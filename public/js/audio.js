@@ -1,17 +1,16 @@
 /**
- * FishingAudioEngine
- * - Nhạc nền: Mô phỏng sóng nước hồ câu êm dịu, tiếng chim rừng & suối reo thư giãn bằng Web Audio API,
- *   tự động hạ nhỏ âm lượng (ducking) khi có giọng đọc ZeroTTS thông báo bắt cá.
- * - Hiệu ứng âm thanh (SFX):
- *   + Tiếng ném thính tõm xuống nước (Water drop / splash)
- *   + Tiếng máy câu quay rè rè (Fishing reel clicker)
- *   + Tiếng vung cần xé gió (Rod whoosh)
- *   + Tiếng cá quẫy nước bì bõm (Fish splash & struggle)
- *   + Tiếng còi báo cá bến thuyền (Boat air horn)
- *   + Tiếng chuông reo ăn mừng cá to (Celebration chime)
- * - Giọng đọc: Hàng đợi ZeroTTS phát tuần tự hào sảng.
+ * ClubAudioEngine
+ * - Nhạc nền: Mô phỏng nhịp điệu EDM / Vinahouse 128 BPM sôi động với tiếng bass, kick và synth lead,
+ *   tự động hạ nhỏ âm lượng (ducking) khi có giọng đọc ZeroTTS xướng tên đại gia và đọc lời cảm ơn.
+ * - Hiệu ứng âm thanh vũ trường (SFX):
+ *   + Tiếng còi DJ air horn kinh điển (pew-pew-pew!)
+ *   + Tiếng bass drop / còi hú khi sàn cháy
+ *   + Tiếng laser zaps quét sàn
+ *   + Tiếng pháo hoa / party popper nổ giòn giã
+ *   + Tiếng nhạc hoàng gia khi cưỡi rồng xuất hiện
+ * - Giọng đọc ZeroTTS: Hàng đợi xướng tên đại gia hào sảng.
  */
-class FishingAudioEngine {
+class ClubAudioEngine {
   constructor() {
     this.ctx = null;
     this.unlocked = false;
@@ -20,16 +19,23 @@ class FishingAudioEngine {
     this.ttsEnabled = true;
     this.ttsVoice = 'maichi';
 
-    const savedMusicVol = parseFloat(localStorage.getItem('fishing_music_vol'));
-    const savedTtsVol = parseFloat(localStorage.getItem('fishing_tts_vol'));
-    this.bgBaseVolume = Number.isFinite(savedMusicVol) ? Math.max(0, Math.min(1, savedMusicVol)) : 0.60;
+    const savedMusicVol = parseFloat(localStorage.getItem('club_music_vol'));
+    const savedTtsVol = parseFloat(localStorage.getItem('club_tts_vol'));
+    this.bgBaseVolume = Number.isFinite(savedMusicVol) ? Math.max(0, Math.min(1, savedMusicVol)) : 0.65;
     this.ttsVolume = Number.isFinite(savedTtsVol) ? Math.max(0, Math.min(1, savedTtsVol)) : 0.95;
 
-    this.synthBgTimer = null;
-    this.waterLapTimer = null;
+    this.beatTimer = null;
+    this.beatStep = 0;
     this.ttsQueue = [];
     this.ttsPlaying = false;
     this.currentAudio = null;
+
+    // Nhạc nền chính: Festival Euphoria.mp3
+    this.bgMusicSrc = '/assets/festival_euphoria.mp3';
+    this.bgMusicAudio = new Audio(this.bgMusicSrc);
+    this.bgMusicAudio.loop = true;
+    this.bgMusicAudio.preload = 'auto';
+    this.bgMusicAudio.volume = this.bgBaseVolume;
   }
 
   ensureContext() {
@@ -41,14 +47,19 @@ class FishingAudioEngine {
       this.ctx.resume();
     }
     this.unlocked = true;
-    if (this.bgMusicEnabled && !this.synthBgTimer) {
-      this.startLakeAmbience();
+    if (this.bgMusicEnabled) {
+      this.startClubBeat();
     }
     return this.ctx;
   }
 
   getDuckedVolume() {
-    return Math.max(0.06, +(this.bgBaseVolume * 0.30).toFixed(2));
+    return Math.max(0.08, +(this.bgBaseVolume * 0.28).toFixed(2));
+  }
+
+  duckMusic(ducked) {
+    if (!this.bgMusicAudio) return;
+    this.bgMusicAudio.volume = ducked ? this.getDuckedVolume() : this.bgBaseVolume;
   }
 
   setMusicVolume(vol) {
@@ -56,8 +67,11 @@ class FishingAudioEngine {
     if (!Number.isFinite(v)) return;
     this.bgBaseVolume = v;
     try {
-      localStorage.setItem('fishing_music_vol', String(v));
+      localStorage.setItem('club_music_vol', String(v));
     } catch (_) {}
+    if (this.bgMusicAudio && !this.ttsPlaying) {
+      this.bgMusicAudio.volume = v;
+    }
   }
 
   setTtsVolume(vol) {
@@ -65,7 +79,7 @@ class FishingAudioEngine {
     if (!Number.isFinite(v)) return;
     this.ttsVolume = v;
     try {
-      localStorage.setItem('fishing_tts_vol', String(v));
+      localStorage.setItem('club_tts_vol', String(v));
     } catch (_) {}
     if (this.currentAudio) {
       this.currentAudio.volume = this.ttsVolume;
@@ -73,295 +87,171 @@ class FishingAudioEngine {
   }
 
   // --------------------------------------------------------------------------
-  // 1. ÂM THANH NỀN HỒ NƯỚC & THIÊN NHIÊN (LAKE & NATURE SYNTH AMBIENCE)
+  // 1. NHẠC NỀN EDM FESTIVAL EUPHORIA (TỰ ĐỘNG LẶP & GIẢM NHẸ KHI ĐỌC TÊN)
   // --------------------------------------------------------------------------
-  startLakeAmbience() {
+  startClubBeat() {
     if (!this.bgMusicEnabled) return;
-    if (this.synthBgTimer) return;
-
-    // Chuỗi nốt lofi ngũ cung êm dịu gợi cảm giác ngồi câu cá bên hồ
-    const PENTATONIC = [220.0, 261.63, 293.66, 329.63, 392.0, 440.0, 523.25];
-    let noteIdx = 0;
-
-    const playLakeTone = () => {
-      if (!this.bgMusicEnabled || !this.ctx) return;
-      try {
-        const now = this.ctx.currentTime;
-        const freq = PENTATONIC[noteIdx % PENTATONIC.length];
-        noteIdx++;
-        const vol = (this.ttsPlaying ? this.getDuckedVolume() : this.bgBaseVolume) * 0.12;
-        if (vol <= 0.002) return;
-
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
-
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(vol, now + 0.8);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 5.0);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.onended = () => {
-          osc.disconnect();
-          gain.disconnect();
-        };
-        osc.start(now);
-        osc.stop(now + 5.1);
-      } catch (_) {}
-    };
-
-    // Tiếng nước vỗ nhẹ bờ hồ ngẫu nhiên
-    const playSoftWaterLap = () => {
-      if (!this.bgMusicEnabled || !this.ctx || this.ttsPlaying) return;
-      try {
-        const now = this.ctx.currentTime;
-        const vol = this.bgBaseVolume * 0.05;
-
-        // Pink noise buffer cho tiếng sóng
-        const bufferSize = this.ctx.sampleRate * 1.2;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const output = buffer.getChannelData(0);
-        let b0 = 0, b1 = 0, b2 = 0;
-        for (let i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1;
-          b0 = 0.99886 * b0 + white * 0.0555179;
-          b1 = 0.99332 * b1 + white * 0.0750759;
-          b2 = 0.96900 * b2 + white * 0.1538520;
-          output[i] = (b0 + b1 + b2 + white * 0.5362) * 0.11;
-        }
-
-        const whiteNoise = this.ctx.createBufferSource();
-        whiteNoise.buffer = buffer;
-
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(380, now);
-        filter.frequency.linearRampToValueAtTime(180, now + 1.2);
-
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(vol, now + 0.3);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
-
-        whiteNoise.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        whiteNoise.start(now);
-        whiteNoise.stop(now + 1.25);
-      } catch (_) {}
-    };
-
-    playLakeTone();
-    this.synthBgTimer = setInterval(playLakeTone, 4200);
-    this.waterLapTimer = setInterval(playSoftWaterLap, 6500);
+    if (this.bgMusicAudio) {
+      this.bgMusicAudio.volume = this.ttsPlaying ? this.getDuckedVolume() : this.bgBaseVolume;
+      const playPromise = this.bgMusicAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('[ClubAudio] Autoplay blocked, click "Bật Âm Nhạc & Giọng Đọc" to start:', err?.message);
+        });
+      }
+    }
   }
 
-  stopLakeAmbience() {
-    if (this.synthBgTimer) {
-      clearInterval(this.synthBgTimer);
-      this.synthBgTimer = null;
-    }
-    if (this.waterLapTimer) {
-      clearInterval(this.waterLapTimer);
-      this.waterLapTimer = null;
+  stopClubBeat() {
+    if (this.bgMusicAudio) {
+      this.bgMusicAudio.pause();
     }
   }
 
   // --------------------------------------------------------------------------
-  // 2. TIẾNG THẢ THÍNH / MỒI RƠI XUỐNG NƯỚC (WATER DROP / PLOP)
+  // 2. TIẾNG CÒI DJ AIR HORN (PEW PEW PEW!)
   // --------------------------------------------------------------------------
-  playWaterDrop(pitchMultiplier = 1.0) {
+  playAirHorn() {
     if (!this.sfxEnabled) return;
-    try {
-      const ctx = this.ensureContext();
-      const now = ctx.currentTime;
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      const startFreq = 420 * pitchMultiplier * (0.95 + Math.random() * 0.1);
-      const endFreq = startFreq * 2.2;
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(startFreq, now);
-      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.08);
-
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.24, now + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.onended = () => {
-        osc.disconnect();
-        gain.disconnect();
-      };
-
-      osc.start(now);
-      osc.stop(now + 0.2);
-    } catch (_) {}
-  }
-
-  // --------------------------------------------------------------------------
-  // 3. TIẾNG QUAY MÁY CÂU (REEL CLICKING / WINDING)
-  // --------------------------------------------------------------------------
-  playReelClick(clicks = 8, intervalMs = 45) {
-    if (!this.sfxEnabled) return;
-    for (let i = 0; i < clicks; i++) {
+    const blasts = [0, 100, 200, 380];
+    blasts.forEach((delay, idx) => {
       setTimeout(() => {
         try {
           const ctx = this.ensureContext();
           const now = ctx.currentTime;
-
-          const osc = ctx.createOscillator();
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
           const gain = ctx.createGain();
 
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(1400 + Math.random() * 300, now);
+          osc1.type = 'sawtooth';
+          osc2.type = 'sawtooth';
 
-          gain.gain.setValueAtTime(0.12, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+          const freq = idx === 3 ? 466.16 : 523.25; // C5 drop to Bb4
+          osc1.frequency.setValueAtTime(freq, now);
+          osc2.frequency.setValueAtTime(freq * 1.5, now);
 
-          osc.connect(gain);
+          const dur = idx === 3 ? 0.45 : 0.08;
+          gain.gain.setValueAtTime(0.24, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
           gain.connect(ctx.destination);
 
-          osc.start(now);
-          osc.stop(now + 0.03);
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + dur + 0.02);
+          osc2.stop(now + dur + 0.02);
         } catch (_) {}
-      }, i * intervalMs);
-    }
+      }, delay);
+    });
   }
 
   // --------------------------------------------------------------------------
-  // 4. TIẾNG VUNG CẦN CÂU XÉ GIÓ (ROD WHOOSH)
+  // 3. TIẾNG SÀN CHÁY / BASS DROP & SIREN
   // --------------------------------------------------------------------------
-  playRodWhoosh() {
+  playFeverDrop() {
     if (!this.sfxEnabled) return;
     try {
       const ctx = this.ensureContext();
       const now = ctx.currentTime;
 
-      // Bandpass noise whoosh
-      const bufferSize = ctx.sampleRate * 0.3;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
-
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(400, now);
-      filter.frequency.exponentialRampToValueAtTime(1600, now + 0.12);
-      filter.frequency.exponentialRampToValueAtTime(300, now + 0.28);
-      filter.Q.setValueAtTime(3.5, now);
-
+      // Heavy Sub Bass Drop
+      const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.25, now + 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.exponentialRampToValueAtTime(32, now + 1.2);
 
-      noise.connect(filter);
-      filter.connect(gain);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+
+      osc.connect(gain);
       gain.connect(ctx.destination);
 
-      noise.start(now);
-      noise.stop(now + 0.3);
+      osc.start(now);
+      osc.stop(now + 1.45);
+
+      // Club Siren
+      const siren = ctx.createOscillator();
+      const sGain = ctx.createGain();
+      siren.type = 'sawtooth';
+      siren.frequency.setValueAtTime(600, now);
+      siren.frequency.linearRampToValueAtTime(1100, now + 0.4);
+      siren.frequency.linearRampToValueAtTime(600, now + 0.8);
+      siren.frequency.linearRampToValueAtTime(1100, now + 1.2);
+
+      sGain.gain.setValueAtTime(0.12, now);
+      sGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+
+      siren.connect(sGain);
+      sGain.connect(ctx.destination);
+
+      siren.start(now);
+      siren.stop(now + 1.45);
     } catch (_) {}
   }
 
   // --------------------------------------------------------------------------
-  // 5. TIẾNG CÁ QUẪY NƯỚC (FISH SPLASH & STRUGGLE)
+  // 4. TIẾNG LASER ZAPS
   // --------------------------------------------------------------------------
-  playFishSplash() {
-    if (!this.sfxEnabled) return;
-    this.playWaterDrop(0.8);
-    setTimeout(() => this.playWaterDrop(1.3), 80);
-    setTimeout(() => this.playWaterDrop(1.1), 160);
-    setTimeout(() => this.playWaterDrop(0.9), 240);
-  }
-
-  // --------------------------------------------------------------------------
-  // 6. TIẾNG CÒI BÁO CÁ / CÒI BẾN TÀU (BOAT AIR HORN)
-  // --------------------------------------------------------------------------
-  playAirHorn() {
+  playLaser() {
     if (!this.sfxEnabled) return;
     try {
       const ctx = this.ensureContext();
       const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-      const baseFreq = 210;
-      const partials = [
-        { freq: baseFreq, amp: 0.22 },
-        { freq: baseFreq * 1.25, amp: 0.18 },
-        { freq: baseFreq * 1.5, amp: 0.14 }
-      ];
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(2200, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.15);
 
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0.001, now);
-      master.gain.linearRampToValueAtTime(0.28, now + 0.05);
-      master.gain.setValueAtTime(0.28, now + 0.65);
-      master.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
-      master.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
 
-      partials.forEach((p) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(p.freq, now);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(p.amp, now);
-
-        osc.connect(g);
-        g.connect(master);
-
-        osc.start(now);
-        osc.stop(now + 1.0);
-      });
+      osc.start(now);
+      osc.stop(now + 0.18);
     } catch (_) {}
   }
 
   // --------------------------------------------------------------------------
-  // 7. TIẾNG CHUÔNG ĂN MỪNG CHIẾN TÍCH (CELEBRATION CHIME)
+  // 5. TIẾNG CƯỠI RỒNG XUẤT HIỆN (TRIUMPHANT DRAGON FANFARE)
   // --------------------------------------------------------------------------
-  playCelebrationChime() {
+  playDragonFanfare() {
     if (!this.sfxEnabled) return;
-    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 arpeggio
+    this.playAirHorn();
+    const notes = [261.63, 329.63, 392.0, 523.25, 659.25, 783.99]; // C major arpeggio
     notes.forEach((freq, idx) => {
       setTimeout(() => {
         try {
           const ctx = this.ensureContext();
           const now = ctx.currentTime;
-
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
 
-          osc.type = 'sine';
+          osc.type = 'triangle';
           osc.frequency.setValueAtTime(freq, now);
 
           gain.gain.setValueAtTime(0.001, now);
-          gain.gain.linearRampToValueAtTime(0.18, now + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+          gain.gain.linearRampToValueAtTime(0.20, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
 
           osc.connect(gain);
           gain.connect(ctx.destination);
 
           osc.start(now);
-          osc.stop(now + 1.25);
+          osc.stop(now + 0.85);
         } catch (_) {}
-      }, idx * 110);
+      }, 400 + idx * 80);
     });
   }
 
   // --------------------------------------------------------------------------
-  // 8. HÀNG ĐỢI ZEROTTS (VOICE QUEUE)
+  // 6. HÀNG ĐỢI ZEROTTS (VOICE QUEUE)
   // --------------------------------------------------------------------------
   enqueueTts(text, options = {}) {
     const onStart = typeof options.onStart === 'function' ? options.onStart : null;
@@ -424,6 +314,7 @@ class FishingAudioEngine {
     if (this.ttsPlaying || this.ttsQueue.length === 0) return;
     const item = this.ttsQueue[0];
     this.ttsPlaying = true;
+    this.duckMusic(true);
 
     try {
       let audioUrl = item.url;
@@ -439,7 +330,6 @@ class FishingAudioEngine {
         await this.playAudioUrl(audioUrl);
         if (item.onEnd) item.onEnd();
       } else {
-        // Fallback: Web Speech API
         await this.playWebSpeechFallback(item.text, item.onStart, item.onEnd);
       }
     } catch (_) {
@@ -447,6 +337,7 @@ class FishingAudioEngine {
     } finally {
       this.ttsQueue.shift();
       this.ttsPlaying = false;
+      this.duckMusic(false);
       this.processTtsQueue();
     }
   }
@@ -469,7 +360,7 @@ class FishingAudioEngine {
 
         audio.onended = done;
         audio.onerror = done;
-        setTimeout(done, 22000); // Guard timeout
+        setTimeout(done, 22000);
         audio.play().catch(done);
       } catch (_) {
         resolve();
@@ -511,6 +402,7 @@ class FishingAudioEngine {
   }
 }
 
-// Backward-compatible global singleton
-window.FishingAudio = new FishingAudioEngine();
-window.TempleAudio = window.FishingAudio; // Alias
+// Global instance & aliases
+window.ClubAudio = new ClubAudioEngine();
+window.FishingAudio = window.ClubAudio;
+window.TempleAudio = window.ClubAudio;

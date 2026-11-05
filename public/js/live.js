@@ -1,20 +1,24 @@
 /**
- * Fishing Lake Live Controller & WebSocket Client
- * - Tự động co giãn khung hình 9:16 (1080x1920) chuẩn xác theo màn hình
- * - Kết nối thời gian thực qua WebSocket (/ws) với JSON-RPC 2.0
- * - Điều phối hiệu ứng phao câu, cần thủ, âm thanh và giọng đọc ZeroTTS Mai Chi
+ * Sàn Quẩy Vũ Trường 3D - Live Controller & WebSocket Client
+ * - Tự động co giãn 9:16 (1080x1920) chuẩn OBS Studio
+ * - Tích hợp Three.js 3D Engine: Sàn nhảy 4x4 neon, nhân vật Mascot 3D đứng vững trên ô gạch
+ * - Camera lia góc động theo đếm ngược 12s hoặc khi tặng 🌹 CAMERA
+ * - Xử lý sự kiện: CƯỠI RỒNG KIM LONG, HÓA KHỔNG LỒ, SÀN CHÁY (Fever Mode)
+ * - Tích hợp giọng đọc ZeroTTS xướng tên đại gia và hệ thống âm thanh EDM Web Audio
  */
+import { Club3DEngine } from './club3d.js';
+
 (function () {
   'use strict';
 
-  // 1. Kiểm tra tham số ?obs=1 để kích hoạt chế độ OBS Studio sạch (không dock)
+  // 1. Kiểm tra tham số ?obs=1 để bật chế độ OBS Studio sạch (ẩn thanh dock điều khiển)
   const urlParams = new URLSearchParams(window.location.search);
   const isObsMode = urlParams.get('obs') === '1' || urlParams.get('obs') === 'true';
   if (isObsMode) {
     document.body.classList.add('obs-mode');
   }
 
-  // 2. Tự động co giãn 9:16 (Auto Scale)
+  // 2. Tự động co giãn khung hình 9:16
   const stage = document.getElementById('stage9x16');
   const stageWrapper = document.getElementById('stageWrapper');
 
@@ -28,49 +32,42 @@
   window.addEventListener('resize', resizeStage);
   resizeStage();
 
-  // 3. Khởi tạo Canvas Particle Engine
-  const canvas = document.getElementById('fishingCanvas');
-  let particleEngine = null;
-  if (canvas && window.FishingParticleEngine) {
-    particleEngine = new window.FishingParticleEngine(canvas);
+  // 3. Khởi tạo Three.js 3D Nightclub Engine
+  const webglContainer = document.getElementById('webglContainer');
+  let club3d = null;
+  const zoomTimerVal = document.getElementById('zoomTimerVal');
+
+  if (webglContainer) {
+    try {
+      club3d = new Club3DEngine(webglContainer);
+      club3d.onZoomCountdownUpdate = (seconds) => {
+        if (zoomTimerVal) zoomTimerVal.textContent = seconds;
+      };
+      console.log('[Three.js] Khởi tạo sàn quẩy 3D thành công!');
+    } catch (err) {
+      console.error('[Three.js Error] Không khởi tạo được WebGL:', err);
+    }
   }
 
-  // 4. Các phần tử DOM chính
-  const bobberBody = document.getElementById('bobberBody');
-  const anglerSpriteImg = document.getElementById('anglerSpriteImg');
-  const anglerWishBubble = document.getElementById('anglerWishBubble');
-  const anglerName = document.getElementById('anglerName');
-  const anglerAction = document.getElementById('anglerAction');
-  const anglerAvatar = document.getElementById('anglerAvatar');
+  // 4. Khởi tạo 2D FX Particle Engine cho Confetti & Pháo hoa
+  const canvas = document.getElementById('clubCanvas');
+  let particleEngine = null;
+  if (canvas && window.ClubParticleEngine) {
+    particleEngine = new window.ClubParticleEngine(canvas);
+  }
 
-  const statCatches = document.getElementById('statCatches');
-  const statWeight = document.getElementById('statWeight');
-  const statBait = document.getElementById('statBait');
-  const statHorn = document.getElementById('statHorn');
-
-  const liveStatusText = document.getElementById('liveStatusText');
-  const liveDot = document.getElementById('liveDot');
-
-  const activeAnglerName = document.getElementById('activeAnglerName');
-  const activeActionTag = document.getElementById('activeActionTag');
-  const leaderboardList = document.getElementById('leaderboardList');
-  const vipStoolsLayer = document.getElementById('vipStoolsLayer');
+  // 5. Các phần tử DOM chính
+  const topDancerCount = document.getElementById('topDancerCount');
+  const tickerText = document.getElementById('tickerText');
+  const topDaigiaList = document.getElementById('topDaigiaList');
+  const dragonRideOverlay = document.getElementById('dragonRideOverlay');
+  const dragonCrownUser = document.getElementById('dragonCrownUser');
+  const feverBanner = document.getElementById('feverBanner');
+  const heatRatioText = document.getElementById('heatRatioText');
+  const heatBarFill = document.getElementById('heatBarFill');
   const eventFeed = document.getElementById('eventFeed');
 
-  // Modal & Banner
-  const catchModal = document.getElementById('catchModal');
-  const catchBadge = document.getElementById('catchBadge');
-  const catchIcon = document.getElementById('catchIcon');
-  const catchFishName = document.getElementById('catchFishName');
-  const catchWeight = document.getElementById('catchWeight');
-  const catchAnglerName = document.getElementById('catchAnglerName');
-  const catchQuote = document.getElementById('catchQuote');
-
-  const leviathanBanner = document.getElementById('leviathanBanner');
-  const leviathanTitle = document.getElementById('leviathanTitle');
-  const leviathanSub = document.getElementById('leviathanSub');
-
-  // 5. Kết nối WebSocket (/ws)
+  // 6. Kết nối WebSocket (/ws)
   let ws = null;
   let wsRetryTimer = null;
 
@@ -81,13 +78,11 @@
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('[WebSocket] Đã kết nối tới server hồ câu!');
-      if (liveDot) liveDot.style.background = '#00e676';
+      console.log('[WebSocket] Đã kết nối sàn quẩy vũ trường 3D!');
     };
 
     ws.onclose = () => {
       console.warn('[WebSocket] Mất kết nối, tự kết nối lại sau 2.5s...');
-      if (liveDot) liveDot.style.background = '#ff5252';
       clearTimeout(wsRetryTimer);
       wsRetryTimer = setTimeout(connectWs, 2500);
     };
@@ -107,229 +102,186 @@
   function handleWsMessage(msg) {
     if (!msg) return;
 
-    // Trạng thái hồ câu
-    if (msg.method === 'fishing.state' || msg.method === 'temple.state') {
+    if (msg.method === 'bar.state' || msg.method === 'fishing.state') {
       updatePublicState(msg.params);
-    }
-    // Sự kiện tương tác thời gian thực
-    else if (msg.method === 'fishing.event' || msg.method === 'temple.event') {
+    } else if (msg.method === 'bar.event' || msg.method === 'fishing.event') {
       const eventData = msg.params?.event;
       if (eventData) {
-        handleFishingEvent(eventData);
+        handleClubEvent(eventData);
       }
       if (msg.params?.state) {
         updatePublicState(msg.params.state);
       }
     }
-    // Số người xem live
-    else if (msg.method === 'fishing.viewerCount' || msg.method === 'temple.viewerCount') {
-      const count = msg.params?.viewerCount || 0;
-      if (liveStatusText) {
-        liveStatusText.textContent = `HỒ CÂU CÁ • ${count} NGƯỜI XEM`;
-      }
-    }
   }
 
-  // 6. Cập nhật giao diện hồ câu từ trạng thái
+  // 7. Cập nhật giao diện từ State
+  let lastFeverState = false;
+
   function updatePublicState(st) {
     if (!st) return;
 
-    if (statCatches) statCatches.textContent = st.totalCatches ?? 0;
-    if (statWeight) statWeight.textContent = st.totalWeightKg ?? '0.0';
-    if (statBait) statBait.textContent = st.totalBait ?? 0;
-    if (statHorn) statHorn.textContent = st.hornsBlown ?? 0;
-
-    // Cập nhật bảng xếp hạng VUA SÁT CÁ
-    if (leaderboardList && Array.isArray(st.leaderboard)) {
-      renderLeaderboard(st.leaderboard);
-      renderVipStools(st.leaderboard);
+    const club = st.club || {};
+    if (topDancerCount) topDancerCount.textContent = club.totalDancers ?? 32;
+    if (tickerText && club.lastJoinUser) {
+      tickerText.textContent = `${club.lastJoinUser} lên sàn 🏃`;
     }
 
-    // Cập nhật trạng thái TikTok
-    if (st.tiktok && liveStatusText) {
-      if (st.tiktok.connected) {
-        liveStatusText.textContent = `@${st.tiktok.username} • ${st.tiktok.viewerCount || 0} NGƯỜI XEM`;
-        if (liveDot) liveDot.style.background = '#00e676';
-      } else if (st.tiktok.connecting) {
-        liveStatusText.textContent = `ĐANG KẾT NỐI @${st.tiktok.username}...`;
-        if (liveDot) liveDot.style.background = '#ffea00';
+    // Cập nhật thanh Nhiệt Sàn
+    const heat = club.heat ?? 0;
+    const maxHeat = club.maxHeat ?? 200;
+    if (heatRatioText) heatRatioText.textContent = `${heat} / ${maxHeat}`;
+    if (heatBarFill) {
+      const pct = Math.min(100, Math.max(0, (heat / maxHeat) * 100));
+      heatBarFill.style.width = `${pct}%`;
+    }
+
+    // Hiệu ứng Sàn Cháy (Fever Mode)
+    const isFever = !!club.feverMode;
+    if (isFever !== lastFeverState) {
+      lastFeverState = isFever;
+      if (isFever) {
+        feverBanner?.classList.add('active');
+        particleEngine?.setFever(true);
+        if (club3d) club3d.feverActive = true;
+        window.ClubAudio?.playFeverDrop();
       } else {
-        liveStatusText.textContent = 'HỒ CÂU CÁ GIẢI TRÍ • TRỰC TIẾP';
-        if (liveDot) liveDot.style.background = '#00e676';
+        feverBanner?.classList.remove('active');
+        particleEngine?.setFever(false);
+        if (club3d) club3d.feverActive = false;
       }
     }
+
+    // Cập nhật Top Đại Gia
+    if (topDaigiaList && Array.isArray(st.topVip)) {
+      renderTopDaigia(st.topVip);
+    }
+
+    // Đồng bộ danh sách nhân vật 3D trên sàn gạch
+    if (club3d && Array.isArray(st.dancers)) {
+      club3d.syncDancers(st.dancers);
+    }
   }
 
-  function renderLeaderboard(board) {
-    leaderboardList.innerHTML = '';
-    board.forEach((item) => {
-      const row = document.createElement('div');
-      row.className = 'lb-row';
-      const medal = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : `${item.rank}.`;
-      row.innerHTML = `
-        <div class="lb-left">
-          <span class="lb-rank">${medal}</span>
-          <span class="lb-name" title="${item.name}">${item.name}</span>
+  function renderTopDaigia(vipList) {
+    if (!topDaigiaList) return;
+    topDaigiaList.innerHTML = '';
+    const medals = ['daigia-rank-1', 'daigia-rank-2', 'daigia-rank-3'];
+    const realVips = Array.isArray(vipList) ? vipList.filter((item) => (item.coinsTotal || 0) > 0) : [];
+
+    if (realVips.length === 0) {
+      topDaigiaList.innerHTML = `
+        <div class="daigia-empty-state">
+          <span>Chờ đại gia lên sàn...</span>
         </div>
-        <div class="lb-weight">${item.totalWeightKg}kg</div>
       `;
-      leaderboardList.appendChild(row);
+      return;
+    }
+
+    realVips.slice(0, 3).forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'daigia-item';
+      row.innerHTML = `
+        <div class="daigia-left">
+          <span class="daigia-rank-icon ${medals[idx] || 'daigia-rank-3'}">${idx + 1}</span>
+          <span class="daigia-name" title="${item.name}">${item.name}</span>
+        </div>
+        <span class="daigia-coins">${Number(item.coinsTotal || 0).toLocaleString()}</span>
+      `;
+      topDaigiaList.appendChild(row);
     });
   }
 
-  function renderVipStools(board) {
-    if (!vipStoolsLayer) return;
-    vipStoolsLayer.innerHTML = '';
-    board.slice(0, 6).forEach((item) => {
-      const card = document.createElement('div');
-      card.className = 'vip-stool-card';
-      const avatarContent = item.avatar
-        ? `<img src="${item.avatar}" class="stool-avatar" alt="" />`
-        : `<div class="stool-avatar">🎣</div>`;
+  // 8. Xử lý các sự kiện tương tác
+  let dragonTimer = null;
 
-      card.innerHTML = `
-        <div class="stool-rank-tag">TOP ${item.rank}</div>
-        ${avatarContent}
-        <div class="stool-name" title="${item.name}">${item.name}</div>
-        <div class="stool-weight">${item.totalWeightKg}kg</div>
-      `;
-      vipStoolsLayer.appendChild(card);
-    });
-  }
-
-  // 7. Xử lý hoạt ảnh sự kiện tương tác
-  let catchModalTimer = null;
-  let bannerTimer = null;
-
-  function handleFishingEvent(ev) {
+  function handleClubEvent(ev) {
     appendEventFeed(ev);
-
-    // Kích hoạt âm thanh & giọng đọc
-    const audio = window.FishingAudio;
+    const audio = window.ClubAudio;
 
     switch (ev.type) {
-      // 1. Thả thính / Ném mồi
-      case 'castBait':
-        if (audio) audio.playWaterDrop();
-        if (particleEngine) particleEngine.addBaitDrop(540, 1150, ev.count || 1);
-        if (activeAnglerName) activeAnglerName.textContent = ev.user;
-        if (activeActionTag) activeActionTag.textContent = `Thả ${ev.count || 1} nắm thính thơm`;
+      // 1. Khách lên sàn
+      case 'joinFloor':
+        if (tickerText) tickerText.textContent = `${ev.user} lên sàn 🏃`;
+        particleEngine?.addSparkles?.(30);
         break;
 
-      // 2. Quăng cần
-      case 'castRod':
-        if (audio) {
-          audio.playRodWhoosh();
-          audio.playWaterDrop(1.2);
+      // 2. Thả tim tăng nhiệt
+      case 'addHeat':
+        if (ev.triggeredFever) {
+          feverBanner?.classList.add('active');
+          particleEngine?.setFever(true);
+          if (club3d) club3d.feverActive = true;
+          audio?.playFeverDrop();
         }
-        if (particleEngine) particleEngine.addBaitDrop(540, 1150, 2);
-        if (anglerWishBubble) anglerWishBubble.textContent = `“${ev.wish || 'Quăng cần thả phao!'}”`;
-        if (anglerName) anglerName.textContent = ev.user;
-        if (anglerAction) anglerAction.textContent = '✨ Quăng cần thả phao';
-        if (activeAnglerName) activeAnglerName.textContent = ev.user;
-        if (activeActionTag) activeActionTag.textContent = 'Vừa vung cần thả phao';
-
         if (ev.ttsText && audio) {
           audio.enqueueTts(ev.ttsText);
         }
         break;
 
-      // 3. Giật cần lên cá (Hook Fish)
-      case 'hookFish':
-      case 'catchBigFish':
-      case 'catchLeviathan':
-        const isLeviathan = ev.type === 'catchLeviathan';
-        const isBig = ev.type === 'catchBigFish' || isLeviathan;
-
-        // Rung lắc phao câu
-        if (bobberBody) {
-          bobberBody.classList.add('hooked');
-          setTimeout(() => bobberBody.classList.remove('hooked'), 3200);
-        }
-
-        // Cần thủ giật cần
-        if (anglerSpriteImg) {
-          anglerSpriteImg.classList.add('reeling');
-          setTimeout(() => anglerSpriteImg.classList.remove('reeling'), 3000);
-        }
-
-        // Âm thanh
-        if (audio) {
-          audio.playReelClick(12, 35);
-          setTimeout(() => audio.playFishSplash(), 350);
-          if (isBig) {
-            setTimeout(() => audio.playCelebrationChime(), 800);
-          }
-        }
-
-        // Hiệu ứng hạt nước
-        if (particleEngine) {
-          particleEngine.addFishCatch(540, 1150, isBig);
-        }
-
-        // Cập nhật thông tin cần thủ
-        if (anglerWishBubble && ev.wish) {
-          anglerWishBubble.textContent = `“${ev.wish}”`;
-        }
-        if (anglerName) anglerName.textContent = ev.user;
-        if (anglerAction) {
-          anglerAction.textContent = `🐟 Bắt được ${ev.fish?.name || 'Cá'} (${ev.weightKg}kg)`;
-        }
-
-        if (activeAnglerName) activeAnglerName.textContent = ev.user;
-        if (activeActionTag) {
-          activeActionTag.textContent = `Vừa giật được ${ev.fish?.name || 'Cá to'} ${ev.weightKg}kg`;
-        }
-
-        // Mở Modal Chiến Tích Bắt Cá đồng bộ Giọng Đọc
-        if (ev.fish && catchModal) {
-          catchBadge.textContent = ev.fish.rarity || 'PHỔ THÔNG';
-          catchBadge.style.background = ev.fish.badgeColor || '#fbc02d';
-          catchIcon.textContent = ev.fish.icon || '🐟';
-          catchFishName.textContent = ev.fish.name || 'Cá Nước Ngọt';
-          catchWeight.textContent = `${ev.weightKg} kg`;
-          catchAnglerName.textContent = `Cần Thủ: ${ev.user}`;
-          catchQuote.textContent = `“${ev.fish.quote || ''}”`;
-
-          catchModal.classList.add('active');
-          clearTimeout(catchModalTimer);
-          catchModalTimer = setTimeout(() => {
-            catchModal.classList.remove('active');
-          }, 6500);
-        }
-
-        // Banner Thủy Quái
-        if (isLeviathan && leviathanBanner) {
-          leviathanTitle.textContent = `🐉 ${ev.fish?.name?.toUpperCase() || 'THỦY QUÁI XUẤT THẾ'} 🐉`;
-          leviathanSub.textContent = `Đại cần thủ ${ev.user} bắt được thủy quái nặng ${ev.weightKg}kg!`;
-          leviathanBanner.classList.add('active');
-          clearTimeout(bannerTimer);
-          bannerTimer = setTimeout(() => {
-            leviathanBanner.classList.remove('active');
-          }, 7000);
-        }
-
-        // Phát giọng đọc ZeroTTS
-        if (ev.ttsText && audio) {
-          audio.enqueueTts(ev.ttsText, {
-            onStart: () => {
-              if (catchModal && !catchModal.classList.contains('active')) {
-                catchModal.classList.add('active');
-              }
-            },
-            onEnd: () => {
-              if (catchModal) catchModal.classList.remove('active');
-            }
-          });
+      // 3. Đổi điệu nhảy
+      case 'danceMove':
+        audio?.playLaser();
+        if (club3d && ev.uniqueId && club3d.dancersMap.has(ev.uniqueId)) {
+          const dancerObj = club3d.dancersMap.get(ev.uniqueId);
+          dancerObj.danceMove = ev.move;
         }
         break;
 
-      // 4. Thổi còi báo cá
-      case 'soundHorn':
-        if (audio) audio.playAirHorn();
-        if (particleEngine) particleEngine.addFishCatch(540, 1150, false);
-        if (activeAnglerName) activeAnglerName.textContent = ev.user;
-        if (activeActionTag) activeActionTag.textContent = 'Thổi còi báo cá vang rền bến hồ';
+      // 4. Sự kiện Tặng Quà
+      case 'gift':
+        // Lia & Zoom camera trực tiếp vào nhân vật vừa donate
+        if (club3d && ev.giftType !== 'dragon_ride') {
+          club3d.zoomToDonor(ev.uniqueId || ev.user);
+        }
+
+        // CƯỠI RỒNG KIM LONG
+        if (ev.giftType === 'dragon_ride') {
+          if (dragonRideOverlay) {
+            if (dragonCrownUser) dragonCrownUser.textContent = `VUA - ${ev.user}`;
+            dragonRideOverlay.classList.add('active');
+            clearTimeout(dragonTimer);
+            dragonTimer = setTimeout(() => {
+              dragonRideOverlay.classList.remove('active');
+            }, 9000);
+          }
+          if (club3d) club3d.triggerDragonRide(ev.user);
+          audio?.playDragonFanfare();
+          particleEngine?.addConfetti?.(120);
+          particleEngine?.addFireworks?.(540, 500);
+        }
+        // CAMERA: Lia góc nhìn camera 3D ngay lập tức
+        else if (ev.giftType === 'camera') {
+          if (club3d) club3d.nextCameraPreset();
+          audio?.playLaser();
+          particleEngine?.addConfetti?.(25);
+        }
+        // KHỔNG LỒ: Hóa to nhân vật trong không gian 3D
+        else if (ev.giftType === 'giant') {
+          if (club3d && ev.uniqueId && club3d.dancersMap.has(ev.uniqueId)) {
+            club3d.dancersMap.get(ev.uniqueId).isGiant = true;
+          }
+          audio?.playAirHorn();
+          particleEngine?.addConfetti?.(60);
+        }
+        // PHÁO HOA
+        else if (ev.giftType === 'fireworks') {
+          particleEngine?.addFireworks?.(350, 480);
+          particleEngine?.addFireworks?.(720, 480);
+          audio?.playAirHorn();
+        }
+        // BONG BÓNG
+        else if (ev.giftType === 'bubbles') {
+          particleEngine?.addBubbles?.(50);
+          audio?.playLaser();
+        }
+        // CÁC QUÀ KHÁC
+        else {
+          audio?.playAirHorn();
+          particleEngine?.addConfetti?.(45);
+        }
+
+        // Phát giọng đọc ZeroTTS xướng tên đại gia
         if (ev.ttsText && audio) {
           audio.enqueueTts(ev.ttsText);
         }
@@ -342,14 +294,22 @@
     const item = document.createElement('div');
     item.className = 'feed-item';
     const timeStr = new Date().toLocaleTimeString('vi-VN');
-    item.innerHTML = `<strong>[${timeStr}] ${ev.user}</strong>: ${ev.type === 'hookFish' ? `Giật được ${ev.fish?.name} (${ev.weightKg}kg)` : ev.type === 'castBait' ? `Thả ${ev.count} mồi thính` : ev.type === 'soundHorn' ? 'Thổi còi báo cá' : 'Quăng cần thả phao'}`;
+    if (ev.type === 'gift') {
+      item.innerHTML = `<strong>[${timeStr}] 🎁 ${ev.user}</strong> tặng <strong>${ev.giftName}</strong> (${ev.coins} xu)`;
+    } else if (ev.type === 'addHeat') {
+      item.innerHTML = `<strong>[${timeStr}] ❤️ ${ev.user}</strong> thả tim (+${ev.count} nhiệt)`;
+    } else if (ev.type === 'danceMove') {
+      item.innerHTML = `<strong>[${timeStr}] 💃 ${ev.user}</strong> nhảy điệu <strong>${ev.move}</strong>`;
+    } else {
+      item.innerHTML = `<strong>[${timeStr}] 🏃 ${ev.user}</strong> đã lên sàn`;
+    }
     eventFeed.prepend(item);
     if (eventFeed.children.length > 25) {
       eventFeed.removeChild(eventFeed.lastChild);
     }
   }
 
-  // 8. Đăng ký các nút bấm tương tác trực tiếp
+  // 9. Đăng ký các nút bấm tương tác & RPC
   async function callRpc(method, params = {}) {
     try {
       const res = await fetch('/rpc', {
@@ -369,115 +329,96 @@
     }
   }
 
-  function getAnglerInputs() {
-    const nameInput = document.getElementById('inputAnglerName');
-    const wishInput = document.getElementById('inputAnglerWish');
-    return {
-      user: nameInput?.value?.trim() || 'Hải Đăng Cần Thủ',
-      wish: wishInput?.value?.trim() || 'Săn cá chép vàng 5 ký!'
-    };
+  function getDancerInputName() {
+    const input = document.getElementById('inputDancerName');
+    return input?.value?.trim() || 'Khách thứ 20';
   }
 
-  // Hotspots trên màn hình hồ câu
-  const spotBait = document.getElementById('spotBait');
-  const spotCast = document.getElementById('spotCast');
-  const spotHorn = document.getElementById('spotHorn');
-  const fishingBobberZone = document.getElementById('fishingBobberZone');
-
-  if (spotBait) {
-    spotBait.addEventListener('click', () => {
-      window.FishingAudio?.ensureContext();
-      const { user } = getAnglerInputs();
-      callRpc('fishing.castBait', { user, count: 5 });
+  // Nút Lia Góc Camera 3D
+  const btnSwitchCam = document.getElementById('btnSwitchCam');
+  if (btnSwitchCam) {
+    btnSwitchCam.addEventListener('click', () => {
+      window.ClubAudio?.ensureContext();
+      if (club3d) club3d.nextCameraPreset();
     });
   }
 
-  if (spotCast) {
-    spotCast.addEventListener('click', () => {
-      window.FishingAudio?.ensureContext();
-      const { user, wish } = getAnglerInputs();
-      callRpc('fishing.castRod', { user, wish });
+  // Bấm vào danh sách quà ở sidebar để test nhanh
+  document.querySelectorAll('.gift-menu-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      window.ClubAudio?.ensureContext();
+      const giftKey = pill.getAttribute('data-gift');
+      const user = getDancerInputName();
+
+      if (giftKey === 'camera') {
+        if (club3d) club3d.nextCameraPreset();
+      }
+
+      const coins = giftKey === 'dragon_ride' ? 199 : giftKey === 'king' ? 500 : 20;
+      callRpc('bar.gift', { user, giftName: pill.textContent.trim(), coins });
     });
-  }
-
-  if (spotHorn) {
-    spotHorn.addEventListener('click', () => {
-      window.FishingAudio?.ensureContext();
-      const { user } = getAnglerInputs();
-      callRpc('fishing.soundHorn', { user });
-    });
-  }
-
-  if (fishingBobberZone) {
-    fishingBobberZone.addEventListener('click', () => {
-      window.FishingAudio?.ensureContext();
-      const { user, wish } = getAnglerInputs();
-      callRpc('fishing.hookFish', { user, wish });
-    });
-  }
-
-  // Thẻ quà HUD đáy
-  document.getElementById('cardBait')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user } = getAnglerInputs();
-    callRpc('fishing.castBait', { user, count: 5 });
-  });
-
-  document.getElementById('cardCast')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user, wish } = getAnglerInputs();
-    callRpc('fishing.castRod', { user, wish });
-  });
-
-  document.getElementById('cardGourmet')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user } = getAnglerInputs();
-    callRpc('fishing.catchBigFish', { user, coins: 20 });
   });
 
   // Nút Quick Dock
-  document.getElementById('btnRpcHook')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user, wish } = getAnglerInputs();
-    callRpc('fishing.hookFish', { user, wish });
+  document.getElementById('btnRpcJoin')?.addEventListener('click', () => {
+    window.ClubAudio?.ensureContext();
+    const user = getDancerInputName();
+    callRpc('bar.joinFloor', { user });
   });
 
-  document.getElementById('btnRpcCast')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user, wish } = getAnglerInputs();
-    callRpc('fishing.castRod', { user, wish });
+  document.getElementById('btnRpcHeat')?.addEventListener('click', () => {
+    window.ClubAudio?.ensureContext();
+    const user = getDancerInputName();
+    callRpc('bar.addHeat', { user, count: 15 });
   });
 
-  document.getElementById('btnRpcBait')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user } = getAnglerInputs();
-    callRpc('fishing.castBait', { user, count: 5 });
+  document.getElementById('btnRpcHiphop')?.addEventListener('click', () => {
+    window.ClubAudio?.ensureContext();
+    const user = getDancerInputName();
+    callRpc('bar.danceMove', { user, move: 'hiphop' });
   });
 
-  document.getElementById('btnRpcHorn')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user } = getAnglerInputs();
-    callRpc('fishing.soundHorn', { user });
+  document.getElementById('btnRpcHeadspin')?.addEventListener('click', () => {
+    window.ClubAudio?.ensureContext();
+    const user = getDancerInputName();
+    callRpc('bar.danceMove', { user, move: 'spin' });
   });
 
-  document.getElementById('btnRpcBigFish')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user } = getAnglerInputs();
-    callRpc('fishing.catchBigFish', { user, coins: 35 });
+  document.getElementById('btnRpcGiant')?.addEventListener('click', () => {
+    window.ClubAudio?.ensureContext();
+    const user = getDancerInputName();
+    callRpc('bar.gift', { user, giftName: 'Khổng Lồ', coins: 40 });
   });
 
-  document.getElementById('btnRpcLeviathan')?.addEventListener('click', () => {
-    window.FishingAudio?.ensureContext();
-    const { user } = getAnglerInputs();
-    callRpc('fishing.catchLeviathan', { user, coins: 199 });
+  document.getElementById('btnRpcDj')?.addEventListener('click', () => {
+    window.ClubAudio?.ensureContext();
+    const user = getDancerInputName();
+    callRpc('bar.gift', { user, giftName: 'Lên DJ', coins: 50 });
+  });
+
+  document.getElementById('btnRpcDragon')?.addEventListener('click', () => {
+    window.ClubAudio?.ensureContext();
+    const user = getDancerInputName();
+    callRpc('bar.gift', { user, giftName: 'Cưỡi Rồng Kim Long', coins: 199 });
+  });
+
+  document.getElementById('btnRpcFever')?.addEventListener('click', () => {
+    window.ClubAudio?.ensureContext();
+    const user = getDancerInputName();
+    callRpc('bar.addHeat', { user, count: 150 });
+  });
+
+  document.getElementById('btnRpcReset')?.addEventListener('click', async () => {
+    window.ClubAudio?.ensureContext();
+    await callRpc('bar.resetState', {});
   });
 
   // Điều khiển âm thanh
   const btnUnlockAudio = document.getElementById('btnUnlockAudio');
   if (btnUnlockAudio) {
     btnUnlockAudio.addEventListener('click', () => {
-      window.FishingAudio?.ensureContext();
-      btnUnlockAudio.textContent = '✅ Đã Bật Âm Thanh & Giọng Đọc';
+      window.ClubAudio?.ensureContext();
+      btnUnlockAudio.textContent = '✅ Đã Bật Âm Nhạc & Giọng Đọc';
       btnUnlockAudio.classList.remove('gold');
     });
   }
@@ -485,18 +426,16 @@
   const btnToggleMusic = document.getElementById('btnToggleMusic');
   if (btnToggleMusic) {
     btnToggleMusic.addEventListener('click', () => {
-      const audio = window.FishingAudio;
+      const audio = window.ClubAudio;
       if (!audio) return;
       audio.ensureContext();
       audio.bgMusicEnabled = !audio.bgMusicEnabled;
       if (audio.bgMusicEnabled) {
-        audio.startLakeAmbience();
-        btnToggleMusic.textContent = '🎵 Âm Hồ Nước: BẬT';
-        btnToggleMusic.classList.add('active-toggle');
+        audio.startClubBeat();
+        btnToggleMusic.textContent = '🎵 Nhạc EDM: BẬT';
       } else {
-        audio.stopLakeAmbience();
-        btnToggleMusic.textContent = '🎵 Âm Hồ Nước: TẮT';
-        btnToggleMusic.classList.remove('active-toggle');
+        audio.stopClubBeat();
+        btnToggleMusic.textContent = '🎵 Nhạc EDM: TẮT';
       }
     });
   }
@@ -504,11 +443,10 @@
   const btnToggleTts = document.getElementById('btnToggleTts');
   if (btnToggleTts) {
     btnToggleTts.addEventListener('click', () => {
-      const audio = window.FishingAudio;
+      const audio = window.ClubAudio;
       if (!audio) return;
       audio.ttsEnabled = !audio.ttsEnabled;
       btnToggleTts.textContent = audio.ttsEnabled ? '🎙️ Giọng Đọc: BẬT' : '🎙️ Giọng Đọc: TẮT';
-      btnToggleTts.classList.toggle('active-toggle', audio.ttsEnabled);
     });
   }
 
@@ -518,7 +456,7 @@
     sliderMusicVol.addEventListener('input', (e) => {
       const val = e.target.value;
       if (valMusicVol) valMusicVol.textContent = `${val}%`;
-      window.FishingAudio?.setMusicVolume(val / 100);
+      window.ClubAudio?.setMusicVolume(val / 100);
     });
   }
 
@@ -528,7 +466,7 @@
     sliderTtsVol.addEventListener('input', (e) => {
       const val = e.target.value;
       if (valTtsVol) valTtsVol.textContent = `${val}%`;
-      window.FishingAudio?.setTtsVolume(val / 100);
+      window.ClubAudio?.setTtsVolume(val / 100);
     });
   }
 
@@ -538,11 +476,11 @@
   if (btnConnectTikTok) {
     btnConnectTikTok.addEventListener('click', async () => {
       const username = inputTikTokUser?.value?.trim();
-      if (!username) return alert('Vui lòng nhập @username hoặc link TikTok Live');
+      if (!username) return alert('Vui lòng nhập @username TikTok Live');
       btnConnectTikTok.textContent = 'Đang kết nối...';
       btnConnectTikTok.disabled = true;
       try {
-        await callRpc('fishing.connectTikTok', { username });
+        await callRpc('bar.connectTikTok', { username });
       } finally {
         btnConnectTikTok.textContent = 'Kết Nối';
         btnConnectTikTok.disabled = false;
@@ -550,32 +488,29 @@
     });
   }
 
-  // Tự động giả lập cần thủ
-  let autoSimState = false;
+  // Tự động giả lập
+  let autoSimActive = false;
   const btnToggleAutoSim = document.getElementById('btnToggleAutoSim');
   if (btnToggleAutoSim) {
     btnToggleAutoSim.addEventListener('click', async () => {
-      autoSimState = !autoSimState;
-      if (autoSimState) {
-        await callRpc('fishing.startAutoSim');
+      autoSimActive = !autoSimActive;
+      if (autoSimActive) {
+        await callRpc('bar.startAutoSim');
         btnToggleAutoSim.textContent = '🤖 Tự động Giả lập: BẬT';
         btnToggleAutoSim.classList.add('gold');
       } else {
-        await callRpc('fishing.stopAutoSim');
+        await callRpc('bar.stopAutoSim');
         btnToggleAutoSim.textContent = '🤖 Tự động Giả lập: TẮT';
         btnToggleAutoSim.classList.remove('gold');
       }
     });
   }
 
-  // Bấm đóng modal chiến tích khi click ra ngoài
-  if (catchModal) {
-    catchModal.addEventListener('click', (e) => {
-      if (e.target === catchModal) {
-        catchModal.classList.remove('active');
-      }
-    });
-  }
+  // Lấy state ban đầu ngay lập tức để render sàn 3D mà không cần chờ WebSocket handshake
+  fetch('/api/state')
+    .then((r) => r.json())
+    .then((st) => updatePublicState(st))
+    .catch((err) => console.warn('[Init State Error]', err));
 
   // Khởi động kết nối
   connectWs();

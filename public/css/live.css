@@ -1,15 +1,13 @@
 :root {
-  --bg-deep: #07151e;
-  --lake-teal: #00796b;
-  --lake-emerald: #004d40;
-  --lake-blue: #0288d1;
-  --gold: #fbc02d;
-  --gold-glow: #ffe082;
-  --amber: #ff8f00;
-  --text-light: #f5fbff;
-  --text-muted: #b0bec5;
-  --card-bg: rgba(7, 24, 34, 0.82);
-  --card-border: rgba(41, 182, 246, 0.35);
+  --neon-pink: #ff007f;
+  --neon-cyan: #00e5ff;
+  --neon-purple: #9d00ff;
+  --neon-gold: #ffd600;
+  --neon-orange: #ff6d00;
+  --neon-green: #00e676;
+  --dark-bg: #090314;
+  --card-bg: rgba(18, 4, 38, 0.88);
+  --border-neon: rgba(255, 0, 127, 0.45);
   --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: 'Noto Serif', serif;
 }
@@ -22,8 +20,8 @@
 }
 
 body {
-  background: #030a0f;
-  color: var(--text-light);
+  background: #04010a;
+  color: #fff;
   font-family: var(--font-sans);
   overflow: hidden;
   height: 100vh;
@@ -37,7 +35,7 @@ body {
   display: flex;
   height: 100vh;
   width: 100vw;
-  background: radial-gradient(circle at 50% 50%, #0b2230 0%, #030c12 100%);
+  background: radial-gradient(circle at 50% 50%, #17042a 0%, #030108 100%);
   overflow: hidden;
 }
 
@@ -57,679 +55,265 @@ body {
   position: relative;
   transform-origin: center center;
   overflow: hidden;
-  box-shadow: 0 0 60px rgba(0, 0, 0, 0.85);
-  background: #02121c;
+  box-shadow: 0 0 70px rgba(157, 0, 255, 0.35);
+  background: url('/assets/bar_club_bg.png') center top / 100% 100% no-repeat #06020e;
 }
 
-/* HÌNH NỀN HỒ CÂU SƠN THỦY HỮU TÌNH */
-.fishing-lake-bg {
+/* THREE.JS WEBGL 3D CANVAS CONTAINER */
+.webgl-canvas-container {
   position: absolute;
   top: 0;
   left: 0;
   width: 1080px;
   height: 1920px;
-  object-fit: cover;
-  z-index: 1;
-  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
 }
 
-/* HIỆU ỨNG NẮNG & SÓNG NƯỚC */
-.water-ambient-overlay {
+.webgl-canvas-container canvas {
+  width: 1080px !important;
+  height: 1920px !important;
+  display: block;
+}
+
+.club-fx-overlay {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
-  width: 100%;
-  height: 60%;
-  background: linear-gradient(
-    180deg,
-    rgba(2, 136, 209, 0) 0%,
-    rgba(0, 77, 64, 0.25) 30%,
-    rgba(2, 28, 44, 0.55) 100%
-  );
-  z-index: 2;
+  width: 1080px;
+  height: 1920px;
   pointer-events: none;
+  z-index: 10;
 }
 
 /* ==========================================================================
-   THANH TRẠNG THÁI MỎNG TRÊN ĐỈNH (TOP BAR)
+   THANH TRẠNG THÁI TRÊN ĐỈNH (TOP BAR)
    ========================================================================== */
-.minimal-top-bar {
+.club-top-bar {
   position: absolute;
-  top: 36px;
-  left: 36px;
-  right: 36px;
+  top: 28px;
+  left: 32px;
+  right: 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  z-index: 20;
+  z-index: 30;
+  pointer-events: none;
 }
 
-.live-pill {
+.capacity-pill {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 18px;
+  background: linear-gradient(90deg, #ff007f 0%, #9d00ff 100%);
+  border: 1.5px solid #ff80df;
+  padding: 8px 24px;
   border-radius: 999px;
-  background: rgba(3, 20, 29, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(41, 182, 246, 0.4);
+  font-size: 16px;
+  font-weight: 800;
   color: #fff;
-  font-size: 15px;
+  box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
+  pointer-events: auto;
+}
+
+.capacity-pill strong {
+  color: var(--neon-gold);
+}
+
+.guest-join-ticker {
+  position: absolute;
+  top: 80px;
+  left: 32px;
+  background: rgba(14, 2, 28, 0.85);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 14px;
   font-weight: 700;
+  color: #00e5ff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+  z-index: 30;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   TOP ĐẠI GIA (BẢNG VIP GÓC TRÊN PHẢI)
+   ========================================================================== */
+.top-daigia-box {
+  position: absolute;
+  top: 36px;
+  right: 32px;
+  width: 270px;
+  background: rgba(18, 3, 36, 0.88);
+  border: 1.5px solid rgba(255, 214, 0, 0.45);
+  border-radius: 18px;
+  padding: 12px 14px;
+  z-index: 30;
+  box-shadow: 0 0 25px rgba(255, 214, 0, 0.25);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.daigia-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--neon-gold);
+  border-bottom: 1px solid rgba(255, 214, 0, 0.25);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: 0.5px;
 }
 
-.live-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #00e676;
-  box-shadow: 0 0 10px #00e676;
-  animation: pulse-dot 1.8s infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
-}
-
-.mini-stat-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  border-radius: 999px;
-  background: rgba(3, 20, 29, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(251, 192, 45, 0.4);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.mini-stat-pill strong {
-  color: var(--gold-glow);
-}
-
-/* ==========================================================================
-   PHAO CÂU NHẤP NHÔ GIỮA HỒ (FISHING BOBBER SYSTEM)
-   ========================================================================== */
-.fishing-bobber-zone {
-  position: absolute;
-  left: 50%;
-  top: 58%;
-  transform: translate(-50%, -50%);
-  z-index: 12;
-  cursor: pointer;
+.daigia-list {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 6px;
 }
 
-.bobber-body {
-  width: 44px;
-  height: 80px;
-  position: relative;
-  animation: bobber-float 3s ease-in-out infinite;
-  transform-origin: center bottom;
-}
-
-.bobber-body.hooked {
-  animation: bobber-strike 0.25s ease-in-out infinite alternate !important;
-}
-
-/* Phần ngọn phao màu cam phản quang */
-.bobber-tip {
-  width: 8px;
-  height: 32px;
-  background: #ff3d00;
-  border-radius: 4px;
-  margin: 0 auto;
-  box-shadow: 0 0 12px #ff3d00;
-  border: 1.5px solid #fff;
-}
-
-/* Thân phao đỏ & trắng hình giọt nước */
-.bobber-float {
-  width: 38px;
-  height: 48px;
-  margin: -6px auto 0 auto;
-  border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
-  background: linear-gradient(180deg, #d50000 0%, #d50000 50%, #ffffff 50%, #ffffff 100%);
-  border: 2px solid rgba(0, 0, 0, 0.35);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-}
-
-/* Gợn sóng tròn chân phao */
-.bobber-ripples {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 140px;
-  height: 50px;
-  pointer-events: none;
-}
-
-.bobber-ripple-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px solid rgba(179, 229, 252, 0.65);
-  border-radius: 50%;
-  animation: ring-expand 2.8s linear infinite;
-}
-
-.bobber-ripple-ring:nth-child(2) {
-  animation-delay: 1.4s;
-}
-
-@keyframes ring-expand {
-  0% { width: 10px; height: 4px; opacity: 1; }
-  100% { width: 140px; height: 45px; opacity: 0; }
-}
-
-@keyframes bobber-float {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(8px) rotate(3deg); }
-}
-
-@keyframes bobber-strike {
-  0% { transform: translateY(-4px) rotate(-6deg); }
-  100% { transform: translateY(18px) rotate(8deg); }
-}
-
-/* SVG DÂY CƯỚC CÂU NỐI VÀO PHAO */
-.fishing-line-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1080px;
-  height: 1920px;
-  z-index: 11;
-  pointer-events: none;
-}
-
-.fishing-line-path {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.65);
-  stroke-width: 1.8;
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
-}
-
-/* ==========================================================================
-   CÁC PHÁP KHÍ / ĐIỂM TƯƠNG TÁC HAI BÊN HỒ CÂU
-   ========================================================================== */
-.fishing-hotspot {
-  position: absolute;
-  z-index: 15;
+.daigia-item {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.daigia-left {
+  display: flex;
   align-items: center;
   gap: 6px;
-  cursor: pointer;
-  background: rgba(3, 20, 29, 0.75);
-  backdrop-filter: blur(10px);
-  border: 1.5px solid rgba(41, 182, 246, 0.45);
-  padding: 10px 18px;
-  border-radius: 18px;
-  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.fishing-hotspot:hover {
-  transform: scale(1.06);
-  box-shadow: 0 0 20px rgba(41, 182, 246, 0.6);
-}
-
-.fishing-hotspot .hotspot-icon {
-  font-size: 28px;
-}
-
-.fishing-hotspot .hotspot-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-light);
-  letter-spacing: 0.3px;
-}
-
-.hotspot-bait {
-  left: 54px;
-  top: 48%;
-}
-
-.hotspot-horn {
-  right: 54px;
-  top: 48%;
-}
-
-.hotspot-cast {
-  left: 54px;
-  top: 58%;
-}
-
-/* ==========================================================================
-   CẦN THỦ TRƯỞNG & BẾN GỖ (BOTTOM FOREGROUND)
-   ========================================================================== */
-.master-angler-station {
-  position: absolute;
-  bottom: 230px;
-  right: 40px;
-  z-index: 14;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.angler-sprite-img {
-  width: 320px;
-  height: auto;
-  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.65));
-  transition: transform 0.3s ease;
-}
-
-.angler-sprite-img.reeling {
-  animation: angler-reel 0.4s ease-in-out infinite alternate;
-}
-
-@keyframes angler-reel {
-  0% { transform: translateY(0) rotate(0deg); }
-  100% { transform: translateY(-8px) rotate(-3deg); }
-}
-
-.angler-wish-bubble {
-  background: rgba(2, 20, 30, 0.92);
-  border: 1.5px solid rgba(251, 192, 45, 0.6);
-  padding: 10px 20px;
-  border-radius: 20px 20px 20px 4px;
-  color: var(--gold-glow);
-  font-size: 14px;
-  font-weight: 600;
-  max-width: 320px;
-  text-align: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  margin-bottom: 12px;
-  backdrop-filter: blur(10px);
-}
-
-.name-tag {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(3, 20, 29, 0.88);
-  border: 1.5px solid rgba(41, 182, 246, 0.5);
-  padding: 8px 18px;
-  border-radius: 999px;
-  backdrop-filter: blur(12px);
-  margin-top: -24px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
-}
-
-.tag-avatar {
-  font-size: 22px;
-}
-
-.tag-texts {
-  display: flex;
-  flex-direction: column;
-}
-
-.tag-name {
-  font-size: 15px;
-  font-weight: 800;
-  color: #fff;
-}
-
-.tag-sub {
-  font-size: 12px;
-  color: #81d4fa;
-  font-weight: 600;
-}
-
-/* ==========================================================================
-   HÀNG 6 GHẾ CÂU VIP (BẢNG VÀNG CẦN THỦ BỜ HỒ)
-   ========================================================================== */
-.vip-stools-layer {
-  position: absolute;
-  bottom: 270px;
-  left: 45px;
-  display: flex;
-  gap: 12px;
-  z-index: 13;
-}
-
-.vip-stool-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(3, 22, 33, 0.85);
-  border: 1px solid rgba(251, 192, 45, 0.45);
-  padding: 8px 10px;
-  border-radius: 12px;
-  min-width: 80px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.stool-rank-tag {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--gold-glow);
-  margin-bottom: 4px;
-}
-
-.stool-avatar {
-  width: 38px;
-  height: 38px;
+.daigia-rank-icon {
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 1.5px solid var(--gold);
-  object-fit: cover;
-  background: #021e2f;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-}
-
-.stool-name {
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-  margin-top: 4px;
-  max-width: 74px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-}
-
-.stool-weight {
-  font-size: 10px;
-  color: #81d4fa;
-  font-weight: 600;
-}
-
-/* CANVAS LAYER */
-#fishingCanvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1080px;
-  height: 1920px;
-  z-index: 10;
-  pointer-events: none;
-}
-
-/* ==========================================================================
-   THANH HUD DƯỚI ĐÁY (BOTTOM HUD BAR)
-   ========================================================================== */
-.bottom-hud-bar {
-  position: absolute;
-  bottom: 28px;
-  left: 36px;
-  right: 36px;
-  display: flex;
-  gap: 20px;
-  z-index: 25;
-}
-
-.hud-left-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.hud-active-notice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(3, 20, 29, 0.88);
-  border: 1.5px solid rgba(41, 182, 246, 0.45);
-  border-radius: 14px;
-  padding: 10px 18px;
-  font-size: 14px;
-  backdrop-filter: blur(10px);
-}
-
-.hud-active-notice strong {
-  color: var(--gold-glow);
-}
-
-.hud-gift-cards {
-  display: flex;
-  gap: 12px;
-}
-
-.hud-gift-card {
-  flex: 1;
-  background: rgba(4, 25, 38, 0.85);
-  border: 1.5px solid rgba(41, 182, 246, 0.4);
-  border-radius: 16px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s;
-  backdrop-filter: blur(10px);
-}
-
-.hud-gift-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--gold);
-}
-
-.gift-coin-tag {
   font-size: 11px;
   font-weight: 800;
-  color: #ffca28;
-  background: rgba(255, 202, 40, 0.15);
-  padding: 3px 8px;
-  border-radius: 8px;
 }
 
-.gift-card-body {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-}
+.daigia-rank-1 { background: #ffd600; color: #000; }
+.daigia-rank-2 { background: #00e5ff; color: #000; }
+.daigia-rank-3 { background: #ff007f; color: #fff; }
 
-.gift-emoji {
-  font-size: 22px;
-}
-
-.gift-title {
-  font-size: 13px;
+.daigia-name {
+  color: #fff;
   font-weight: 700;
-  color: #fff;
-}
-
-.hud-right-leaderboard {
-  width: 320px;
-  background: rgba(3, 20, 29, 0.88);
-  border: 1.5px solid rgba(251, 192, 45, 0.45);
-  border-radius: 16px;
-  padding: 12px 16px;
-  backdrop-filter: blur(12px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.hud-lb-header {
-  font-family: var(--font-serif);
-  font-size: 14px;
-  font-weight: 900;
-  color: var(--gold-glow);
-  border-bottom: 1px solid rgba(251, 192, 45, 0.25);
-  padding-bottom: 6px;
-  letter-spacing: 0.5px;
-}
-
-.hud-lb-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 110px;
-  overflow: hidden;
-}
-
-.lb-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-}
-
-.lb-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lb-rank {
-  font-weight: 800;
-  color: var(--gold);
-  width: 16px;
-}
-
-.lb-name {
-  color: #fff;
-  font-weight: 600;
   max-width: 140px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.lb-weight {
-  color: #81d4fa;
-  font-weight: 700;
+.daigia-coins {
+  color: var(--neon-gold);
+  font-weight: 800;
 }
 
 /* ==========================================================================
-   MODAL TỜ CHIẾN TÍCH BẮT CÁ (CATCH MODAL)
+   MENU DANH SÁCH QUÀ TẶNG DỌC BÊN PHẢI (GIFT LIST BAR)
    ========================================================================== */
-.catch-modal-overlay {
+.gift-menu-sidebar {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 10, 16, 0.82);
-  backdrop-filter: blur(8px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  animation: fadeIn 0.3s ease;
-}
-
-.catch-modal-overlay.active {
+  top: 480px;
+  right: 18px;
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 25;
 }
 
-.catch-card {
-  width: 720px;
-  background: linear-gradient(180deg, #072535 0%, #03141e 100%);
-  border: 2px solid var(--gold);
-  border-radius: 28px;
-  padding: 36px 32px;
+.gift-menu-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 2, 28, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 4px 12px 4px 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.3px;
+  transition: transform 0.2s, border-color 0.2s;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.gift-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
+  flex-shrink: 0;
+}
+
+.daigia-empty-state {
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 13px;
+  color: #c77dff;
+  font-style: italic;
+  letter-spacing: 0.3px;
+}
+
+.gift-menu-pill:hover {
+  transform: translateX(-5px);
+  border-color: var(--neon-pink);
+}
+
+.gift-menu-pill.gold {
+  border-color: var(--neon-gold);
+  color: var(--neon-gold);
+}
+
+/* ==========================================================================
+   SỰ KIỆN ĐẶC BIỆT: "🐉 CƯỠI RỒNG" (BANNER)
+   ========================================================================== */
+.dragon-ride-overlay {
+  position: absolute;
+  top: 340px;
+  left: 50%;
+  transform: translateX(-50%) scale(0);
+  width: 900px;
+  z-index: 45;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 0 50px rgba(251, 192, 45, 0.35);
-  text-align: center;
-  animation: scaleUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.catch-badge {
-  font-size: 14px;
-  font-weight: 800;
-  color: #03141e;
-  background: var(--gold);
-  padding: 6px 20px;
-  border-radius: 999px;
-  letter-spacing: 1px;
-}
-
-.catch-icon {
-  font-size: 84px;
-  margin: 8px 0;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
-}
-
-.catch-fish-name {
-  font-family: var(--font-serif);
-  font-size: 32px;
-  color: #fff;
-  font-weight: 900;
-}
-
-.catch-weight-pill {
-  font-size: 24px;
-  font-weight: 800;
-  color: #29b6f6;
-  background: rgba(41, 182, 246, 0.15);
-  padding: 6px 24px;
-  border-radius: 12px;
-  border: 1px solid rgba(41, 182, 246, 0.4);
-}
-
-.catch-angler-name {
-  font-size: 16px;
-  color: var(--gold-glow);
-  font-weight: 700;
-}
-
-.catch-quote {
-  font-size: 15px;
-  color: var(--text-muted);
-  font-style: italic;
-  max-width: 580px;
-  line-height: 1.5;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes scaleUp {
-  from { transform: scale(0.85); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-/* ==========================================================================
-   BANNER ĐẠI CHIẾN THỦY QUÁI (LEVIATHAN CELEBRATION)
-   ========================================================================== */
-.leviathan-banner {
-  position: absolute;
-  top: 140px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-100px);
-  background: linear-gradient(90deg, #b71c1c 0%, #d84315 50%, #b71c1c 100%);
-  border: 2px solid #ffd54f;
-  padding: 18px 48px;
-  border-radius: 24px;
-  text-align: center;
-  box-shadow: 0 0 60px rgba(255, 112, 67, 0.85);
-  z-index: 40;
-  opacity: 0;
   pointer-events: none;
-  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s;
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
 }
 
-.leviathan-banner.active {
-  transform: translateX(-50%) translateY(0);
+.dragon-ride-overlay.active {
+  transform: translateX(-50%) scale(1);
   opacity: 1;
 }
 
-.leviathan-title {
+.dragon-vip-crown-banner {
+  background: linear-gradient(90deg, #d50000 0%, #ff8f00 50%, #d50000 100%);
+  border: 2.5px solid #ffd600;
+  border-radius: 999px;
+  padding: 10px 42px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 0 40px rgba(255, 214, 0, 0.85);
+  margin-bottom: 12px;
+}
+
+.dragon-crown-title {
   font-family: var(--font-serif);
   font-size: 26px;
   font-weight: 900;
@@ -737,10 +321,133 @@ body {
   letter-spacing: 1px;
 }
 
-.leviathan-sub {
-  font-size: 15px;
-  color: #ffe082;
-  font-weight: 700;
+.dragon-combo-badge {
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffd600;
+  text-shadow: 0 0 18px rgba(255, 214, 0, 0.9);
+  animation: pulse-combo 0.4s infinite alternate;
+}
+
+@keyframes pulse-combo {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.15); }
+}
+
+/* ==========================================================================
+   SỰ KIỆN: "🔥 SÀN CHÁY RỒI! 🔥" (FEVER MODE)
+   ========================================================================== */
+.fever-flame-banner {
+  position: absolute;
+  top: 175px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-120px);
+  background: linear-gradient(90deg, #d50000 0%, #ff3d00 50%, #d50000 100%);
+  border: 3px solid #ffd600;
+  border-radius: 999px;
+  padding: 14px 48px;
+  box-shadow: 0 0 60px rgba(255, 61, 0, 0.95);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
+}
+
+.fever-flame-banner.active {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.fever-title {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 25px rgba(255, 214, 0, 1);
+  letter-spacing: 2px;
+}
+
+/* ==========================================================================
+   THANH HUD ĐÁY: "⚡ NHIỆT SÀN [0 / 200]" & HƯỚNG DẪN BÌNH LUẬN
+   ========================================================================== */
+.bottom-club-hud {
+  position: absolute;
+  bottom: 22px;
+  left: 32px;
+  right: 32px;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+.heat-meter-card {
+  background: linear-gradient(180deg, rgba(27, 3, 54, 0.94) 0%, rgba(13, 1, 28, 0.96) 100%);
+  border: 2px solid #00e5ff;
+  border-radius: 20px;
+  padding: 12px 20px 10px;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.heat-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.heat-title-row strong {
+  color: #00e5ff;
+}
+
+.heat-track {
+  width: 100%;
+  height: 18px;
+  background: #06010d;
+  border: 2px solid #ff007f;
+  border-radius: 999px;
+  padding: 2px;
+  overflow: hidden;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.8);
+}
+
+.heat-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff007f 0%, #9d00ff 50%, #00e5ff 100%);
+  box-shadow: 0 0 16px #00e5ff;
+  transition: width 0.4s ease;
+}
+
+.comment-instructions-box {
+  text-align: center;
+  font-size: 13px;
+  color: #e1bee7;
+  line-height: 1.45;
+  margin-top: 2px;
+  pointer-events: auto;
+}
+
+.comment-instructions-box strong {
+  color: #00e5ff;
+}
+
+.comment-instructions-box .heart-tag {
+  color: #ff007f;
+}
+
+.comment-sub-note {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
   margin-top: 4px;
 }
 
@@ -750,12 +457,12 @@ body {
 .quick-dock {
   width: 420px;
   height: 100vh;
-  background: #04121a;
-  border-left: 1.5px solid var(--card-border);
+  background: #090214;
+  border-left: 1.5px solid var(--border-neon);
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   overflow-y: auto;
   z-index: 100;
 }
@@ -764,20 +471,20 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(41, 182, 246, 0.2);
+  border-bottom: 1px solid rgba(255, 0, 127, 0.3);
   padding-bottom: 14px;
 }
 
 .dock-title {
   font-family: var(--font-serif);
   font-size: 18px;
-  color: var(--gold-glow);
+  color: var(--neon-gold);
   font-weight: 800;
 }
 
 .dock-link {
   font-size: 13px;
-  color: #81d4fa;
+  color: #00e5ff;
   text-decoration: none;
   font-weight: 700;
 }
@@ -785,26 +492,25 @@ body {
 .dock-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dock-section-title {
   font-size: 13px;
   font-weight: 800;
-  color: #81d4fa;
+  color: #00e5ff;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .dock-btn {
   cursor: pointer;
-  background: linear-gradient(180deg, #093144 0%, #051c27 100%);
-  border: 1px solid var(--card-border);
+  background: linear-gradient(180deg, #3d085e 0%, #1c022e 100%);
+  border: 1px solid rgba(255, 0, 127, 0.45);
   color: #fff;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-radius: 10px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -813,31 +519,32 @@ body {
 }
 
 .dock-btn:hover {
-  background: linear-gradient(180deg, #0c3e57 0%, #072635 100%);
-  border-color: #81d4fa;
+  border-color: #00e5ff;
+  background: linear-gradient(180deg, #5c0b8e 0%, #2e044c 100%);
 }
 
 .dock-btn.gold {
-  background: linear-gradient(180deg, #fbc02d 0%, #f57f17 100%);
-  color: #04121a;
-  border-color: #fff9c4;
+  background: linear-gradient(180deg, #ffd600 0%, #ff8f00 100%);
+  color: #000;
+  border-color: #fffde7;
 }
 
-.dock-btn.gold:hover {
-  background: linear-gradient(180deg, #fdd835 0%, #f9a825 100%);
+.dock-btn.danger {
+  background: linear-gradient(180deg, #ff1744 0%, #b71c1c 100%);
+  border-color: #ff8a80;
 }
 
 .dock-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .dock-input {
-  background: #020b10;
-  border: 1px solid var(--card-border);
+  background: #05010a;
+  border: 1px solid var(--border-neon);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   color: #fff;
   font-family: var(--font-sans);
   font-size: 13px;
@@ -845,7 +552,7 @@ body {
 }
 
 .dock-input:focus {
-  border-color: #81d4fa;
+  border-color: #00e5ff;
 }
 
 .dock-input-row {
@@ -856,43 +563,42 @@ body {
 .volume-control-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .volume-label-line {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: var(--text-muted);
+  color: #b39ddb;
 }
 
 .volume-slider {
   width: 100%;
-  accent-color: var(--gold);
+  accent-color: var(--neon-pink);
 }
 
 .event-feed {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 240px;
+  gap: 6px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
 .feed-item {
-  background: rgba(2, 11, 16, 0.7);
-  border: 1px solid rgba(41, 182, 246, 0.2);
+  background: rgba(14, 2, 28, 0.7);
+  border: 1px solid rgba(255, 0, 127, 0.25);
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 8px 10px;
   font-size: 12px;
-  color: var(--text-light);
 }
 
 .feed-item strong {
-  color: var(--gold-glow);
+  color: var(--neon-gold);
 }
 
-/* KHI CHẠY Ở CHẾ ĐỘ OBS SẠCH (?obs=1) */
+/* CHẾ ĐỘ OBS SẠCH (?obs=1) */
 body.obs-mode .quick-dock {
   display: none !important;
 }

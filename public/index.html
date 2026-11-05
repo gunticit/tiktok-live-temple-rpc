@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hồ Câu Cá Giải Trí — TikTok Live RPC (9:16 Cần Thủ Online)</title>
+  <title>Sàn Quẩy Vũ Trường 3D — TikTok Live RPC (Cần Thủ & Dân Chơi 9:16)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/live.css" />
 </head>
 <body>
@@ -16,149 +16,129 @@
          ==================================================================== -->
     <div class="stage-wrapper" id="stageWrapper">
       <div class="stage-9x16" id="stage9x16">
-        <!-- 1. HÌNH NỀN HỒ CÂU SƠN THỦY HỮU TÌNH 9:16 -->
-        <img
-          src="/assets/fishing_lake_bg.png"
-          alt="Hồ Câu Cá Giải Trí"
-          class="fishing-lake-bg"
-        />
 
-        <div class="water-ambient-overlay"></div>
+        <!-- 1. THREE.JS REAL 3D NIGHTCLUB CONTAINER -->
+        <div id="webglContainer" class="webgl-canvas-container"></div>
+        <!-- 2D FX OVERLAY CANVAS (Confetti, pháo hoa khi tặng quà) -->
+        <canvas id="clubCanvas" class="club-fx-overlay"></canvas>
 
-        <!-- 2. THANH TRẠNG THÁI MỎNG TRÊN ĐỈNH -->
-        <header class="minimal-top-bar">
-          <div class="live-pill" id="liveStatusPill">
-            <span class="live-dot" id="liveDot"></span>
-            <span id="liveStatusText">HỒ CÂU CÁ GIẢI TRÍ • TRỰC TIẾP</span>
+        <!-- 2. THANH TRẠNG THÁI TRÊN ĐỈNH -->
+        <header class="club-top-bar">
+          <div class="capacity-pill">
+            <span>Trên sàn <strong id="topDancerCount">32</strong>/1000</span>
+            <span>•</span>
+            <span>⌛ Chờ zoom <strong id="zoomTimerVal" style="color:#00e5ff;">12</strong></span>
           </div>
-          <div class="top-Right-badges">
-            <div class="mini-stat-pill">
-              🐟 <strong id="statCatches">48</strong> cá • ⚖️ <strong id="statWeight">186.5</strong> kg • 🪱 <strong id="statBait">360</strong> mồi
+
+          <!-- BẢNG TOP ĐẠI GIA (GÓC TRÊN PHẢI - LẤY DỮ LIỆU THẬT) -->
+          <div class="top-daigia-box">
+            <div class="daigia-header">💎 TOP ĐẠI GIA</div>
+            <div class="daigia-list" id="topDaigiaList">
+              <div class="daigia-empty-state">
+                <span>Chờ đại gia lên sàn...</span>
+              </div>
             </div>
           </div>
         </header>
 
-        <!-- 3. PHAO CÂU NHẤP NHÔ GIỮA HỒ -->
-        <div class="fishing-bobber-zone" id="fishingBobberZone" title="Bấm để Giật Cần Lên Cá">
-          <div class="bobber-body" id="bobberBody">
-            <div class="bobber-tip"></div>
-            <div class="bobber-float"></div>
+        <!-- TICKER KHÁCH LÊN SÀN -->
+        <div class="guest-join-ticker" id="guestJoinTicker">
+          <span>K</span>
+          <span id="tickerText">Khách lên sàn theo bình luận & tặng quà 🏃</span>
+        </div>
+
+        <!-- 3. MENU DANH SÁCH QUÀ TẶNG DỌC BÊN PHẢI (ICON CHUẨN TIKTOK) -->
+        <aside class="gift-menu-sidebar">
+          <div class="gift-menu-pill" data-gift="camera">
+            <img src="/assets/gifts/hoa_hong.png" class="gift-icon" alt="" />
+            <span>Hoa hồng (1x)</span>
           </div>
-          <div class="bobber-ripples">
-            <div class="bobber-ripple-ring"></div>
-            <div class="bobber-ripple-ring"></div>
+          <div class="gift-menu-pill" data-gift="catwalk">
+            <img src="/assets/gifts/dinh.png" class="gift-icon" alt="" />
+            <span>Đỉnh (1x)</span>
           </div>
-        </div>
-
-        <!-- DÂY CƯỚC CÂU TỪ CẦN CÂU ĐẾN PHAO (SVG) -->
-        <svg class="fishing-line-svg">
-          <path id="fishingLinePath" class="fishing-line-path" d="M 820 1480 Q 680 1300 540 1150" />
-        </svg>
-
-        <!-- 4. ĐIỂM TƯƠNG TÁC HAI BÊN HỒ CÂU -->
-        <div class="fishing-hotspot hotspot-bait" id="spotBait" title="Bấm để Thả Thính Dụ Cá">
-          <span class="hotspot-icon">🪱</span>
-          <span class="hotspot-label">Thả Thính</span>
-        </div>
-
-        <div class="fishing-hotspot hotspot-cast" id="spotCast" title="Bấm để Quăng Cần Thả Phao">
-          <span class="hotspot-icon">🎣</span>
-          <span class="hotspot-label">Quăng Cần</span>
-        </div>
-
-        <div class="fishing-hotspot hotspot-horn" id="spotHorn" title="Bấm để Thổi Còi Báo Cá">
-          <span class="hotspot-icon">📯</span>
-          <span class="hotspot-label">Báo Cá (<span id="statHorn">24</span>)</span>
-        </div>
-
-        <!-- 5. CẦN THỦ TRƯỞNG TRÊN BẾN GỖ (GÓC DƯỚI PHẢI) -->
-        <div class="master-angler-station" id="masterAnglerStation">
-          <div class="angler-wish-bubble" id="anglerWishBubble">
-            “Thả mồi trùn quế, săn chú cá chép vàng 5 ký!”
+          <div class="gift-menu-pill" data-gift="dance_once">
+            <img src="/assets/gifts/yeu_ban.png" class="gift-icon" alt="" />
+            <span>Yêu bạn (1x)</span>
           </div>
-          <img
-            src="/assets/angler_master.png"
-            alt="Cần Thủ Trưởng"
-            class="angler-sprite-img"
-            id="anglerSpriteImg"
-          />
-          <div class="name-tag">
-            <div class="tag-avatar" id="anglerAvatar">🎣</div>
-            <div class="tag-texts">
-              <div class="tag-name" id="anglerName">Cần Thủ Hải Đăng</div>
-              <div class="tag-sub" id="anglerAction">✨ Quăng cần • Giỏ: 18.5kg</div>
+          <div class="gift-menu-pill" data-gift="bubbles">
+            <img src="/assets/gifts/hieu_y_toi.png" class="gift-icon" alt="" />
+            <span>Hiểu ý (1x)</span>
+          </div>
+          <div class="gift-menu-pill" data-gift="dj_booth">
+            <img src="/assets/gifts/ban_tim.png" class="gift-icon" alt="" />
+            <span>Bắn tim (5x)</span>
+          </div>
+          <div class="gift-menu-pill" data-gift="swap">
+            <img src="/assets/gifts/que_phat_sang.png" class="gift-icon" alt="" />
+            <span>Que sáng (1x)</span>
+          </div>
+          <div class="gift-menu-pill" data-gift="giant">
+            <img src="/assets/gifts/kem_oc_que.png" class="gift-icon" alt="" />
+            <span>Ốc quế (1x)</span>
+          </div>
+          <div class="gift-menu-pill" data-gift="couple">
+            <img src="/assets/gifts/tiktok.png" class="gift-icon" alt="" />
+            <span>TikTok (1x)</span>
+          </div>
+          <div class="gift-menu-pill" data-gift="fireworks">
+            <img src="/assets/gifts/mic_dj.png" class="gift-icon" alt="" />
+            <span>Mic DJ (1x)</span>
+          </div>
+          <div class="gift-menu-pill" data-gift="rocket">
+            <img src="/assets/gifts/nhac_tu_do.png" class="gift-icon" alt="" />
+            <span>Nhạc tự do (1x)</span>
+          </div>
+          <div class="gift-menu-pill" data-gift="golden_duck">
+            <img src="/assets/gifts/nhip_trong.png" class="gift-icon" alt="" />
+            <span>Nhịp trống (1x)</span>
+          </div>
+          <div class="gift-menu-pill gold" data-gift="dragon_ride">
+            <img src="/assets/gifts/mantap.png" class="gift-icon" alt="" />
+            <span>CƯỠI RỒNG (199x)</span>
+          </div>
+          <div class="gift-menu-pill gold" data-gift="king">
+            <img src="/assets/gifts/banh_sinh_nhat.png" class="gift-icon" alt="" />
+            <span>VUA QUẨY (500x)</span>
+          </div>
+        </aside>
+
+        <!-- 4. SỰ KIỆN ĐẶC BIỆT: "🐉 CƯỠI RỒNG" BANNER -->
+        <div class="dragon-ride-overlay" id="dragonRideOverlay">
+          <div class="dragon-vip-crown-banner">
+            <span style="font-size: 28px;">👑</span>
+            <span class="dragon-crown-title" id="dragonCrownUser">VUA - Khách thứ 20</span>
+            <span style="font-size: 28px;">🪽</span>
+          </div>
+          <div class="dragon-combo-badge" id="dragonCombo">PERFECT x27</div>
+        </div>
+
+        <!-- 5. SỰ KIỆN ĐẶC BIỆT: "🔥 SÀN CHÁY RỒI! 🔥" -->
+        <div class="fever-flame-banner" id="feverBanner">
+          <div class="fever-title">🔥 SÀN CHÁY RỒI! 🔥</div>
+        </div>
+
+        <!-- 6. THANH HUD DƯỚI ĐÁY: NHIỆT SÀN & HƯỚNG DẪN BÌNH LUẬN -->
+        <footer class="bottom-club-hud">
+          <div class="heat-meter-card">
+            <div class="heat-title-row">
+              <span>⚡ Nhiệt sàn</span>
+              <strong id="heatRatioText">0 / 200</strong>
             </div>
-          </div>
-        </div>
-
-        <!-- 6. HÀNG 6 GHẾ CÂU VIP (TOP 6 CẦN THỦ BỜ HỒ) -->
-        <div class="vip-stools-layer" id="vipStoolsLayer"></div>
-
-        <!-- 7. LỚP CANVAS HIỆU ỨNG BONG BÓNG, SÓNG NƯỚC, GIỌT NƯỚC BẮN & BÓNG CÁ -->
-        <canvas id="fishingCanvas"></canvas>
-
-        <!-- 8. THANH HUD GỌN GÀNG DƯỚI ĐÁY -->
-        <footer class="bottom-hud-bar">
-          <div class="hud-left-col">
-            <div class="hud-active-notice" id="hudActiveNotice">
-              <span>🐟</span>
-              <strong id="activeAnglerName">Cần Thủ Hải Đăng</strong>
-              <span>—</span>
-              <span id="activeActionTag">Vừa giật được Cá Chép Vàng 4.8kg</span>
-              <span>🎣</span>
+            <div class="heat-track">
+              <div class="heat-bar-fill" id="heatBarFill" style="width: 0%;"></div>
             </div>
-
-            <div class="hud-gift-cards">
-              <div class="hud-gift-card" id="cardBait" title="Bấm để Thả Thính">
-                <div class="gift-coin-tag">1 COIN / LIKE</div>
-                <div class="gift-card-body">
-                  <span class="gift-emoji">🪱</span>
-                  <span class="gift-title">Thả thính</span>
-                </div>
+            <div class="comment-instructions-box">
+              <div>
+                💬 Bình luận để <strong>lên sàn</strong> • gõ <strong>nhảy</strong>, <strong>đi vòng</strong>, <strong>ghép đôi</strong>, <strong>đổi đồ</strong>
               </div>
-
-              <div class="hud-gift-card" id="cardCast" title="Bấm để Quăng Cần">
-                <div class="gift-coin-tag">5 COINS / CMT</div>
-                <div class="gift-card-body">
-                  <span class="gift-emoji">🎣</span>
-                  <span class="gift-title">Quăng cần</span>
-                </div>
+              <div>
+                điệu: <strong>lộn</strong>, <strong>hiphop</strong>, <strong>xoay đầu</strong>... (số 1–14) • <span class="heart-tag">❤️ thả tim tăng nhiệt</span>
               </div>
-
-              <div class="hud-gift-card" id="cardGourmet" title="Bấm để Dâng Mồi Thượng Hạng">
-                <div class="gift-coin-tag">10+ COINS</div>
-                <div class="gift-card-body">
-                  <span class="gift-emoji">🦐</span>
-                  <span class="gift-title">Mồi xịn</span>
-                </div>
-              </div>
+              <div class="comment-sub-note">Sàn nhảy giải trí • không có giải thưởng</div>
             </div>
-          </div>
-
-          <!-- Bên phải: Bảng VUA SÁT CÁ (Top Cần Thủ) -->
-          <div class="hud-right-leaderboard">
-            <div class="hud-lb-header">👑 VUA SÁT CÁ BỜ HỒ</div>
-            <div class="hud-lb-list" id="leaderboardList"></div>
           </div>
         </footer>
-
-        <!-- BANNER ĐẠI CHIẾN THỦY QUÁI -->
-        <div class="leviathan-banner" id="leviathanBanner">
-          <div class="leviathan-title" id="leviathanTitle">🐉 ĐẠI CHIẾN THỦY QUÁI HỒ SÂU 🐉</div>
-          <div class="leviathan-sub" id="leviathanSub">Cần thủ giật được Cá Rồng Kim Long Khổng Lồ!</div>
-        </div>
-
-        <!-- MODAL CHIẾN TÍCH BẮT CÁ -->
-        <div class="catch-modal-overlay" id="catchModal">
-          <div class="catch-card">
-            <div class="catch-badge" id="catchBadge">QUÝ HIẾM</div>
-            <div class="catch-icon" id="catchIcon">🐠</div>
-            <div class="catch-fish-name" id="catchFishName">Cá Chép Vàng Cát Tường</div>
-            <div class="catch-weight-pill" id="catchWeight">4.8 kg</div>
-            <div class="catch-angler-name" id="catchAnglerName">Cần Thủ: Hải Đăng</div>
-            <div class="catch-quote" id="catchQuote">“Chép vàng vượt vũ môn hóa rồng, rước đại cát đại lợi về nhà!”</div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -167,25 +147,32 @@
          ==================================================================== -->
     <aside class="quick-dock" id="quickDock">
       <div class="dock-header">
-        <div class="dock-title">🎛️ Bảng Điều Khiển Hồ Câu</div>
+        <div class="dock-title">🎛️ Bảng Điều Khiển Sàn Quẩy 3D</div>
         <a href="/admin" target="_blank" class="dock-link">Mở Admin Đầy Đủ ↗</a>
       </div>
 
       <div class="dock-section">
-        <div class="dock-section-title">🔊 Âm Thanh Hồ Câu & Giọng Đọc</div>
+        <div class="dock-section-title">🎥 Điều Khiển Camera 3D</div>
+        <button class="dock-btn gold" id="btnSwitchCam">
+          🎥 Lia Góc Camera (Đổi Góc Nhìn)
+        </button>
+      </div>
+
+      <div class="dock-section">
+        <div class="dock-section-title">🔊 Âm Nhạc & Giọng Đọc</div>
         <button class="dock-btn gold" id="btnUnlockAudio">
-          🔔 Bật Âm Thanh Hồ & Giọng Đọc
+          🔔 Bật Âm Nhạc & Giọng Đọc
         </button>
         <div class="dock-grid-2">
-          <button class="dock-btn active-toggle" id="btnToggleTts">🎙️ Giọng Đọc: BẬT</button>
-          <button class="dock-btn active-toggle" id="btnToggleMusic">🎵 Âm Hồ Nước: BẬT</button>
+          <button class="dock-btn" id="btnToggleTts">🎙️ Giọng Đọc: BẬT</button>
+          <button class="dock-btn" id="btnToggleMusic">🎵 Nhạc EDM: BẬT</button>
         </div>
         <div class="volume-control-row">
           <div class="volume-label-line">
-            <span>🎵 Âm lượng Hồ Nước</span>
-            <strong id="valMusicVol">60%</strong>
+            <span>🎵 Âm lượng Nhạc EDM</span>
+            <strong id="valMusicVol">65%</strong>
           </div>
-          <input type="range" id="sliderMusicVol" class="volume-slider" min="0" max="100" value="60" />
+          <input type="range" id="sliderMusicVol" class="volume-slider" min="0" max="100" value="65" />
         </div>
         <div class="volume-control-row">
           <div class="volume-label-line">
@@ -199,31 +186,39 @@
       <div class="dock-section">
         <div class="dock-section-title">📡 Kết Nối TikTok Live</div>
         <div class="dock-input-row">
-          <input type="text" id="inputTikTokUser" class="dock-input" value="@zenfacts_vn" placeholder="Nhập @username hoặc link TikTok Live..." />
+          <input type="text" id="inputTikTokUser" class="dock-input" value="@zenfacts_vn" placeholder="Nhập @username TikTok Live..." />
           <button class="dock-btn gold" id="btnConnectTikTok">Kết Nối</button>
         </div>
         <button class="dock-btn" id="btnToggleAutoSim">
-          🤖 Tự động Giả lập Cần Thủ: TẮT
+          🤖 Tự động Giả lập Khách Quẩy: TẮT
         </button>
       </div>
 
       <div class="dock-section">
-        <div class="dock-section-title">🎣 Kích Hoạt Hành Động Câu Cá (RPC)</div>
-        <input type="text" id="inputAnglerName" class="dock-input" value="Tuấn_Cần_Thủ" placeholder="Tên cần thủ..." />
-        <input type="text" id="inputAnglerWish" class="dock-input" value="Săn con cá chép giòn 5 ký làm tiệc!" placeholder="Lời chúc / mong ước..." />
+        <div class="dock-section-title">💃 Kích Hoạt Tương Tác Sàn Quẩy (RPC)</div>
+        <input type="text" id="inputDancerName" class="dock-input" value="Khách thứ 20" placeholder="Tên khách / Đại gia..." />
 
         <div class="dock-grid-2">
-          <button class="dock-btn gold" id="btnRpcHook">🐟 Giật Cần Lên Cá</button>
-          <button class="dock-btn" id="btnRpcCast">🎣 Quăng Cần Thả Phao</button>
-          <button class="dock-btn" id="btnRpcBait">🪱 Thả Thính (+5)</button>
-          <button class="dock-btn" id="btnRpcHorn">📯 Thổi Còi Báo Cá</button>
-          <button class="dock-btn" id="btnRpcBigFish">🦐 Mồi Thượng Hạng</button>
-          <button class="dock-btn gold" id="btnRpcLeviathan">🐉 Săn Thủy Quái (Quà Lớn)</button>
+          <button class="dock-btn" id="btnRpcJoin">🏃 Lên Sàn Nhảy</button>
+          <button class="dock-btn" id="btnRpcHeat">❤️ Thả Tim (+15 Nhiệt)</button>
+          <button class="dock-btn" id="btnRpcHiphop">🤸 Điệu Hiphop</button>
+          <button class="dock-btn" id="btnRpcHeadspin">🌀 Điệu Xoay Đầu</button>
+          <button class="dock-btn" id="btnRpcGiant">🦾 Hóa Khổng Lồ</button>
+          <button class="dock-btn" id="btnRpcDj">🎧 Lên Bục DJ</button>
+          <button class="dock-btn gold" id="btnRpcDragon" style="grid-column: span 2;">
+            🐉 CƯỠI RỒNG KIM LONG (Quà Lớn)
+          </button>
+          <button class="dock-btn danger" id="btnRpcFever" style="grid-column: span 2;">
+            🔥 KÍCH HOẠT SÀN CHÁY (Fever Mode)
+          </button>
+          <button class="dock-btn" id="btnRpcReset" style="grid-column: span 2; background: rgba(255, 0, 85, 0.25); border-color: #ff0055; color: #ff80bf;">
+            🔄 Reset Về 1 Người Nhảy (Xóa Dữ Liệu Cũ)
+          </button>
         </div>
       </div>
 
       <div class="dock-section">
-        <div class="dock-section-title">📜 Nhật Ký Bắt Cá Mới Nhất</div>
+        <div class="dock-section-title">📜 Nhật Ký Sự Kiện Gần Nhất</div>
         <div class="event-feed" id="eventFeed"></div>
       </div>
     </aside>
@@ -231,6 +226,6 @@
 
   <script src="/js/audio.js"></script>
   <script src="/js/particles.js"></script>
-  <script src="/js/live.js"></script>
+  <script type="module" src="/js/live.js"></script>
 </body>
 </html>

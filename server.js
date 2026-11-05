@@ -18,263 +18,45 @@ process.on('unhandledRejection', (reason) => {
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const TTS_CACHE_DIR = path.join(DATA_DIR, 'tts-cache');
-const STATE_FILE = path.join(DATA_DIR, 'fishing-state.json');
-const LEGACY_STATE_FILE = path.join(DATA_DIR, 'merit-state.json');
+const STATE_FILE = path.join(DATA_DIR, 'club-state.json');
 
 fs.mkdirSync(TTS_CACHE_DIR, { recursive: true });
 
 // ============================================================================
-// 1. BÁCH KHOA CÁ & THỦY QUÁI (FISH CATALOG)
+// 1. DANH MỤC ĐIỆU NHẢY & QUÀ TẶNG VŨ TRƯỜNG (DANCE MOVES & GIFTS)
 // ============================================================================
-const FISH_CATALOG = [
-  // Tier 1: Phổ Thông (Common - Tỉ lệ xuất hiện cao)
-  {
-    id: 'bong_cat',
-    name: 'Cá Bống Cát',
-    species: 'Glossogobius giuris',
-    rarity: 'Phổ Thông',
-    tier: 1,
-    minWeight: 0.2,
-    maxWeight: 0.6,
-    points: 10,
-    badgeColor: '#546e7a',
-    gradient: 'linear-gradient(135deg, #78909c 0%, #455a64 100%)',
-    quote: 'Bống bống bang bang, bé hạt tiêu nhưng thịt thơm ngọt lịm!',
-    icon: '🐟',
-    ttsSummary: 'Cá Bống Cát tươi rói! Bé hạt tiêu nhưng mở hàng siêu may mắn!'
-  },
-  {
-    id: 'ro_dong',
-    name: 'Cá Rô Đồng',
-    species: 'Anabas testudineus',
-    rarity: 'Phổ Thông',
-    tier: 1,
-    minWeight: 0.3,
-    maxWeight: 0.9,
-    points: 12,
-    badgeColor: '#558b2f',
-    gradient: 'linear-gradient(135deg, #7cb342 0%, #33691e 100%)',
-    quote: 'Rô đồng béo múp, vây giương oai vệ, đặc sản đồng quê!',
-    icon: '🐟',
-    ttsSummary: 'Cá Rô Đồng béo mầm, vây giương oai vệ đặc sản đồng quê!'
-  },
-  {
-    id: 'me_hoa',
-    name: 'Cá Mè Hoa',
-    species: 'Hypophthalmichthys nobilis',
-    rarity: 'Phổ Thông',
-    tier: 1,
-    minWeight: 1.2,
-    maxWeight: 2.8,
-    points: 15,
-    badgeColor: '#00838f',
-    gradient: 'linear-gradient(135deg, #00acc1 0%, #006064 100%)',
-    quote: 'Mè hoa lượn sóng đầm lầy, đầu to béo ngậy!',
-    icon: '🐟',
-    ttsSummary: 'Cá Mè Hoa lượn sóng đầm lầy, kéo máy câu ríu rít!'
-  },
-  {
-    id: 'troi_den',
-    name: 'Cá Trôi Đen',
-    species: 'Cirrhinus microlepis',
-    rarity: 'Phổ Thông',
-    tier: 1,
-    minWeight: 1.5,
-    maxWeight: 3.5,
-    points: 18,
-    badgeColor: '#37474f',
-    gradient: 'linear-gradient(135deg, #607d8b 0%, #263238 100%)',
-    quote: 'Trôi cắn câu phóng như tàu lượn, ghì máy câu kêu ràn rạt!',
-    icon: '🐟',
-    ttsSummary: 'Cá Trôi Đen lực lưỡng phóng như tàu lượn xé toạc mặt nước!'
-  },
-  {
-    id: 'tai_tuong',
-    name: 'Cá Tai Tượng',
-    species: 'Osphronemus goramy',
-    rarity: 'Phổ Thông',
-    tier: 1,
-    minWeight: 1.0,
-    maxWeight: 2.6,
-    points: 16,
-    badgeColor: '#6d4c41',
-    gradient: 'linear-gradient(135deg, #8d6e63 0%, #4e342e 100%)',
-    quote: 'Tai tượng vảy xòe như quạt ba tiêu, giật cực đã tay!',
-    icon: '🐟',
-    ttsSummary: 'Cá Tai Tượng vảy xòe như cánh quạt, giật cực đã tay!'
-  },
-
-  // Tier 2: Quý Hiếm (Rare)
-  {
-    id: 'chep_vang',
-    name: 'Cá Chép Vàng Cát Tường',
-    species: 'Cyprinus carpio aureate',
-    rarity: 'Quý Hiếm',
-    tier: 2,
-    minWeight: 2.5,
-    maxWeight: 5.8,
-    points: 35,
-    badgeColor: '#f9a825',
-    gradient: 'linear-gradient(135deg, #ffd54f 0%, #f57f17 100%)',
-    quote: 'Chép vàng vượt vũ môn hóa rồng, rước đại cát đại lợi về nhà!',
-    icon: '🐠',
-    ttsSummary: 'Cá Chép Vàng Cát Tường! Vượt vũ môn hóa rồng mang đại cát đại lợi!'
-  },
-  {
-    id: 'tra_khung',
-    name: 'Cá Tra Khủng',
-    species: 'Pangasius hypophthalmus',
-    rarity: 'Quý Hiếm',
-    tier: 2,
-    minWeight: 4.0,
-    maxWeight: 9.8,
-    points: 42,
-    badgeColor: '#0277bd',
-    gradient: 'linear-gradient(135deg, #29b6f6 0%, #01579b 100%)',
-    quote: 'Cá tra béo tròn lủn cũn, quẫy đuôi làm sóng dạt đôi bờ!',
-    icon: '🐟',
-    ttsSummary: 'Cá Tra Khủng béo tròn, quẫy đuôi làm sóng dạt đôi bờ hồ câu!'
-  },
-  {
-    id: 'lang_hoa',
-    name: 'Cá Lăng Đốm Hoa',
-    species: 'Hemibagrus guttatus',
-    rarity: 'Quý Hiếm',
-    tier: 2,
-    minWeight: 3.2,
-    maxWeight: 7.5,
-    points: 48,
-    badgeColor: '#6a1b9a',
-    gradient: 'linear-gradient(135deg, #ab47bc 0%, #4a148c 100%)',
-    quote: 'Đặc sản ghềnh thác sông sâu, kéo máy câu rít từng hồi!',
-    icon: '🐡',
-    ttsSummary: 'Cá Lăng Đốm Hoa quý hiếm, đặc sản ghềnh thác ghì cong ngọn cần!'
-  },
-  {
-    id: 'chim_trang',
-    name: 'Cá Chim Trắng Lưỡi Kiếm',
-    species: 'Piaractus brachypomus',
-    rarity: 'Quý Hiếm',
-    tier: 2,
-    minWeight: 2.8,
-    maxWeight: 6.2,
-    points: 40,
-    badgeColor: '#00838f',
-    gradient: 'linear-gradient(135deg, #26c6da 0%, #006064 100%)',
-    quote: 'Tốc độ xé nước như tia chớp, hàm răng sắc bén như thép!',
-    icon: '🐠',
-    ttsSummary: 'Cá Chim Trắng tốc độ xé nước như tia chớp, giằng co gay cấn!'
-  },
-
-  // Tier 3: Cực Phẩm (Epic / Sát Thủ Đầm Lầy)
-  {
-    id: 'koi_cam_thach',
-    name: 'Cá Koi Ngũ Sắc Hoàng Gia',
-    species: 'Cyprinus rubrofuscus var.',
-    rarity: 'Cực Phẩm',
-    tier: 3,
-    minWeight: 5.5,
-    maxWeight: 13.5,
-    points: 85,
-    badgeColor: '#d84315',
-    gradient: 'linear-gradient(135deg, #ff7043 0%, #bf360c 100%)',
-    quote: 'Tuyệt tác tạo hóa! Vảy ngũ sắc lấp lánh như ngọc lục bảo!',
-    icon: '🪸',
-    ttsSummary: 'Cực phẩm Cá Koi Ngũ Sắc Hoàng Gia! Vảy ngọc lung linh tuyệt mỹ!'
-  },
-  {
-    id: 'tre_hoang_kim',
-    name: 'Cá Trê Hoàng Kim Phát Quang',
-    species: 'Clarias gariepinus albino',
-    rarity: 'Cực Phẩm',
-    tier: 3,
-    minWeight: 6.5,
-    maxWeight: 15.0,
-    points: 95,
-    badgeColor: '#ef6c00',
-    gradient: 'linear-gradient(135deg, #ffa726 0%, #e65100 100%)',
-    quote: 'Trê vàng toàn thân rực ánh hoàng kim, vạn người ao ước!',
-    icon: '✨',
-    ttsSummary: 'Cực phẩm Cá Trê Hoàng Kim Đột Biến! Toàn thân phát quang lấp lánh!'
-  },
-  {
-    id: 'tam_hoang_gia',
-    name: 'Cá Tầm Hoàng Gia Hắc Ngự',
-    species: 'Acipenser baerii',
-    rarity: 'Cực Phẩm',
-    tier: 3,
-    minWeight: 8.5,
-    maxWeight: 19.5,
-    points: 110,
-    badgeColor: '#283593',
-    gradient: 'linear-gradient(135deg, #5c6bc0 0%, #1a237e 100%)',
-    quote: 'Hóa thạch sống sông Danube, vương giả của thế giới thủy sinh!',
-    icon: '🦈',
-    ttsSummary: 'Cực phẩm Cá Tầm Hoàng Gia Hắc Ngự! Vương giả uy phong ngời ngời!'
-  },
-  {
-    id: 'channa_hoang_de',
-    name: 'Cá Chuối Hoàng Đế (Channa)',
-    species: 'Channa marulioides',
-    rarity: 'Cực Phẩm',
-    tier: 3,
-    minWeight: 4.8,
-    maxWeight: 12.0,
-    points: 90,
-    badgeColor: '#ad1457',
-    gradient: 'linear-gradient(135deg, #ec407a 0%, #880e4f 100%)',
-    quote: 'Chúa tể săn mồi đầm lầy, mắt rực lửa hoa văn rồng cuộn!',
-    icon: '🐊',
-    ttsSummary: 'Cực phẩm Cá Chuối Hoàng Đế! Chúa tể đầm lầy với hoa văn rồng cuộn!'
-  },
-
-  // Tier 4: Huyền Thoại (Mythic / Leviathan - Thủy Quái)
-  {
-    id: 'rong_kim_long',
-    name: 'Cá Rồng Bối Đầu Vàng (Kim Long Quá Bối)',
-    species: 'Scleropages formosus',
-    rarity: 'Huyền Thoại',
-    tier: 4,
-    minWeight: 18.0,
-    maxWeight: 38.5,
-    points: 280,
-    badgeColor: '#ffb300',
-    gradient: 'linear-gradient(135deg, #ffe082 0%, #ff8f00 100%)',
-    quote: 'BẬC THẦY PHONG THỦY! Kim Long xuất hải, tài lộc vượng khí cuộn trào!',
-    icon: '🐉',
-    ttsSummary: 'HUYỀN THOẠI XUẤT HIỆN! Cá Rồng Kim Long Quá Bối xuất hải, tài lộc vượng khí ngập tràn!'
-  },
-  {
-    id: 'thuy_quai_ho_sau',
-    name: 'Thủy Quái Hồ Sâu (Cá Hô Khổng Lồ)',
-    species: 'Catlocarpio siamensis',
-    rarity: 'Huyền Thoại',
-    tier: 4,
-    minWeight: 42.0,
-    maxWeight: 96.0,
-    points: 380,
-    badgeColor: '#c62828',
-    gradient: 'linear-gradient(135deg, #ef5350 0%, #b71c1c 100%)',
-    quote: 'VUA CỦA CÁC LOÀI CÁ NƯỚC NGỌT! Cần câu cong vút cực hạn, bọt nước tung trời!',
-    icon: '🐋',
-    ttsSummary: 'THỦY QUÁI HỒ SÂU! Cá Hô Khổng Lồ kéo cong cần titan, cả bến thuyền cùng hò reo!'
-  },
-  {
-    id: 'rua_than_ngoc',
-    name: 'Cụ Rùa Vàng Thần Long',
-    species: 'Cuora amboinensis aurea',
-    rarity: 'Huyền Thoại',
-    tier: 4,
-    minWeight: 55.0,
-    maxWeight: 99.9,
-    points: 500,
-    badgeColor: '#e65100',
-    gradient: 'linear-gradient(135deg, #ffb74d 0%, #bf360c 100%)',
-    quote: 'RÙA VÀNG BÁCH NIÊN! Ban phúc trường thọ trăm tuổi, gia đạo bình an phát tài!',
-    icon: '🐢',
-    ttsSummary: 'ĐẠI CÁT TƯỜNG! Cụ Rùa Vàng Thần Long nổi lên ban phúc trường thọ gia đạo an khang!'
-  }
+const DANCE_MOVES = [
+  { id: 'nhay_tu_do', name: 'Nhảy Tự Do', keyword: 'nhảy' },
+  { id: 'hiphop', name: 'Hiphop B-Boy', keyword: 'hiphop' },
+  { id: 'xoay_dau', name: 'Xoay Đầu (Headspin)', keyword: 'xoay đầu' },
+  { id: 'lon_vong', name: 'Nhào Lộn', keyword: 'lộn' },
+  { id: 'catwalk', name: 'Catwalk Siêu Mẫu', keyword: 'catwalk' },
+  { id: 'robot', name: 'Robot Dance', keyword: 'robot' },
+  { id: 'wave', name: 'Lượn Sóng (Body Wave)', keyword: 'lượn sóng' },
+  { id: 'shuffle', name: 'Shuffle Dance', keyword: 'shuffle' },
+  { id: 'breakdance', name: 'Breakdance Đỉnh Cao', keyword: 'breakdance' },
+  { id: 'moonwalk', name: 'Moonwalk Huyền Thoại', keyword: 'moonwalk' }
 ];
+
+const GIFT_CONFIGS = {
+  // Quà nhỏ 1-4 xu
+  camera: { name: 'Camera', minCoins: 1, type: 'camera', label: '🌹 CAMERA SOI CẬN CẢNH' },
+  swap: { name: 'Đổi Nhân Vật', minCoins: 1, type: 'swap', label: '🎵 ĐỔI NHÂN VẬT' },
+  dance_once: { name: 'Nhảy 1 Cái', minCoins: 2, type: 'dance_once', label: '👯 NHẢY SOLO' },
+  // Quà vừa 5-49 xu
+  catwalk: { name: 'Catwalk', minCoins: 5, type: 'catwalk', label: '💃 CATWALK THẢM ĐỎ' },
+  fireworks: { name: 'Pháo Hoa', minCoins: 10, type: 'fireworks', label: '🎆 PHÁO HOA RỰC SÀN' },
+  bubbles: { name: 'Mưa Bong Bóng', minCoins: 20, type: 'bubbles', label: '🫧 MƯA BONG BÓNG' },
+  couple: { name: 'Ghép Đôi', minCoins: 30, type: 'couple', label: '👩‍❤️‍👨 GHÉP ĐÔI TÌNH TỨ' },
+  giant: { name: 'Khổng Lồ', minCoins: 40, type: 'giant', label: '🦾 HÓA KHỔNG LỒ' },
+  // Quà lớn 50-198 xu
+  dj_booth: { name: 'Lên DJ', minCoins: 50, type: 'dj_booth', label: '🎧 LÊN BỤC DJ QUẨY' },
+  rocket: { name: 'Tên Lửa', minCoins: 100, type: 'rocket', label: '🚀 PHÓNG TÊN LỬA' },
+  golden_duck: { name: 'Vịt Vàng', minCoins: 150, type: 'golden_duck', label: '🦆 VỊT VÀNG SIÊU CẤP' },
+  // Quà siêu cấp >= 199 xu
+  dragon_ride: { name: 'Cưỡi Rồng', minCoins: 199, type: 'dragon_ride', label: '🐉 ĐẠI GIA CƯỠI RỒNG' },
+  king: { name: 'Vua Sàn Quẩy', minCoins: 500, type: 'king', label: '👑 VUA VŨ TRƯỜNG' }
+};
 
 // ============================================================================
 // 2. QUẢN LÝ TIẾN TRÌNH ZEROTTS (WORKER DAEMON)
@@ -288,7 +70,6 @@ class ZeroTTSManager {
     this.voices = ['maichi'];
     this.model = 'zeroweight-ai/ZeroTTS';
     this.pending = new Map();
-    this.inflight = new Map();
     this.reqCounter = 0;
     this.buffer = '';
     this.startWorker();
@@ -438,17 +219,37 @@ class ZeroTTSManager {
 }
 
 // ============================================================================
-// 3. TRẠNG THÁI HỒ CÂU & BẢNG VÀNG CẦN THỦ
+// 3. TRẠNG THÁI SÀN NHẢY & TOP ĐẠI GIA (MẶC ĐỊNH CHỈ 1 NHÂN VẬT KHỞI ĐỘNG)
 // ============================================================================
 const DEFAULT_STATE = {
-  totalCatches: 48,
-  totalWeightKg: 186.5,
-  totalBait: 360,
-  hornsBlown: 24,
-  lakeCondition: 'Cá Đi Ăn Mạnh 🐟',
-  activeFish: null,
-  rodState: 'idle', // idle, casting, hooked, reeling, celebrating
-  anglers: {},
+  club: {
+    totalDancers: 1,
+    maxFloorCapacity: 1000,
+    heat: 0,
+    maxHeat: 200,
+    feverMode: false,
+    feverEndsAt: 0,
+    currentTrack: 'Festival Euphoria',
+    djName: 'Bạch Tuộc DJ',
+    lastJoinUser: 'Dân Chơi Khởi Động'
+  },
+  dancers: {
+    starter_dancer: {
+      name: 'Dân Chơi Khởi Động',
+      uniqueId: 'starter_dancer',
+      avatar: '',
+      slotIndex: 0,
+      mascotId: 1,
+      coinsTotal: 0,
+      likesContributed: 0,
+      danceMove: 'bounce',
+      title: 'Dân Chơi Vũ Trường 🕺',
+      isGiant: false,
+      isRidingDragon: false,
+      joinedAt: 1793885000000,
+      lastActive: 1793885000000
+    }
+  },
   recentEvents: [],
   settings: {
     ttsEnabled: true,
@@ -456,7 +257,7 @@ const DEFAULT_STATE = {
     bgMusicEnabled: true,
     sfxEnabled: true,
     autoSim: false,
-    autoSimIntervalMs: 8000
+    autoSimIntervalMs: 6500
   },
   tiktok: {
     connected: false,
@@ -468,53 +269,46 @@ const DEFAULT_STATE = {
   }
 };
 
-function calculateAnglerTitle(totalWeightKg, catchesCount) {
-  if (totalWeightKg >= 60 || catchesCount >= 20) return 'Vua Sát Cá Đại Dương 👑';
-  if (totalWeightKg >= 30 || catchesCount >= 12) return 'Bá Chủ Đầm Lầy 🦈';
-  if (totalWeightKg >= 15 || catchesCount >= 6) return 'Cần Thủ Chuyên Nghiệp 🐠';
-  if (totalWeightKg >= 5 || catchesCount >= 3) return 'Tay Câu Cừ Khôi 🐟';
-  return 'Cần Thủ Nhập Môn 🎣';
+function calculateDancerTitle(coinsTotal) {
+  if (coinsTotal >= 1000) return 'Đại Gia Bao Sàn 👑';
+  if (coinsTotal >= 300) return 'Thiếu Gia Sàn Nhảy 💎';
+  if (coinsTotal >= 50) return 'Dân Chơi Phố Đi Bộ 🕶️';
+  return 'Khách VIP 🕺';
 }
 
 function loadState() {
   try {
     if (fs.existsSync(STATE_FILE)) {
       const saved = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-      return {
-        ...DEFAULT_STATE,
-        ...saved,
-        anglers: saved.anglers || {},
-        settings: { ...DEFAULT_STATE.settings, ...(saved.settings || {}) },
-        tiktok: { ...DEFAULT_STATE.tiktok }
-      };
-    } else if (fs.existsSync(LEGACY_STATE_FILE)) {
-      // Migrate from legacy temple state
-      const legacy = JSON.parse(fs.readFileSync(LEGACY_STATE_FILE, 'utf8'));
-      const migratedAnglers = {};
-      if (legacy.devotees) {
-        for (const [id, d] of Object.entries(legacy.devotees)) {
-          const catches = Math.max(1, Math.floor((d.incense || 1)));
-          const weight = +(catches * 2.8).toFixed(1);
-          migratedAnglers[id] = {
-            name: d.name,
-            uniqueId: d.uniqueId || id,
-            avatar: d.avatar || '',
-            catchesCount: catches,
-            totalWeightKg: weight,
-            points: d.merit || 50,
-            title: calculateAnglerTitle(weight, catches),
-            lastWish: d.lastWish || 'Chúc hội cần thủ may mắn lên cá to!',
-            bestCatch: { fishName: 'Cá Chép Vàng', weightKg: 4.8 }
-          };
+      // Dọn dẹp dancers: Chỉ giữ người có xu thực tế (> 0) hoặc starter_dancer duy nhất
+      const filteredDancers = {};
+      let hasRealDancers = false;
+      if (saved.dancers) {
+        for (const [k, d] of Object.entries(saved.dancers)) {
+          if ((d.coinsTotal || 0) > 0) {
+            filteredDancers[k] = d;
+            hasRealDancers = true;
+          }
         }
+      }
+      if (!hasRealDancers) {
+        filteredDancers.starter_dancer = { ...DEFAULT_STATE.dancers.starter_dancer, joinedAt: Date.now(), lastActive: Date.now() };
       }
       return {
         ...DEFAULT_STATE,
-        anglers: migratedAnglers
+        club: {
+          ...DEFAULT_STATE.club,
+          ...(saved.club || {}),
+          totalDancers: Object.keys(filteredDancers).length,
+          lastJoinUser: hasRealDancers ? (saved.club?.lastJoinUser || 'Khách VIP') : 'Dân Chơi Khởi Động'
+        },
+        dancers: filteredDancers,
+        settings: { ...DEFAULT_STATE.settings, ...(saved.settings || {}) },
+        tiktok: { ...DEFAULT_STATE.tiktok }
       };
     }
   } catch (e) {
-    console.warn('[State] Không đọc được state, dùng mặc định:', e.message);
+    console.warn('[State] Không đọc được club-state.json, dùng mặc định:', e.message);
   }
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
 }
@@ -526,12 +320,8 @@ function saveState() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     const toSave = {
-      totalCatches: state.totalCatches,
-      totalWeightKg: state.totalWeightKg,
-      totalBait: state.totalBait,
-      hornsBlown: state.hornsBlown,
-      lakeCondition: state.lakeCondition,
-      anglers: state.anglers,
+      club: state.club,
+      dancers: state.dancers,
       settings: state.settings
     };
     fs.promises.writeFile(STATE_FILE, JSON.stringify(toSave, null, 2), 'utf8').catch((e) => {
@@ -540,88 +330,90 @@ function saveState() {
   }, 1200);
 }
 
-function getLeaderboard(limit = 6) {
-  return Object.values(state.anglers)
-    .sort((a, b) => (b.totalWeightKg || 0) - (a.totalWeightKg || 0) || (b.points || 0) - (a.points || 0))
+function getLeaderboard(limit = 3) {
+  return Object.values(state.dancers)
+    .filter((d) => (d.coinsTotal || 0) > 0) // Chỉ đại gia có xu / quà thật
+    .sort((a, b) => (b.coinsTotal || 0) - (a.coinsTotal || 0) || (b.likesContributed || 0) - (a.likesContributed || 0))
     .slice(0, limit)
-    .map((a, index) => ({
+    .map((d, index) => ({
       rank: index + 1,
-      name: a.name,
-      uniqueId: a.uniqueId,
-      avatar: a.avatar || '',
-      totalWeightKg: a.totalWeightKg || 0,
-      catchesCount: a.catchesCount || 0,
-      points: a.points || 0,
-      title: a.title || 'Cần Thủ Nhập Môn 🎣',
-      bestCatch: a.bestCatch || null,
-      lastWish: a.lastWish || ''
+      name: d.name,
+      uniqueId: d.uniqueId,
+      avatar: d.avatar || '',
+      coinsTotal: d.coinsTotal || 0,
+      title: d.title || 'Đại Gia Sàn Quẩy',
+      mascotId: d.mascotId || 1
     }));
 }
 
-// Bộ lọc an toàn ký tự & spam
-const WEIRD_SPAM_RE = /[\u{12000}-\u{1254F}\uFDFD\u2800-\u28FF\u2580-\u259F]|[\u0300-\u036F]{3,}/u;
-const BRACKET_EMOTE_RE = /\[[^\]]{1,24}\]/g;
-const ALLOWED_VI_TEXT_RE = /[^0-9a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s.,!?]/g;
-const ALLOWED_VI_NAME_RE = /[^0-9a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s._-]/g;
-const BAD_WORDS_RE = /(đá dái|địt|lồn|cặc|đm|vcl|vl|yamate|lừa đảo|lừa à|telegram)/i;
-
-function isBlockedSpamOrToxic(rawText) {
-  if (!rawText) return true;
-  if (WEIRD_SPAM_RE.test(rawText)) return true;
-  if (BAD_WORDS_RE.test(rawText)) return true;
-  return false;
+function getActiveDancersList(limit = 32) {
+  return Object.values(state.dancers)
+    .sort((a, b) => (b.lastActive || 0) - (a.lastActive || 0))
+    .slice(0, limit)
+    .map((d) => ({
+      id: d.uniqueId,
+      name: d.name,
+      avatar: d.avatar || '',
+      slotIndex: d.slotIndex,
+      mascotId: d.mascotId || 1,
+      danceMove: d.danceMove || 'nhay_tu_do',
+      isGiant: !!d.isGiant,
+      isRidingDragon: !!d.isRidingDragon,
+      title: d.title
+    }));
 }
 
-function sanitizeWishText(raw) {
-  if (!raw) return '';
-  let text = String(raw).normalize('NFKC').replace(BRACKET_EMOTE_RE, ' ').trim();
-  text = text.replace(ALLOWED_VI_TEXT_RE, ' ').replace(/\s+/g, ' ').trim();
-  if (text.length > 95) text = text.slice(0, 95).trim();
-  return text;
-}
-
-function sanitizeUserName(raw) {
-  if (!raw) return 'Cần Thủ Vô Danh';
-  let name = String(raw).normalize('NFKC').replace(BRACKET_EMOTE_RE, ' ').trim();
-  name = name.replace(ALLOWED_VI_NAME_RE, ' ').replace(/\s+/g, ' ').trim();
-  if (!name) return 'Cần Thủ Ẩn Danh';
-  if (name.length > 24) name = name.slice(0, 24).trim();
+function sanitizeUserName(raw, fallbackIndex = null) {
+  if (!raw) return fallbackIndex ? `Khách thứ ${fallbackIndex}` : 'Dân Chơi Ẩn Danh';
+  let name = String(raw).normalize('NFKC').replace(/\[[^\]]{1,24}\]/g, ' ').trim();
+  name = name.replace(/[^0-9a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s._-]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!name) return fallbackIndex ? `Khách thứ ${fallbackIndex}` : 'Khách Quý';
+  if (name.length > 20) name = name.slice(0, 20).trim();
   return name;
 }
 
-function recordAngler(user, uniqueId, avatar, pointsGained = 10, weightGained = 0, catchesGained = 0, wish = '', caughtFish = null) {
-  const key = uniqueId || user || `angler_${Date.now()}`;
-  const existing = state.anglers[key] || {
-    name: user || 'Cần Thủ',
-    uniqueId: key,
-    avatar: avatar || '',
-    catchesCount: 0,
-    totalWeightKg: 0,
-    points: 0,
-    title: 'Cần Thủ Nhập Môn 🎣',
-    bestCatch: null,
-    lastWish: ''
-  };
+function sanitizeComment(raw) {
+  if (!raw) return '';
+  let text = String(raw).normalize('NFKC').replace(/\[[^\]]{1,24}\]/g, ' ').trim();
+  text = text.replace(/[^0-9a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s.,!?_-]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (text.length > 90) text = text.slice(0, 90).trim();
+  return text;
+}
 
-  existing.name = user || existing.name;
-  if (avatar) existing.avatar = avatar;
-  existing.points += pointsGained;
-  existing.catchesCount += catchesGained;
-  existing.totalWeightKg = +(existing.totalWeightKg + weightGained).toFixed(1);
-  existing.title = calculateAnglerTitle(existing.totalWeightKg, existing.catchesCount);
-  if (wish) existing.lastWish = wish;
+function recordDancer(user, uniqueId, avatar, coinsAdded = 0, likesAdded = 0, moveName = null) {
+  const key = uniqueId || user || `dancer_${Date.now()}`;
+  let existing = state.dancers[key];
 
-  if (caughtFish) {
-    if (!existing.bestCatch || (caughtFish.weightKg > (existing.bestCatch.weightKg || 0))) {
-      existing.bestCatch = {
-        fishName: caughtFish.name,
-        weightKg: caughtFish.weightKg,
-        rarity: caughtFish.rarity
-      };
-    }
+  if (!existing) {
+    const slotCount = Object.keys(state.dancers).length + 1;
+    existing = {
+      name: sanitizeUserName(user, slotCount),
+      uniqueId: key,
+      avatar: avatar || '',
+      slotIndex: (slotCount % 16) + 1,
+      mascotId: ((slotCount - 1) % 9) + 1,
+      coinsTotal: 0,
+      likesContributed: 0,
+      danceMove: moveName || 'nhay_tu_do',
+      title: 'Khách VIP 🕺',
+      isGiant: false,
+      isRidingDragon: false,
+      joinedAt: Date.now(),
+      lastActive: Date.now()
+    };
+    state.club.totalDancers = Math.min(1000, state.club.totalDancers + 1);
+    state.club.lastJoinUser = existing.name;
   }
 
-  state.anglers[key] = existing;
+  if (avatar) existing.avatar = avatar;
+  if (user) existing.name = sanitizeUserName(user);
+  existing.coinsTotal += coinsAdded;
+  existing.likesContributed += likesAdded;
+  if (moveName) existing.danceMove = moveName;
+  existing.title = calculateDancerTitle(existing.coinsTotal);
+  existing.lastActive = Date.now();
+
+  state.dancers[key] = existing;
   return existing;
 }
 
@@ -638,290 +430,247 @@ function pushEventLog(event) {
   return item;
 }
 
-function getRandomFish(tierFilter = null) {
-  let candidates = FISH_CATALOG;
-  if (tierFilter != null) {
-    candidates = FISH_CATALOG.filter((f) => f.tier === tierFilter);
-  }
-  if (!candidates.length) {
-    // Weighted random distribution
-    const roll = Math.random();
-    if (roll < 0.60) {
-      candidates = FISH_CATALOG.filter((f) => f.tier === 1); // Common 60%
-    } else if (roll < 0.85) {
-      candidates = FISH_CATALOG.filter((f) => f.tier === 2); // Rare 25%
-    } else if (roll < 0.96) {
-      candidates = FISH_CATALOG.filter((f) => f.tier === 3); // Epic 11%
-    } else {
-      candidates = FISH_CATALOG.filter((f) => f.tier === 4); // Mythic 4%
-    }
-  }
-
-  const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-  const weight = +(chosen.minWeight + Math.random() * (chosen.maxWeight - chosen.minWeight)).toFixed(1);
-  return {
-    ...chosen,
-    weightKg: weight
-  };
-}
-
 function getPublicState() {
+  // Kiểm tra fever mode hết giờ chưa
+  if (state.club.feverMode && Date.now() > state.club.feverEndsAt) {
+    state.club.feverMode = false;
+    state.club.heat = 20;
+  }
+
   return {
-    totalCatches: state.totalCatches,
-    totalWeightKg: state.totalWeightKg,
-    totalBait: state.totalBait,
-    hornsBlown: state.hornsBlown,
-    lakeCondition: state.lakeCondition,
-    activeFish: state.activeFish,
-    rodState: state.rodState,
-    leaderboard: getLeaderboard(6),
+    club: state.club,
+    topVip: getLeaderboard(3),
+    dancers: getActiveDancersList(24),
     recentEvents: state.recentEvents.slice(0, 15),
     settings: state.settings,
-    tiktok: state.tiktok
+    tiktok: state.tiktok,
+    // Backward compatibility fields for any legacy panels:
+    totalCatches: state.club.heat,
+    totalWeightKg: state.club.totalDancers,
+    totalBait: state.club.heat,
+    hornsBlown: Object.keys(state.dancers).length,
+    leaderboard: getLeaderboard(6).map((item, idx) => ({
+      ...item,
+      totalWeightKg: item.coinsTotal,
+      catchesCount: idx + 1
+    }))
   };
 }
 
 // ============================================================================
-// 4. HÀNH ĐỘNG CÂU CÁ & TƯƠNG TÁC (FISHING ENGINE)
+// 4. HÀNH ĐỘNG VŨ TRƯỜNG & TƯƠNG TÁC (CLUB ENGINE)
 // ============================================================================
-const FishingEngine = {
-  // 1. Thả thính / Ném mồi dụ cá (Tương ứng Thả Tim)
-  castBait(params = {}) {
-    const user = sanitizeUserName(params.user);
+const ClubEngine = {
+  // 1. Vào sàn nhảy (Join dance floor)
+  joinFloor(params = {}) {
+    const user = params.user;
+    const uniqueId = params.uniqueId || '';
+    const avatar = params.avatar || '';
+    const dancer = recordDancer(user, uniqueId, avatar);
+
+    const event = pushEventLog({
+      type: 'joinFloor',
+      user: dancer.name,
+      uniqueId: dancer.uniqueId,
+      avatar: dancer.avatar,
+      mascotId: dancer.mascotId,
+      ttsText: params.readTts ? `Chào mừng ${dancer.name} đã lên sàn quẩy!` : ''
+    });
+
+    saveState();
+    broadcastNotification('bar.event', { event, state: getPublicState() });
+    broadcastNotification('fishing.event', { event, state: getPublicState() }); // Alias
+    return { event, state: getPublicState() };
+  },
+
+  // 2. Thả tim tăng nhiệt sàn (Like / Add Heat)
+  addHeat(params = {}) {
+    const user = params.user;
     const uniqueId = params.uniqueId || '';
     const avatar = params.avatar || '';
     const count = Math.max(1, Math.min(50, Number(params.count) || 1));
-    const points = count;
+    const dancer = recordDancer(user, uniqueId, avatar, 0, count);
 
-    state.totalBait += count;
-    const angler = recordAngler(user, uniqueId, avatar, points, 0, 0);
+    state.club.heat = Math.min(state.club.maxHeat, state.club.heat + count);
+
+    // Kiểm tra nếu chạm mốc 200/200: SÀN CHÁY RỒI! (Fever Mode)
+    let triggeredFever = false;
+    if (state.club.heat >= state.club.maxHeat && !state.club.feverMode) {
+      state.club.feverMode = true;
+      state.club.feverEndsAt = Date.now() + 18000; // Sàn cháy trong 18s
+      triggeredFever = true;
+    }
+
+    const ttsText = triggeredFever
+      ? 'Sàn quẩy đã đạt cực đại hai trăm nhiệt! Sàn cháy rồi anh em ơi! Quẩy hết mình nào!'
+      : (params.readTts ? `${dancer.name} vừa thả tim bốc lửa tăng nhiệt sàn!` : '');
 
     const event = pushEventLog({
-      type: 'castBait',
-      user: angler.name,
-      uniqueId: angler.uniqueId,
-      avatar: angler.avatar,
+      type: 'addHeat',
+      user: dancer.name,
+      uniqueId: dancer.uniqueId,
+      avatar: dancer.avatar,
       count,
-      points,
-      title: angler.title,
-      ttsText: params.readTts ? `Cần thủ ${angler.name} vừa thả ${count} nắm thính thơm dụ cá!` : ''
-    });
-
-    saveState();
-    broadcastNotification('fishing.event', { event, state: getPublicState() });
-    return { event, state: getPublicState() };
-  },
-
-  // 2. Quăng cần / Thả phao chờ cá cắn
-  castRod(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const wish = sanitizeWishText(params.wish) || 'Quăng cần thả phao, cầu hôm nay giỏ đầy ắp cá!';
-    const points = 5;
-
-    state.rodState = 'casting';
-    const angler = recordAngler(user, uniqueId, avatar, points, 0, 0, wish);
-
-    const ttsText = params.readTts === false
-      ? ''
-      : `Cần thủ ${angler.name} vung cần quăng phao ra giữa hồ: ${wish}.`;
-
-    const event = pushEventLog({
-      type: 'castRod',
-      user: angler.name,
-      uniqueId: angler.uniqueId,
-      avatar: angler.avatar,
-      wish,
-      points,
-      title: angler.title,
+      currentHeat: state.club.heat,
+      feverMode: state.club.feverMode,
+      triggeredFever,
       ttsText,
       ttsVoice: state.settings.ttsVoice || 'maichi'
     });
 
     saveState();
+    broadcastNotification('bar.event', { event, state: getPublicState() });
     broadcastNotification('fishing.event', { event, state: getPublicState() });
     return { event, state: getPublicState() };
   },
 
-  // 3. Giật cần / Bắt cá (Hook Fish)
-  hookFish(params = {}) {
-    const user = sanitizeUserName(params.user);
+  // 3. Đổi điệu nhảy (Dance move change)
+  setDanceMove(params = {}) {
+    const user = params.user;
     const uniqueId = params.uniqueId || '';
     const avatar = params.avatar || '';
-    const wish = sanitizeWishText(params.wish) || 'Giật cần lên cá to!';
-    const tierOverride = params.tierOverride != null ? Number(params.tierOverride) : null;
-    const caughtFish = getRandomFish(tierOverride);
-
-    state.totalCatches += 1;
-    state.totalWeightKg = +(state.totalWeightKg + caughtFish.weightKg).toFixed(1);
-    state.activeFish = caughtFish;
-    state.rodState = 'hooked';
-
-    const points = caughtFish.points;
-    const angler = recordAngler(user, uniqueId, avatar, points, caughtFish.weightKg, 1, wish, caughtFish);
-
-    const ttsText = params.readTts === false
-      ? ''
-      : `Chúc mừng cần thủ ${angler.name} vừa giật cần bắt được ${caughtFish.name} nặng ${caughtFish.weightKg} ký! ${caughtFish.quote}`;
+    const moveKey = params.move || 'hiphop';
+    const dancer = recordDancer(user, uniqueId, avatar, 0, 1, moveKey);
 
     const event = pushEventLog({
-      type: 'hookFish',
-      user: angler.name,
-      uniqueId: angler.uniqueId,
-      avatar: angler.avatar,
-      wish,
-      fish: caughtFish,
-      weightKg: caughtFish.weightKg,
-      points,
-      title: angler.title,
-      ttsText,
-      ttsVoice: state.settings.ttsVoice || 'maichi'
+      type: 'danceMove',
+      user: dancer.name,
+      uniqueId: dancer.uniqueId,
+      avatar: dancer.avatar,
+      move: moveKey,
+      ttsText: params.readTts ? `${dancer.name} đang biểu diễn điệu ${moveKey} cực mượt!` : ''
     });
 
     saveState();
+    broadcastNotification('bar.event', { event, state: getPublicState() });
     broadcastNotification('fishing.event', { event, state: getPublicState() });
     return { event, state: getPublicState() };
   },
 
-  // 4. Thổi còi bến thuyền / Báo cá cắn câu (Tương ứng Follow / Share)
-  soundHorn(params = {}) {
-    const user = sanitizeUserName(params.user);
+  // 4. Kích hoạt sự kiện tặng quà (Gift Event)
+  triggerGift(params = {}) {
+    const user = params.user;
     const uniqueId = params.uniqueId || '';
     const avatar = params.avatar || '';
-    const wish = sanitizeWishText(params.wish) || 'Báo cá! Báo cá! Chúc cả bến thuyền cùng bội thu!';
-    const points = 15;
+    const coins = Math.max(1, Number(params.coins) || 10);
+    const giftName = params.giftName || 'Quà Tặng Bar';
 
-    state.hornsBlown += 1;
-    const angler = recordAngler(user, uniqueId, avatar, points, 0, 0, wish);
+    let giftType = 'fireworks';
+    const gLower = giftName.toLowerCase();
 
-    const ttsText = params.readTts
-      ? `Cần thủ ${angler.name} thổi còi báo cá rộn rã toàn hồ: ${wish}.`
-      : '';
+    if (coins >= 199 || gLower.includes('rồng') || gLower.includes('dragon')) {
+      giftType = 'dragon_ride';
+    } else if (coins >= 500 || gLower.includes('bánh sinh nhật')) {
+      giftType = 'king';
+    } else if (coins >= 150 || gLower.includes('nhịp trống')) {
+      giftType = 'golden_duck';
+    } else if (coins >= 100 || gLower.includes('nhạc tự do')) {
+      giftType = 'rocket';
+    } else if (coins >= 50 || gLower.includes('mic')) {
+      giftType = 'dj_booth';
+    } else if (coins >= 40 || gLower.includes('ốc quế') || gLower.includes('kem')) {
+      giftType = 'giant';
+    } else if (coins >= 30 || gLower.includes('tiktok')) {
+      giftType = 'couple';
+    } else if (coins >= 20 || gLower.includes('hiểu ý') || gLower.includes('dallah')) {
+      giftType = 'bubbles';
+    } else if (coins >= 10 || gLower.includes('mantap')) {
+      giftType = 'fireworks';
+    } else if (coins >= 5 || gLower.includes('bắn tim')) {
+      giftType = 'dj_booth';
+    } else if (gLower.includes('đỉnh')) {
+      giftType = 'catwalk';
+    } else if (gLower.includes('yêu bạn')) {
+      giftType = 'dance_once';
+    } else if (gLower.includes('que') || gLower.includes('sáng')) {
+      giftType = 'swap';
+    } else if (gLower.includes('hồng') || gLower.includes('rose')) {
+      giftType = 'camera';
+    } else {
+      giftType = 'camera';
+    }
+
+    const dancer = recordDancer(user, uniqueId, avatar, coins, 5);
+
+    // Tăng nhiệt sàn mạnh khi tặng quà
+    state.club.heat = Math.min(state.club.maxHeat, state.club.heat + Math.min(50, Math.floor(coins / 2)));
+    if (state.club.heat >= state.club.maxHeat && !state.club.feverMode) {
+      state.club.feverMode = true;
+      state.club.feverEndsAt = Date.now() + 18000;
+    }
+
+    if (giftType === 'dragon_ride') {
+      dancer.isRidingDragon = true;
+      setTimeout(() => {
+        dancer.isRidingDragon = false;
+        saveState();
+      }, 10000);
+    } else if (giftType === 'giant') {
+      dancer.isGiant = true;
+      setTimeout(() => {
+        dancer.isGiant = false;
+        saveState();
+      }, 8000);
+    } else if (giftType === 'dj_booth') {
+      state.club.djName = dancer.name;
+    }
+
+    let ttsText = '';
+    if (giftType === 'dragon_ride') {
+      ttsText = `CHẤN ĐỘNG VŨ TRƯỜNG! Đại gia ${dancer.name} xuất hiện cưỡi rồng vàng kim long rực sáng! Cả vũ trường cùng cúi chào Vua Sàn Nhảy!`;
+    } else if (giftType === 'dj_booth') {
+      ttsText = `Đại gia ${dancer.name} đã bước lên bục DJ chỉ đạo âm nhạc! Tăng âm lượng nào anh em ơi!`;
+    } else if (giftType === 'giant') {
+      ttsText = `Úi chà! ${dancer.name} đã hóa khổng lồ dẫm nát sàn nhảy!`;
+    } else {
+      ttsText = `Cảm ơn đại gia ${dancer.name} đã tặng ${giftName} ${coins} xu! Quẩy bốc lửa lên nào!`;
+    }
 
     const event = pushEventLog({
-      type: 'soundHorn',
-      user: angler.name,
-      uniqueId: angler.uniqueId,
-      avatar: angler.avatar,
-      points,
-      wish,
-      title: angler.title,
-      ttsText,
-      ttsVoice: state.settings.ttsVoice || 'maichi'
-    });
-
-    saveState();
-    broadcastNotification('fishing.event', { event, state: getPublicState() });
-    return { event, state: getPublicState() };
-  },
-
-  // 5. Mồi Thượng Hạng (Quà Vừa: 5-99 xu) -> Chắc chắn bắt cá Quý Hiếm hoặc Cực Phẩm
-  catchBigFish(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const coins = Math.max(5, Number(params.coins) || 20);
-    const tier = coins >= 30 ? 3 : 2;
-    const caughtFish = getRandomFish(tier);
-
-    state.totalCatches += 1;
-    state.totalWeightKg = +(state.totalWeightKg + caughtFish.weightKg).toFixed(1);
-    state.activeFish = caughtFish;
-    state.rodState = 'celebrating';
-
-    const points = coins * 15;
-    const angler = recordAngler(user, uniqueId, avatar, points, caughtFish.weightKg, 1, params.giftName || 'Dâng Mồi Thượng Hạng', caughtFish);
-
-    const ttsText = params.readTts === false
-      ? ''
-      : `Đại cần thủ ${angler.name} dùng mồi câu thượng hạng, giật vút lên ${caughtFish.name} nặng ${caughtFish.weightKg} ký! Cả bến thuyền cùng chúc mừng!`;
-
-    const event = pushEventLog({
-      type: 'catchBigFish',
-      user: angler.name,
-      uniqueId: angler.uniqueId,
-      avatar: angler.avatar,
+      type: 'gift',
+      giftType,
+      giftName,
       coins,
-      giftName: params.giftName || 'Mồi Thượng Hạng',
-      fish: caughtFish,
-      weightKg: caughtFish.weightKg,
-      points,
-      title: angler.title,
+      user: dancer.name,
+      uniqueId: dancer.uniqueId,
+      avatar: dancer.avatar,
+      mascotId: dancer.mascotId,
       ttsText,
       ttsVoice: state.settings.ttsVoice || 'maichi'
     });
 
     saveState();
-    broadcastNotification('fishing.event', { event, state: getPublicState() });
-    return { event, state: getPublicState() };
-  },
-
-  // 6. Đại Chiến Thủy Quái (Quà Lớn: >= 100 xu) -> Cá Rồng Kim Long hoặc Thủy Quái Hồ Sâu
-  catchLeviathan(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const coins = Math.max(100, Number(params.coins) || 199);
-    const caughtFish = getRandomFish(4); // Mythic Tier 4
-
-    state.totalCatches += 1;
-    state.totalWeightKg = +(state.totalWeightKg + caughtFish.weightKg).toFixed(1);
-    state.activeFish = caughtFish;
-    state.rodState = 'celebrating';
-    state.lakeCondition = 'Đại Tiệc Thủy Quái 🐉';
-
-    const points = coins * 30;
-    const angler = recordAngler(user, uniqueId, avatar, points, caughtFish.weightKg, 1, params.giftName || 'Đại Lễ Săn Thủy Quái', caughtFish);
-
-    const ttsText = params.readTts === false
-      ? ''
-      : `CHẤN ĐỘNG HỒ CÂU! Đại cao thủ ${angler.name} vừa bắt được huyền thoại ${caughtFish.name} nặng ${caughtFish.weightKg} ký! ${caughtFish.quote}`;
-
-    const event = pushEventLog({
-      type: 'catchLeviathan',
-      user: angler.name,
-      uniqueId: angler.uniqueId,
-      avatar: angler.avatar,
-      coins,
-      giftName: params.giftName || 'Cá Rồng Kim Long',
-      fish: caughtFish,
-      weightKg: caughtFish.weightKg,
-      points,
-      title: angler.title,
-      ttsText,
-      ttsVoice: state.settings.ttsVoice || 'maichi'
-    });
-
-    saveState();
+    broadcastNotification('bar.event', { event, state: getPublicState() });
     broadcastNotification('fishing.event', { event, state: getPublicState() });
     return { event, state: getPublicState() };
   },
 
   updateSettings(params = {}) {
-    state.settings = {
-      ...state.settings,
-      ...params
-    };
+    state.settings = { ...state.settings, ...params };
     if (typeof params.autoSim === 'boolean') {
       configureAutoSim(params.autoSim);
     }
     saveState();
+    broadcastNotification('bar.state', getPublicState());
     broadcastNotification('fishing.state', getPublicState());
     return getPublicState();
   },
 
   resetState() {
-    state.totalCatches = 0;
-    state.totalWeightKg = 0;
-    state.totalBait = 0;
-    state.hornsBlown = 0;
-    state.lakeCondition = 'Nước Tĩnh Lặng 🌊';
-    state.activeFish = null;
-    state.rodState = 'idle';
-    state.anglers = {};
+    state.club.heat = 0;
+    state.club.feverMode = false;
+    state.club.totalDancers = 1;
+    state.club.lastJoinUser = 'Dân Chơi Khởi Động';
+    state.dancers = {
+      starter_dancer: {
+        ...DEFAULT_STATE.dancers.starter_dancer,
+        joinedAt: Date.now(),
+        lastActive: Date.now()
+      }
+    };
     state.recentEvents = [];
     saveState();
+    broadcastNotification('bar.state', getPublicState());
     broadcastNotification('fishing.state', getPublicState());
     return getPublicState();
   }
@@ -935,69 +684,40 @@ const commentCooldownMap = new Map();
 
 function parseViewerComment(commentText, user, uniqueId, avatar) {
   const raw = String(commentText || '').trim();
-  if (!raw || isBlockedSpamOrToxic(raw)) return null;
+  if (!raw) return null;
 
-  const cleanWish = sanitizeWishText(raw);
-  if (!cleanWish || cleanWish.length < 2) return null;
+  const clean = sanitizeComment(raw);
+  if (!clean || clean.length < 1) return null;
 
-  // Chống spam (cooldown 3.5s / người)
+  // Chống spam (cooldown 2.5s / người)
   const userKey = uniqueId || user || '';
   const now = Date.now();
   if (userKey) {
     const lastTs = commentCooldownMap.get(userKey) || 0;
-    if (now - lastTs < 3500) return null;
+    if (now - lastTs < 2500) return null;
     commentCooldownMap.set(userKey, now);
-    if (commentCooldownMap.size > 600) {
+    if (commentCooldownMap.size > 800) {
       const oldestKey = commentCooldownMap.keys().next().value;
       commentCooldownMap.delete(oldestKey);
     }
   }
 
   const cleanUser = sanitizeUserName(user);
-  const lower = cleanWish.toLowerCase();
+  const lower = clean.toLowerCase();
 
-  // 1. Thả thính / Mồi
-  if (lower.includes('thả thính') || lower.includes('tha thinh') || lower.includes('mồi') || lower.includes('moi') || lower.includes('thính')) {
-    return FishingEngine.castBait({ user: cleanUser, uniqueId, avatar, count: 5 });
+  // Đổi điệu nhảy
+  for (const move of DANCE_MOVES) {
+    if (lower.includes(move.keyword) || lower.includes(move.id)) {
+      return ClubEngine.setDanceMove({ user: cleanUser, uniqueId, avatar, move: move.id, readTts: false });
+    }
   }
 
-  // 2. Thổi còi / Báo cá
-  if (lower.includes('thổi còi') || lower.includes('thoi coi') || lower.includes('báo cá') || lower.includes('bao ca') || lower.includes('còi') || lower.includes('coi')) {
-    return FishingEngine.soundHorn({ user: cleanUser, uniqueId, avatar, wish: cleanWish, readTts: true });
-  }
-
-  // 3. Thủy quái / Cá Rồng / Kim Long
-  if (lower.includes('thủy quái') || lower.includes('thuy quai') || lower.includes('cá rồng') || lower.includes('ca rong') || lower.includes('kim long')) {
-    return FishingEngine.hookFish({ user: cleanUser, uniqueId, avatar, wish: cleanWish, tierOverride: Math.random() < 0.4 ? 4 : 3, readTts: true });
-  }
-
-  // 4. Giật cần / Lên cá / Bắt cá / Câu cá
-  if (
-    lower.includes('giật') ||
-    lower.includes('giat') ||
-    lower.includes('lên cá') ||
-    lower.includes('len ca') ||
-    lower.includes('bắt cá') ||
-    lower.includes('bat ca') ||
-    lower.includes('cắn câu') ||
-    lower.includes('can cau') ||
-    lower.includes('câu cá') ||
-    lower.includes('cau ca') ||
-    lower.includes('quăng cần') ||
-    lower.includes('quang can') ||
-    lower.includes('thả câu') ||
-    lower.includes('cá to') ||
-    lower.includes('ca to')
-  ) {
-    return FishingEngine.hookFish({ user: cleanUser, uniqueId, avatar, wish: cleanWish, readTts: true });
-  }
-
-  // 5. Bình luận chào hỏi / chúc may mắn -> Cho thử vận may giật một mẻ cá
-  return FishingEngine.hookFish({ user: cleanUser, uniqueId, avatar, wish: cleanWish, readTts: true });
+  // Lên sàn / Tham gia quẩy
+  return ClubEngine.joinFloor({ user: cleanUser, uniqueId, avatar, readTts: false });
 }
 
 function extractUserFromEvent(data) {
-  const user = data?.nickname || data?.uniqueId || data?.user?.nickname || data?.user?.uniqueId || 'Cần Thủ';
+  const user = data?.nickname || data?.uniqueId || data?.user?.nickname || data?.user?.uniqueId || 'Khách VIP';
   const uniqueId = data?.uniqueId || data?.user?.uniqueId || '';
   const avatar = data?.profilePictureUrl || data?.user?.profilePictureUrls?.[0] || '';
   return { user, uniqueId, avatar };
@@ -1034,6 +754,7 @@ async function connectTikTokLive(usernameOrUrl) {
     viewerCount: 0,
     lastError: null
   };
+  broadcastNotification('bar.state', getPublicState());
   broadcastNotification('fishing.state', getPublicState());
 
   tiktokConn = new TikTokLiveConnection(cleanUser, {
@@ -1062,36 +783,35 @@ async function connectTikTokLive(usernameOrUrl) {
     state.tiktok.connecting = false;
     state.tiktok.roomId = roomState?.roomId || tiktokConn?.roomId || null;
     state.tiktok.lastError = null;
-    console.log(`[TikTok Live] Đã kết nối hồ câu @${cleanUser} (roomId: ${state.tiktok.roomId})`);
-    broadcastNotification('fishing.state', getPublicState());
+    console.log(`[TikTok Live] Đã kết nối vũ trường @${cleanUser} (roomId: ${state.tiktok.roomId})`);
+    broadcastNotification('bar.state', getPublicState());
   });
 
   tiktokConn.on(ControlEvent.DISCONNECTED, () => {
     state.tiktok.connected = false;
     state.tiktok.connecting = false;
     console.log(`[TikTok Live] Đã ngắt kết nối @${cleanUser}`);
-    broadcastNotification('fishing.state', getPublicState());
+    broadcastNotification('bar.state', getPublicState());
   });
 
   tiktokConn.on(ControlEvent.ERROR, (err) => {
     const errMsg = err?.exception?.message || err?.info || err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
     state.tiktok.lastError = errMsg;
     console.warn('[TikTok Live Warning]', errMsg);
-    broadcastNotification('fishing.state', getPublicState());
+    broadcastNotification('bar.state', getPublicState());
   });
 
   tiktokConn.on(WebcastEvent.ROOM_USER, (data) => {
     const viewerCount = Number(data?.total ?? data?.viewerCount ?? 0);
     if (viewerCount > 0) {
       state.tiktok.viewerCount = viewerCount;
-      broadcastNotification('fishing.viewerCount', { viewerCount });
+      broadcastNotification('bar.viewerCount', { viewerCount });
     }
   });
 
   tiktokConn.on(WebcastEvent.MEMBER, (data) => {
-    const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    recordAngler(user, uniqueId, avatar, 1, 0, 0, 'Đã vào hồ câu cá');
-    broadcastNotification('fishing.state', getPublicState());
+    // Chỉ ghi nhận người vào xem, không tự động cho lên sàn.
+    // Người xem chỉ lên sàn nhảy khi comment (CHAT) hoặc tặng quà (GIFT).
   });
 
   tiktokConn.on(WebcastEvent.CHAT, (data) => {
@@ -1103,19 +823,13 @@ async function connectTikTokLive(usernameOrUrl) {
 
   tiktokConn.on(WebcastEvent.LIKE, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    const likeCount = Math.min(15, Math.max(1, Number(data?.count ?? data?.likeCount ?? 1)));
-    FishingEngine.castBait({ user, uniqueId, avatar, count: likeCount });
+    const likeCount = Math.min(25, Math.max(1, Number(data?.count ?? data?.likeCount ?? 1)));
+    ClubEngine.addHeat({ user, uniqueId, avatar, count: likeCount });
   });
 
   const handleSocialEvent = (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    FishingEngine.soundHorn({
-      user,
-      uniqueId,
-      avatar,
-      wish: 'Hữu duyên tương ngộ nơi hồ câu, chúc buông cần thắng lợi!',
-      readTts: false
-    });
+    ClubEngine.addHeat({ user, uniqueId, avatar, count: 10 });
   };
 
   tiktokConn.on(WebcastEvent.FOLLOW, handleSocialEvent);
@@ -1129,41 +843,19 @@ async function connectTikTokLive(usernameOrUrl) {
 
   tiktokConn.on(WebcastEvent.GIFT, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    const giftName = data?.giftName || data?.name || 'Quà Tặng Hồ Câu';
+    const giftName = data?.giftName || data?.name || 'Quà Sàn Nhảy';
     const diamondCount = Number(data?.diamondCount || 0);
     const repeatCount = Number(data?.repeatCount || 1);
     const totalCoins = Math.max(1, diamondCount * repeatCount);
 
     console.log(`[TikTok Gift] ${user} tặng ${giftName} (${totalCoins} xu)`);
-
-    if (totalCoins >= 100) {
-      FishingEngine.catchLeviathan({
-        user,
-        uniqueId,
-        avatar,
-        coins: totalCoins,
-        giftName,
-        readTts: true
-      });
-    } else if (totalCoins >= 5) {
-      FishingEngine.catchBigFish({
-        user,
-        uniqueId,
-        avatar,
-        coins: totalCoins,
-        giftName,
-        readTts: true
-      });
-    } else {
-      FishingEngine.hookFish({
-        user,
-        uniqueId,
-        avatar,
-        tierOverride: 2,
-        wish: `Tặng ${giftName} lấy may!`,
-        readTts: true
-      });
-    }
+    ClubEngine.triggerGift({
+      user,
+      uniqueId,
+      avatar,
+      giftName,
+      coins: totalCoins
+    });
   });
 
   try {
@@ -1171,13 +863,13 @@ async function connectTikTokLive(usernameOrUrl) {
     state.tiktok.connected = true;
     state.tiktok.connecting = false;
     state.tiktok.roomId = roomState?.roomId || tiktokConn?.roomId || null;
-    broadcastNotification('fishing.state', getPublicState());
+    broadcastNotification('bar.state', getPublicState());
     return state.tiktok;
   } catch (err) {
     state.tiktok.connected = false;
     state.tiktok.connecting = false;
     state.tiktok.lastError = err?.message || 'Không thể kết nối phòng Live (kiểm tra tài khoản đang phát Live chưa)';
-    broadcastNotification('fishing.state', getPublicState());
+    broadcastNotification('bar.state', getPublicState());
     throw new Error(state.tiktok.lastError);
   }
 }
@@ -1192,34 +884,39 @@ function disconnectTikTokLive() {
   state.tiktok.connected = false;
   state.tiktok.connecting = false;
   state.tiktok.viewerCount = 0;
-  broadcastNotification('fishing.state', getPublicState());
+  broadcastNotification('bar.state', getPublicState());
   return state.tiktok;
 }
 
 // ============================================================================
-// 6. AUTO-SIMULATION ENGINE (GIẢ LẬP CẦN THỦ TƯƠNG TÁC)
+// 6. AUTO-SIMULATION ENGINE (GIẢ LẬP KHÁCH QUẨY VŨ TRƯỜNG)
 // ============================================================================
 let autoSimTimer = null;
-const SIM_ANGLERS = [
-  { user: 'Hải Đăng Cần Thủ', uniqueId: 'haidang.angler', wish: 'Thả mồi trùn quế, săn chú cá chép vàng 5 ký!' },
-  { user: 'Trần Tuấn Sát Cá', uniqueId: 'tuancauca_99', wish: 'Quyết tâm giật con cá tra khủng phá kỷ lục hồ câu!' },
-  { user: 'Bích Thảo Thư Thái', uniqueId: 'thao.lotus', wish: 'Em mới tập câu, xin một chú cá rô đồng xinh xinh lấy may ạ' },
-  { user: 'Hoàng Long Cần Titan', uniqueId: 'long_titan_88', wish: 'Săn thủy quái hồ sâu, kéo cong vút cần titan!' },
-  { user: 'Minh Quân Bến Thuyền', uniqueId: 'quan.river', wish: 'Chúc anh em cần thủ một ngày giỏ đầy ắp cá béo!' },
-  { user: 'Diệu Hương Thư Giãn', uniqueId: 'huong_healing', wish: 'Ngồi câu cá ngắm mây trời thanh thản, chúc cả nhà bình an!' }
+const SIM_CLUB_GUESTS = [
+  { user: 'Bé Thỏ Quẩy', uniqueId: 'bunny_dancer', move: 'hop', gift: 'camera', coins: 1 },
+  { user: 'Gấu B-Boy', uniqueId: 'bear_bboy', move: 'hiphop', gift: 'fireworks', coins: 20 },
+  { user: 'Kangaroo Nhảy', uniqueId: 'kanga_kick', move: 'lộn', gift: 'catwalk', coins: 10 },
+  { user: 'Hổ Sành Điệu', uniqueId: 'tiger_club', move: 'robot', gift: 'giant', coins: 45 },
+  { user: 'Bạch Tuộc DJ', uniqueId: 'octo_dj', move: 'wave', gift: 'dj_booth', coins: 68 },
+  { user: 'Đại Gia Phố Lớn', uniqueId: 'daigia_vip', move: 'breakdance', gift: 'dragon_ride', coins: 299 }
 ];
 
 function runSingleSimulationStep() {
-  const pick = SIM_ANGLERS[Math.floor(Math.random() * SIM_ANGLERS.length)];
+  const pick = SIM_CLUB_GUESTS[Math.floor(Math.random() * SIM_CLUB_GUESTS.length)];
   const roll = Math.random();
-  if (roll < 0.35) {
-    FishingEngine.castBait({ user: pick.user, uniqueId: pick.uniqueId, count: 5 });
-  } else if (roll < 0.65) {
-    FishingEngine.castRod({ user: pick.user, uniqueId: pick.uniqueId, wish: pick.wish });
-  } else if (roll < 0.90) {
-    FishingEngine.hookFish({ user: pick.user, uniqueId: pick.uniqueId, wish: pick.wish });
+  if (roll < 0.40) {
+    ClubEngine.addHeat({ user: pick.user, uniqueId: pick.uniqueId, count: 5 });
+  } else if (roll < 0.70) {
+    ClubEngine.setDanceMove({ user: pick.user, uniqueId: pick.uniqueId, move: pick.move });
+  } else if (roll < 0.92) {
+    ClubEngine.joinFloor({ user: pick.user, uniqueId: pick.uniqueId });
   } else {
-    FishingEngine.soundHorn({ user: pick.user, uniqueId: pick.uniqueId, wish: pick.wish });
+    ClubEngine.triggerGift({
+      user: pick.user,
+      uniqueId: pick.uniqueId,
+      giftName: pick.gift === 'dragon_ride' ? 'Cưỡi Rồng' : 'Pháo Hoa Rực Sàn',
+      coins: pick.coins
+    });
   }
 }
 
@@ -1230,8 +927,8 @@ function configureAutoSim(enabled) {
   }
   state.settings.autoSim = !!enabled;
   if (enabled) {
-    console.log('[AutoSim] Bật chế độ giả lập cần thủ tương tác...');
-    autoSimTimer = setInterval(runSingleSimulationStep, state.settings.autoSimIntervalMs || 8000);
+    console.log('[AutoSim] Bật chế độ giả lập khách quẩy vũ trường...');
+    autoSimTimer = setInterval(runSingleSimulationStep, state.settings.autoSimIntervalMs || 6500);
   } else {
     console.log('[AutoSim] Đã tắt chế độ giả lập.');
   }
@@ -1242,60 +939,66 @@ function configureAutoSim(enabled) {
 // ============================================================================
 async function handleRpcCall(method, params = {}) {
   switch (method) {
-    // Fishing Methods
+    // Bar / Club Methods
+    case 'bar.joinFloor':
+      return ClubEngine.joinFloor(params);
+
+    case 'bar.addHeat':
     case 'fishing.castBait':
     case 'temple.incense': // Backward-compatible alias
-      return FishingEngine.castBait(params);
+      return ClubEngine.addHeat(params);
 
+    case 'bar.danceMove':
     case 'fishing.castRod':
     case 'temple.prayer': // Backward-compatible alias
-      return FishingEngine.castRod(params);
+      return ClubEngine.setDanceMove(params);
 
+    case 'bar.gift':
     case 'fishing.hookFish':
-    case 'temple.fortune':
-    case 'temple.drawFortune': // Backward-compatible alias
-      return FishingEngine.hookFish(params);
-
-    case 'fishing.soundHorn':
-    case 'temple.bell': // Backward-compatible alias
-      return FishingEngine.soundHorn(params);
-
     case 'fishing.catchBigFish':
-    case 'temple.giftLotus': // Backward-compatible alias
-      return FishingEngine.catchBigFish(params);
-
     case 'fishing.catchLeviathan':
+    case 'temple.fortune':
+    case 'temple.drawFortune':
+    case 'temple.giftLotus':
     case 'temple.grandCeremony': // Backward-compatible alias
-      return FishingEngine.catchLeviathan(params);
+      return ClubEngine.triggerGift(params);
 
+    case 'bar.getState':
     case 'fishing.getState':
     case 'temple.getState':
       return getPublicState();
 
+    case 'bar.getLeaderboard':
     case 'fishing.getLeaderboard':
     case 'temple.getLeaderboard':
-      return getLeaderboard(params.limit || 6);
+      return getLeaderboard(params.limit || 3);
 
+    case 'bar.resetState':
     case 'fishing.resetState':
     case 'temple.resetMerit':
-      return FishingEngine.resetState();
+      return ClubEngine.resetState();
 
+    case 'bar.setSettings':
     case 'fishing.setSettings':
     case 'temple.setSettings':
-      return FishingEngine.updateSettings(params);
+      return ClubEngine.updateSettings(params);
 
+    case 'bar.connectTikTok':
     case 'fishing.connectTikTok':
     case 'temple.connectTikTok':
       return await connectTikTokLive(params.username);
 
+    case 'bar.disconnectTikTok':
     case 'fishing.disconnectTikTok':
     case 'temple.disconnectTikTok':
       return disconnectTikTokLive();
 
+    case 'bar.startAutoSim':
     case 'fishing.startAutoSim':
       configureAutoSim(true);
       return getPublicState();
 
+    case 'bar.stopAutoSim':
     case 'fishing.stopAutoSim':
       configureAutoSim(false);
       return getPublicState();
@@ -1350,11 +1053,6 @@ app.post('/rpc', async (req, res) => {
   }
 });
 
-// Danh mục cá API
-app.get('/api/fish-catalog', (_req, res) => {
-  res.json({ ok: true, catalog: FISH_CATALOG });
-});
-
 // ZeroTTS HTTP Endpoint (Mai Chi default)
 app.all('/api/tts', async (req, res) => {
   const text = (req.body?.text || req.query?.text || '').trim();
@@ -1403,7 +1101,7 @@ wss.on('connection', (ws) => {
   ws.send(
     JSON.stringify({
       jsonrpc: '2.0',
-      method: 'fishing.state',
+      method: 'bar.state',
       params: getPublicState()
     })
   );
@@ -1445,7 +1143,7 @@ const zeroTts = new ZeroTTSManager();
 
 server.listen(PORT, () => {
   console.log(`============================================================`);
-  console.log(`🎣 HỒ CÂU CÁ GIẢI TRÍ TIKTOK LIVE RPC ĐÃ KHỞI ĐỘNG`);
+  console.log(`🪩 SÀN QUẨY VŨ TRƯỜNG TIKTOK LIVE RPC ĐÃ KHỞI ĐỘNG`);
   console.log(`📺 Màn hình Live (9:16 OBS): http://localhost:${PORT}`);
   console.log(`🎛️ Bảng điều khiển RPC Admin: http://localhost:${PORT}/admin`);
   console.log(`🔌 JSON-RPC 2.0 Endpoint   : http://localhost:${PORT}/rpc (ws://localhost:${PORT}/ws)`);

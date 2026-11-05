@@ -1,7 +1,7 @@
 {
   "name": "tiktok-live-temple-rpc",
   "version": "1.0.0",
-  "description": "TikTok Live RPC Interactive Fishing Sanctuary - Hồ Câu Cá Giải Trí (Bun.js + ZeroTTS giọng Mai Chi)",
+  "description": "TikTok Live RPC Interactive Bar & Nightclub Game - Sàn Quẩy Vũ Trường (Bun.js + ZeroTTS giọng Mai Chi)",
   "main": "server.js",
   "scripts": {
     "start": "bun run server.js",
@@ -10,6 +10,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "three": "^0.187.0",
     "tiktok-live-connector": "^2.1.0",
     "ws": "^8.18.0"
   }
