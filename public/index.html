@@ -71,20 +71,22 @@
         <!-- 5. HỆ THỐNG CÁC CẦN THỦ NGỒI VÒNG QUANH HỒ (18 VỊ TRÍ BỜ HỒ) -->
         <div class="shore-anglers-container" id="shoreAnglersContainer"></div>
 
-        <!-- 6. ĐIỂM TƯƠNG TÁC HAI BÊN HỒ CÂU -->
-        <div class="fishing-hotspot hotspot-bait" id="spotBait" title="Bấm để Thả Thính Dụ Cá">
-          <span class="hotspot-icon">🪱</span>
-          <span class="hotspot-label">Thả Thính</span>
-        </div>
+        <!-- 6. THANH ĐIỀU KHIỂN TƯƠNG TÁC HỒ CÂU TRÊN BẦU TRỜ (LAKE ACTION TOOLBAR) -->
+        <div class="lake-action-toolbar" id="lakeActionToolbar">
+          <button class="lake-action-btn btn-bait" id="spotBait" type="button" title="Bấm để Thả Thính Dụ Cá">
+            <span class="action-btn-icon">🪱</span>
+            <span class="action-btn-label">Thả Thính</span>
+          </button>
 
-        <div class="fishing-hotspot hotspot-cast" id="spotCast" title="Bấm để Quăng Cần Thả Phao">
-          <span class="hotspot-icon">🎣</span>
-          <span class="hotspot-label">Quăng Cần</span>
-        </div>
+          <button class="lake-action-btn btn-cast" id="spotCast" type="button" title="Bấm để Quăng Cần Câu Cá (Đợi 1 Phút)">
+            <span class="action-btn-icon">🎣</span>
+            <span class="action-btn-label">Quăng Cần (1p)</span>
+          </button>
 
-        <div class="fishing-hotspot hotspot-horn" id="spotHorn" title="Bấm để Thổi Còi Báo Cá">
-          <span class="hotspot-icon">📯</span>
-          <span class="hotspot-label">Báo Cá (<span id="statHorn">24</span>)</span>
+          <button class="lake-action-btn btn-horn" id="spotHorn" type="button" title="Bấm để Thổi Còi Báo Cá">
+            <span class="action-btn-icon">📯</span>
+            <span class="action-btn-label">Báo Cá (<span id="statHorn">24</span>)</span>
+          </button>
         </div>
 
         <!-- 7. DÒNG CHAT & HOẠT ĐỘNG TRỰC TIẾP NỔI TRÊN MÀN HÌNH (TIKTOK LIVE OVERLAY) -->
@@ -208,14 +210,36 @@
       </div>
 
       <div class="dock-section">
-        <div class="dock-section-title">🔊 Âm Thanh Hồ Câu & Giọng Đọc</div>
+        <div class="dock-section-title">🔊 Thiết Lập Âm Thanh & Giọng Đọc</div>
         <button class="dock-btn gold" id="btnUnlockAudio">
-          🔔 Bật Âm Thanh Hồ & Giọng Đọc
+          🔔 Bật Âm Thanh Hồ & Thử Giọng
         </button>
         <div class="dock-grid-2">
           <button class="dock-btn active-toggle" id="btnToggleTts">🎙️ Giọng Đọc: BẬT</button>
           <button class="dock-btn active-toggle" id="btnToggleMusic">🎵 Âm Hồ Nước: BẬT</button>
         </div>
+
+        <!-- BỘ CHỌN GIỌNG ĐỌC ZEROTTS (8 GIỌNG TIẾNG VIỆT) -->
+        <div class="volume-control-row" style="margin-top: 6px;">
+          <div class="volume-label-line">
+            <span>🗣️ Chọn Giọng Đọc (ZeroTTS)</span>
+          </div>
+          <select id="selectTtsVoice" class="dock-input" style="padding: 6px 10px; cursor: pointer; background: #071e2e; color: #fff; border: 1px solid rgba(41,182,246,0.4); border-radius: 8px;">
+            <option value="maichi" selected>Mai Chi (Nữ miền Bắc - Dịu dàng, chuẩn)</option>
+            <option value="kimoanh">Kim Oanh (Nữ miền Trung - Truyền cảm)</option>
+            <option value="hamy">Hà My (Nữ miền Nam - Ngọt ngào)</option>
+            <option value="baotrang">Bảo Trang (Nữ miền Bắc - Trong sáng)</option>
+            <option value="giahuy">Gia Huy (Nam miền Bắc - Hào sảng, trầm ấm)</option>
+            <option value="huuduc">Hữu Đức (Nam miền Nam - Rõ ràng, dứt khoát)</option>
+            <option value="quangminh">Quang Minh (Nam miền Bắc - Dứt khoát)</option>
+            <option value="tiendat">Tiến Đạt (Nam miền Bắc - Trẻ trung)</option>
+          </select>
+        </div>
+
+        <button class="dock-btn" id="btnTestVoice" style="margin-top: 6px;">
+          📢 Thử Phát Giọng Đọc Ngay
+        </button>
+
         <div class="volume-control-row">
           <div class="volume-label-line">
             <span>🎵 Âm lượng Hồ Nước</span>

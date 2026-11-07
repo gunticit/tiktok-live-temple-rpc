@@ -899,13 +899,45 @@
     callRpc('fishing.catchLeviathan', { user, coins: 199 });
   });
 
-  // Điều khiển âm thanh
+  // ============================================================================
+  // ĐIỀU KHIỂN ÂM THANH & THIẾT LẬP GIỌNG ĐỌC ZEROTTS
+  // ============================================================================
   const btnUnlockAudio = document.getElementById('btnUnlockAudio');
+  const btnTestVoice = document.getElementById('btnTestVoice');
+  const selectTtsVoice = document.getElementById('selectTtsVoice');
+
+  if (selectTtsVoice && window.FishingAudio) {
+    if (window.FishingAudio.ttsVoice) {
+      selectTtsVoice.value = window.FishingAudio.ttsVoice;
+    }
+    selectTtsVoice.addEventListener('change', (e) => {
+      const voice = e.target.value;
+      window.FishingAudio?.setVoice(voice);
+      callRpc('fishing.updateSettings', { ttsVoice: voice });
+      // Thử giọng mới ngay lập tức
+      window.FishingAudio?.testVoice(`Đã chuyển sang giọng đọc ${e.target.selectedOptions[0]?.text || voice}!`);
+    });
+  }
+
   if (btnUnlockAudio) {
     btnUnlockAudio.addEventListener('click', () => {
-      window.FishingAudio?.ensureContext();
-      btnUnlockAudio.textContent = '✅ Đã Bật Âm Thanh & Giọng Đọc';
+      const audio = window.FishingAudio;
+      if (!audio) return;
+      audio.ensureContext();
+      audio.testVoice('Hệ thống âm thanh hồ câu và giọng đọc đã sẵn sàng!');
+      btnUnlockAudio.textContent = '✅ Âm Thanh Đã Bật (Bấm Thử Lại)';
       btnUnlockAudio.classList.remove('gold');
+    });
+  }
+
+  if (btnTestVoice) {
+    btnTestVoice.addEventListener('click', () => {
+      const audio = window.FishingAudio;
+      if (!audio) return;
+      audio.ensureContext();
+      const currentVoice = selectTtsVoice?.value || audio.ttsVoice || 'maichi';
+      audio.setVoice(currentVoice);
+      audio.testVoice('Chúc mừng cần thủ vừa giật được cá chép vàng 5 ký tại hồ câu!');
     });
   }
 
@@ -925,6 +957,7 @@
         btnToggleMusic.textContent = '🎵 Âm Hồ Nước: TẮT';
         btnToggleMusic.classList.remove('active-toggle');
       }
+      callRpc('fishing.updateSettings', { bgMusicEnabled: audio.bgMusicEnabled });
     });
   }
 
@@ -936,12 +969,17 @@
       audio.ttsEnabled = !audio.ttsEnabled;
       btnToggleTts.textContent = audio.ttsEnabled ? '🎙️ Giọng Đọc: BẬT' : '🎙️ Giọng Đọc: TẮT';
       btnToggleTts.classList.toggle('active-toggle', audio.ttsEnabled);
+      callRpc('fishing.updateSettings', { ttsEnabled: audio.ttsEnabled });
     });
   }
 
   const sliderMusicVol = document.getElementById('sliderMusicVol');
   const valMusicVol = document.getElementById('valMusicVol');
   if (sliderMusicVol) {
+    if (window.FishingAudio) {
+      sliderMusicVol.value = Math.round(window.FishingAudio.bgBaseVolume * 100);
+      if (valMusicVol) valMusicVol.textContent = `${sliderMusicVol.value}%`;
+    }
     sliderMusicVol.addEventListener('input', (e) => {
       const val = e.target.value;
       if (valMusicVol) valMusicVol.textContent = `${val}%`;
@@ -952,6 +990,10 @@
   const sliderTtsVol = document.getElementById('sliderTtsVol');
   const valTtsVol = document.getElementById('valTtsVol');
   if (sliderTtsVol) {
+    if (window.FishingAudio) {
+      sliderTtsVol.value = Math.round(window.FishingAudio.ttsVolume * 100);
+      if (valTtsVol) valTtsVol.textContent = `${sliderTtsVol.value}%`;
+    }
     sliderTtsVol.addEventListener('input', (e) => {
       const val = e.target.value;
       if (valTtsVol) valTtsVol.textContent = `${val}%`;

@@ -409,34 +409,36 @@ function findMatchingGift(rawName, defaultCoins = 1) {
 
 // ============================================================================
 // 1.2. HỆ THỐNG ĐA CẦN THỦ NGỒI QUANH BỜ HỒ (SHORE ANGLERS RING SYSTEM)
-// Mỗi người xem là 1 cần thủ độc lập ngồi quanh các bờ hồ (Bắc, Trái, Phải, Tiền cảnh)
+// Tọa độ 16 vị trí chuẩn xác ôm trọn lòng hồ, bảo đảm 100% người câu nằm trọn trong khung hình
 // ============================================================================
 const SHORE_SLOTS = [
-  // 1. Bờ Phía Bắc / Bờ Xa (5 cần thủ, ngắm xa, nhìn xuống hồ)
-  { id: 0, shoreX: 280, shoreY: 720, waterX: 330, waterY: 840, dir: 'down', scale: 0.72, zIndex: 6 },
-  { id: 1, shoreX: 410, shoreY: 700, waterX: 430, waterY: 820, dir: 'down', scale: 0.72, zIndex: 6 },
-  { id: 2, shoreX: 540, shoreY: 690, waterX: 540, waterY: 810, dir: 'down', scale: 0.72, zIndex: 6 },
-  { id: 3, shoreX: 670, shoreY: 700, waterX: 650, waterY: 820, dir: 'down', scale: 0.72, zIndex: 6 },
-  { id: 4, shoreX: 800, shoreY: 720, waterX: 750, waterY: 840, dir: 'down', scale: 0.72, zIndex: 6 },
+  // 1. Bờ Phía Bắc / Bờ Xa (4 cần thủ ngắm non nước hữu tình, buông cần xuống hồ)
+  // Đặt tại y = 660-675 (mép nước xa), x rải từ 280 đến 790, hoàn toàn thoáng đãng
+  { id: 0, shoreX: 280, shoreY: 670, waterX: 340, waterY: 790, dir: 'down', scale: 0.68, zIndex: 6 },
+  { id: 1, shoreX: 450, shoreY: 655, waterX: 470, waterY: 785, dir: 'down', scale: 0.68, zIndex: 6 },
+  { id: 2, shoreX: 620, shoreY: 655, waterX: 610, waterY: 785, dir: 'down', scale: 0.68, zIndex: 6 },
+  { id: 3, shoreX: 790, shoreY: 670, waterX: 740, waterY: 790, dir: 'down', scale: 0.68, zIndex: 6 },
 
-  // 2. Bờ Trái (4 cần thủ, ngồi ven cỏ, nhìn sang phải vào hồ)
-  { id: 5, shoreX: 130, shoreY: 870, waterX: 270, waterY: 910, dir: 'right', scale: 0.86, zIndex: 8 },
-  { id: 6, shoreX: 100, shoreY: 1020, waterX: 250, waterY: 1040, dir: 'right', scale: 0.90, zIndex: 8 },
-  { id: 7, shoreX: 110, shoreY: 1180, waterX: 260, waterY: 1180, dir: 'right', scale: 0.95, zIndex: 9 },
-  { id: 8, shoreX: 135, shoreY: 1340, waterX: 280, waterY: 1310, dir: 'right', scale: 1.00, zIndex: 10 },
+  // 2. Bờ Cỏ Phía Tây / Trái (4 cần thủ ngồi ven đầm sen, buông cần sang phải vào hồ)
+  // Đặt tại x = 125-145 (cách mép trái màn hình 65-75px an toàn), y rải từ 830 đến 1340
+  { id: 4, shoreX: 130, shoreY: 830,  waterX: 300, waterY: 880,  dir: 'right', scale: 0.82, zIndex: 8 },
+  { id: 5, shoreX: 125, shoreY: 1000, waterX: 290, waterY: 1030, dir: 'right', scale: 0.86, zIndex: 8 },
+  { id: 6, shoreX: 130, shoreY: 1170, waterX: 300, waterY: 1180, dir: 'right', scale: 0.90, zIndex: 9 },
+  { id: 7, shoreX: 145, shoreY: 1340, waterX: 320, waterY: 1320, dir: 'right', scale: 0.95, zIndex: 10 },
 
-  // 3. Bờ Phải (4 cần thủ, ngồi bến gỗ, nhìn sang trái vào hồ)
-  { id: 9, shoreX: 950, shoreY: 870, waterX: 810, waterY: 910, dir: 'left', scale: 0.86, zIndex: 8 },
-  { id: 10, shoreX: 980, shoreY: 1020, waterX: 830, waterY: 1040, dir: 'left', scale: 0.90, zIndex: 8 },
-  { id: 11, shoreX: 970, shoreY: 1180, waterX: 820, waterY: 1180, dir: 'left', scale: 0.95, zIndex: 9 },
-  { id: 12, shoreX: 945, shoreY: 1340, waterX: 800, waterY: 1310, dir: 'left', scale: 1.00, zIndex: 10 },
+  // 3. Bờ Phía Đông / Phải (4 cần thủ ngồi ven bến gỗ trên, buông cần sang trái vào hồ)
+  // Đặt tại x = 910-935 (cách mép phải màn hình 85-95px an toàn), y rải từ 830 đến 1330
+  { id: 8,  shoreX: 930, shoreY: 830,  waterX: 760, waterY: 880,  dir: 'left', scale: 0.82, zIndex: 8 },
+  { id: 9,  shoreX: 935, shoreY: 1000, waterX: 770, waterY: 1030, dir: 'left', scale: 0.86, zIndex: 8 },
+  { id: 10, shoreX: 925, shoreY: 1170, waterX: 760, waterY: 1180, dir: 'left', scale: 0.90, zIndex: 9 },
+  { id: 11, shoreX: 910, shoreY: 1330, waterX: 750, waterY: 1320, dir: 'left', scale: 0.95, zIndex: 10 },
 
-  // 4. Bờ Trước Tiền Cảnh (5 cần thủ VIP ngồi ghế câu ven bến, nhìn lên mặt hồ)
-  { id: 13, shoreX: 210, shoreY: 1530, waterX: 300, waterY: 1400, dir: 'up', scale: 1.12, zIndex: 14 },
-  { id: 14, shoreX: 370, shoreY: 1560, waterX: 420, waterY: 1420, dir: 'up', scale: 1.15, zIndex: 14 },
-  { id: 15, shoreX: 540, shoreY: 1575, waterX: 540, waterY: 1430, dir: 'up', scale: 1.18, zIndex: 14 }, // Ghế VIP trung tâm
-  { id: 16, shoreX: 710, shoreY: 1560, waterX: 660, waterY: 1420, dir: 'up', scale: 1.15, zIndex: 14 },
-  { id: 17, shoreX: 880, shoreY: 1530, waterX: 780, waterY: 1400, dir: 'up', scale: 1.12, zIndex: 14 }
+  // 4. Bờ Tiền Cảnh / Bến Gỗ Dưới (4 cần thủ VIP ngồi bến gỗ & bờ cỏ, buông cần lên mặt hồ)
+  // Đặt tại y = 1475-1495, cách chat popup & HUD đáy >120px, khoảng cách ngang rộng rãi 210px
+  { id: 12, shoreX: 230, shoreY: 1475, waterX: 350, waterY: 1390, dir: 'up', scale: 1.02, zIndex: 14 },
+  { id: 13, shoreX: 440, shoreY: 1490, waterX: 470, waterY: 1400, dir: 'up', scale: 1.05, zIndex: 14 },
+  { id: 14, shoreX: 650, shoreY: 1495, waterX: 620, waterY: 1405, dir: 'up', scale: 1.08, zIndex: 14 }, // Ghế VIP trung tâm bến
+  { id: 15, shoreX: 850, shoreY: 1480, waterX: 730, waterY: 1395, dir: 'up', scale: 1.05, zIndex: 14 }
 ];
 
 const activeLakeAnglers = new Map();
@@ -502,12 +504,22 @@ function registerLakeAngler(user, uniqueId, avatar, action = 'idle', fish = null
 }
 
 const SIM_ANGLERS = [
-  { user: 'Hải Đăng Cần Thủ', uniqueId: 'haidang.angler', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=haidang', wish: 'Thả mồi trùn quế, săn chú cá chép vàng 5 ký!' },
-  { user: 'Trần Tuấn Sát Cá', uniqueId: 'tuancauca_99', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=tuancauca', wish: 'Quyết tâm giật con cá tra khủng phá kỷ lục hồ câu!' },
-  { user: 'Bích Thảo Thư Thái', uniqueId: 'thao.lotus', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=thao', wish: 'Em mới tập câu, xin một chú cá rô đồng xinh xinh lấy may ạ' },
+  { user: 'Hải Đăng Cần Thủ', uniqueId: 'haidang.angler', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=haidang', wish: 'Thả mồi trùn quế, săn cá chép vàng 5 ký!' },
+  { user: 'Trần Tuấn Sát Cá', uniqueId: 'tuancauca_99', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=tuancauca', wish: 'Quyết tâm giật con cá tra khủng phá kỷ lục!' },
+  { user: 'Bích Thảo Thư Thái', uniqueId: 'thao.lotus', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=thao', wish: 'Em mới tập câu, xin một chú cá rô đồng lấy may ạ' },
   { user: 'Hoàng Long Cần Titan', uniqueId: 'long_titan_88', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=longtitan', wish: 'Săn thủy quái hồ sâu, kéo cong vút cần titan!' },
   { user: 'Minh Quân Bến Thuyền', uniqueId: 'quan.river', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=quan', wish: 'Chúc anh em cần thủ một ngày giỏ đầy ắp cá béo!' },
-  { user: 'Diệu Hương Thư Giãn', uniqueId: 'huong_healing', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=huong', wish: 'Ngồi câu cá ngắm mây trời thanh thản, chúc cả nhà bình an!' }
+  { user: 'Diệu Hương Thư Giãn', uniqueId: 'huong_healing', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=huong', wish: 'Ngồi câu cá ngắm mây trời thanh thản, chúc cả nhà bình an!' },
+  { user: 'Thanh Tùng Bến Sông', uniqueId: 'tung.angler', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=tung', wish: 'Vung cần bờ cỏ, săn cá lăng hoa ghềnh đá!' },
+  { user: 'Phương Linh Câu Cá', uniqueId: 'linh.fishing', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=linh', wish: 'Chúc bến câu hôm nay tôm cá đầy khoang!' },
+  { user: 'Bảo Nam Hồ Tây', uniqueId: 'nam.hotay', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=nam', wish: 'Đợi 1 phút cá cắn câu, kiên nhẫn ắt có quà to!' },
+  { user: 'Thùy Dương Bờ Sen', uniqueId: 'duong.lotus', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=duong', wish: 'Hồ nước thanh tịnh ngắm hoa sen nở rực rỡ!' },
+  { user: 'Quốc Việt Titan', uniqueId: 'viet.pro', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=viet', wish: 'Hôm nay trời đẹp cá đi ăn mạnh, kéo đã tay!' },
+  { user: 'Mai Chi Cát Tường', uniqueId: 'maichi.lucky', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=maichi', wish: 'Gửi lời chúc đại cát đại lợi đến toàn thể anh em!' },
+  { user: 'Anh Dũng Sông Sâu', uniqueId: 'dung.river', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=dung', wish: 'Cần thủ kiên trì ắt gặt hái mẻ cá rồng!' },
+  { user: 'Khánh Toàn Bến Cũ', uniqueId: 'toan.dock', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=toan', wish: 'Bến gỗ đón bình minh, thả thính dụ cá to!' },
+  { user: 'Ngọc Hân Cần Trúc', uniqueId: 'han.bamboo', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=han', wish: 'Mồi thơm phao đỏ, giỏ cá đầy ắp!' },
+  { user: 'Hữu Phước Bến Hồ', uniqueId: 'phuoc.lake', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=phuoc', wish: 'Buông cần thanh tịnh, tâm an vạn sự lành!' }
 ];
 
 function initShoreAnglers() {

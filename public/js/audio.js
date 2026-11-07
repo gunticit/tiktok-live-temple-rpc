@@ -18,7 +18,8 @@ class FishingAudioEngine {
     this.sfxEnabled = true;
     this.bgMusicEnabled = true;
     this.ttsEnabled = true;
-    this.ttsVoice = 'maichi';
+    const savedVoice = localStorage.getItem('fishing_tts_voice');
+    this.ttsVoice = savedVoice || 'maichi';
 
     const savedMusicVol = parseFloat(localStorage.getItem('fishing_music_vol'));
     const savedTtsVol = parseFloat(localStorage.getItem('fishing_tts_vol'));
@@ -45,6 +46,21 @@ class FishingAudioEngine {
       this.startLakeAmbience();
     }
     return this.ctx;
+  }
+
+  setVoice(voice) {
+    if (!voice) return;
+    this.ttsVoice = String(voice).toLowerCase().trim();
+    try {
+      localStorage.setItem('fishing_tts_voice', this.ttsVoice);
+    } catch (_) {}
+  }
+
+  testVoice(text) {
+    this.ensureContext();
+    this.playCelebrationChime();
+    const sample = text || 'Chào mừng quý cần thủ đến với Hồ Câu Giải Trí! Chúc anh em giật được nhiều cá to!';
+    this.enqueueTts(sample, { voice: this.ttsVoice });
   }
 
   getDuckedVolume() {

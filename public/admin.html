@@ -273,6 +273,43 @@
           Trạng thái TikTok: Chưa kết nối
         </div>
       </div>
+
+      <!-- CỘT 3: THIẾT LẬP ÂM THANH & GIỌNG ĐỌC ZEROTTS -->
+      <div class="card" style="grid-column: span 2;">
+        <h2>🔊 Thiết Lập Âm Thanh & Giọng Đọc (ZeroTTS AI)</h2>
+        <div class="row" style="align-items: center; justify-content: space-between;">
+          <span style="font-size: 14px; color: #b0bec5;">Trạng thái ZeroTTS:</span>
+          <span id="ttsStatusBadge" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(76,175,80,0.2); color: #81c784; border: 1px solid #4caf50;">🟢 Đang kiểm tra...</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 14px;">
+          <div class="row" style="flex-direction: column; gap: 6px;">
+            <label style="font-size: 13px; color: var(--blue); font-weight: 700;">🗣️ Chọn Giọng Đọc Mặc Định:</label>
+            <select id="adminSelectVoice" class="input" style="cursor: pointer; padding: 10px;">
+              <option value="maichi" selected>Mai Chi (Nữ miền Bắc - Dịu dàng, chuẩn)</option>
+              <option value="kimoanh">Kim Oanh (Nữ miền Trung - Truyền cảm)</option>
+              <option value="hamy">Hà My (Nữ miền Nam - Ngọt ngào)</option>
+              <option value="baotrang">Bảo Trang (Nữ miền Bắc - Trong sáng)</option>
+              <option value="giahuy">Gia Huy (Nam miền Bắc - Hào sảng, trầm ấm)</option>
+              <option value="huuduc">Hữu Đức (Nam miền Nam - Rõ ràng, dứt khoát)</option>
+              <option value="quangminh">Quang Minh (Nam miền Bắc - Dứt khoát)</option>
+              <option value="tiendat">Tiến Đạt (Nam miền Bắc - Trẻ trung)</option>
+            </select>
+          </div>
+
+          <div class="row" style="flex-direction: column; gap: 6px;">
+            <label style="font-size: 13px; color: var(--blue); font-weight: 700;">💬 Câu Đọc Thử Nghiệm:</label>
+            <input type="text" id="adminInputTtsText" class="input" value="Chúc mừng cần thủ vừa giật được cá chép vàng 5 ký tại hồ câu giải trí!" />
+          </div>
+        </div>
+
+        <div class="row" style="flex-wrap: wrap; gap: 10px;">
+          <button class="btn gold" id="adminBtnTestTts">📢 Phát Thử Giọng Đọc Ngay</button>
+          <button class="btn" id="adminBtnToggleTts">🎙️ Giọng Đọc: BẬT</button>
+          <button class="btn" id="adminBtnToggleMusic">🎵 Âm Hồ Nước: BẬT</button>
+        </div>
+        <audio id="adminAudioPlayer" style="display: none;"></audio>
+      </div>
     </div>
 
     <!-- BẢNG VÀNG CẦN THỦ & NHẬT KÝ -->
@@ -495,6 +532,95 @@
         log('Đã đặt lại dữ liệu hồ câu về 0.');
         refreshState();
       }
+    };
+
+    // ------------------------------------------------------------------------
+    // THIẾT LẬP ÂM THANH & GIỌNG ĐỌC ZEROTTS (ADMIN)
+    // ------------------------------------------------------------------------
+    const ttsStatusBadge = document.getElementById('ttsStatusBadge');
+    const adminSelectVoice = document.getElementById('adminSelectVoice');
+    const adminInputTtsText = document.getElementById('adminInputTtsText');
+    const adminBtnTestTts = document.getElementById('adminBtnTestTts');
+    const adminBtnToggleTts = document.getElementById('adminBtnToggleTts');
+    const adminBtnToggleMusic = document.getElementById('adminBtnToggleMusic');
+    const adminAudioPlayer = document.getElementById('adminAudioPlayer');
+
+    async function checkTtsStatus() {
+      try {
+        const res = await rpc('tts.status');
+        if (res?.result) {
+          const s = res.result;
+          if (s.ready || s.status === 'ready') {
+            ttsStatusBadge.textContent = '🟢 Sẵn Sàng (Ready - ZeroTTS)';
+            ttsStatusBadge.style.color = '#81c784';
+            ttsStatusBadge.style.borderColor = '#4caf50';
+            ttsStatusBadge.style.background = 'rgba(76,175,80,0.2)';
+          } else {
+            ttsStatusBadge.textContent = `🟡 ${s.status || 'Đang nạp model...'}`;
+            ttsStatusBadge.style.color = '#ffd54f';
+            ttsStatusBadge.style.borderColor = '#ffb300';
+            ttsStatusBadge.style.background = 'rgba(255,179,0,0.15)';
+          }
+        }
+      } catch (_) {
+        ttsStatusBadge.textContent = '⚪ Chờ kết nối';
+      }
+    }
+    checkTtsStatus();
+    setInterval(checkTtsStatus, 5000);
+
+    adminSelectVoice.onchange = async () => {
+      const voice = adminSelectVoice.value;
+      await rpc('fishing.updateSettings', { ttsVoice: voice });
+      log(`Đã đổi giọng đọc mặc định sang: <strong>${adminSelectVoice.selectedOptions[0]?.text || voice}</strong>`);
+      refreshState();
+    };
+
+    adminBtnTestTts.onclick = async () => {
+      const text = adminInputTtsText.value.trim() || 'Xin chào cần thủ!';
+      const voice = adminSelectVoice.value || 'maichi';
+      adminBtnTestTts.textContent = '⏳ Đang tổng hợp giọng...';
+      adminBtnTestTts.disabled = true;
+      try {
+        const res = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, voice })
+        });
+        const data = await res.json();
+        if (data && data.ok && data.url) {
+          adminAudioPlayer.src = data.url;
+          adminAudioPlayer.play().catch(e => log(`Lỗi phát audio: ${e.message}`));
+          log(`🔊 Đang phát giọng đọc mẫu [${voice}]: "${text}" (${data.synthSec || 1}s)`);
+        } else {
+          log(`❌ Lỗi tạo giọng đọc: ${data?.error || 'Không khả dụng'}`);
+        }
+      } catch (err) {
+        log(`❌ Lỗi kết nối TTS: ${err.message}`);
+      } finally {
+        adminBtnTestTts.textContent = '📢 Phát Thử Giọng Đọc Ngay';
+        adminBtnTestTts.disabled = false;
+      }
+    };
+
+    let adminTtsOn = true;
+    adminBtnToggleTts.onclick = async () => {
+      adminTtsOn = !adminTtsOn;
+      adminBtnToggleTts.textContent = adminTtsOn ? '🎙️ Giọng Đọc: BẬT' : '🎙️ Giọng Đọc: TẮT';
+      adminBtnToggleTts.classList.toggle('gold', adminTtsOn);
+      await rpc('fishing.updateSettings', { ttsEnabled: adminTtsOn });
+      log(`Đã ${adminTtsOn ? 'BẬT' : 'TẮT'} giọng đọc ZeroTTS.`);
+      refreshState();
+    };
+
+    let adminMusicOn = true;
+    adminBtnToggleMusic.onclick = async () => {
+      adminMusicOn = !adminMusicOn;
+      adminBtnToggleMusic.textContent = adminMusicOn ? '🎵 Âm Hồ Nước: BẬT' : '🎵 Âm Hồ Nước: TẮT';
+      adminBtnToggleMusic.classList.toggle('gold', adminMusicOn);
+      await rpc('fishing.updateSettings', { bgMusicEnabled: adminMusicOn });
+      log(`Đã ${adminMusicOn ? 'BẬT' : 'TẮT'} nhạc nền hồ nước.`);
+      refreshState();
     };
 
     // Tự động làm mới mỗi 3 giây
