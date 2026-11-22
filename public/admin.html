@@ -3,34 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bảng Điều Khiển JSON-RPC 2.0 — Chùa Linh Ứng TikTok Live</title>
+  <title>Bảng Điều Khiển JSON-RPC 2.0 — Hoa Sơn Luận Kiếm 3D</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #120504;
-      --card: #210906;
-      --border: rgba(244, 193, 80, 0.38);
-      --gold: #f4c150;
-      --gold-light: #ffe694;
-      --text: #fff8eb;
-      --muted: #d6ba8a;
+      --bg: #0c0712;
+      --card: #190e24;
+      --border: rgba(245, 158, 11, 0.35);
+      --gold: #f59e0b;
+      --gold-light: #fef08a;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: radial-gradient(circle at 50% 0%, #330c08 0%, #100302 80%);
+      background: radial-gradient(circle at 50% 0%, #29123c 0%, #08040d 80%);
       color: var(--text);
       font-family: 'Be Vietnam Pro', sans-serif;
       min-height: 100vh;
-      padding: 28px;
+      padding: 24px;
     }
     .container {
       max-width: 1280px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 22px;
+      gap: 20px;
     }
     .top-bar {
       display: flex;
@@ -38,206 +38,417 @@
       justify-content: space-between;
       background: var(--card);
       border: 1.5px solid var(--border);
-      border-radius: 18px;
-      padding: 18px 24px;
+      border-radius: 16px;
+      padding: 16px 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
     .top-title {
-      font-family: 'Noto Serif', serif;
-      font-size: 26px;
+      font-size: 22px;
+      font-weight: 800;
       color: var(--gold-light);
-    }
-    .top-sub {
-      font-size: 14px;
-      color: var(--muted);
-      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .top-links {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
     .btn {
       cursor: pointer;
       border: 1px solid var(--border);
-      background: linear-gradient(180deg, #6b140e 0%, #3d0906 100%);
+      background: #2a153d;
       color: var(--gold-light);
       padding: 10px 16px;
       border-radius: 10px;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      gap: 6px;
+      transition: all 0.2s;
     }
-    .btn.gold {
-      background: linear-gradient(180deg, #f4c150 0%, #c48312 100%);
-      color: #1f0604;
-      border-color: #fff3b0;
+    .btn:hover {
+      background: var(--gold);
+      color: #000;
+      border-color: #fff;
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #000;
+      border: none;
+    }
+    .btn.danger {
+      background: #dc2626;
+      color: #fff;
+      border-color: #ef4444;
     }
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
     .card {
       background: var(--card);
       border: 1.5px solid var(--border);
-      border-radius: 18px;
+      border-radius: 16px;
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
     .card h2 {
-      font-size: 18px;
+      font-size: 16px;
       color: var(--gold-light);
-      border-bottom: 1px solid rgba(244, 193, 80, 0.2);
-      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+      padding-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .row {
       display: flex;
       gap: 10px;
+      align-items: center;
     }
-    input, select, textarea {
-      width: 100%;
-      background: #120403;
+    input[type="text"], select {
+      flex: 1;
+      background: #281639;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 14px;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
     }
-    .action-grid {
+    .badge-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge-status.connected { background: #22c55e; color: #052e16; }
+    .badge-status.disconnected { background: #ef4444; color: #fff; }
+    .sect-buttons-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .action-buttons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-    pre {
-      background: #0b0202;
-      border: 1px solid rgba(244, 193, 80, 0.25);
+    .log-box {
+      background: #0d0714;
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 10px;
       padding: 12px;
-      font-size: 12.5px;
-      color: #9ef0c0;
-      overflow-x: auto;
-      max-height: 280px;
+      height: 240px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
+    .log-entry {
+      color: #94a3b8;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+      padding-bottom: 4px;
+    }
+    .log-entry.crit { color: #fde047; font-weight: bold; }
+    .log-entry.champ { color: #f59e0b; font-weight: bold; }
   </style>
 </head>
 <body>
   <div class="container">
-    <header class="top-bar">
-      <div>
-        <div class="top-title">🪷 BẢNG ĐIỀU KHIỂN CHÙA ONLINE TIKTOK LIVE RPC (BUN.JS + ZEROTTS MAI CHI)</div>
-        <div class="top-sub" id="statusBanner">Đang tải trạng thái hệ thống...</div>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="top-title">
+        ⚔️ QUẢN TRỊ LÔI ĐÀI HOA SƠN LUẬN KIẾM 3D
       </div>
       <div class="top-links">
-        <a class="btn" href="/?obs=1" target="_blank">📺 Mở Màn Hình OBS 9:16 Sạch (?obs=1)</a>
-        <a class="btn gold" href="/" target="_blank">🪷 Mở Màn Hình Live Chính</a>
+        <a href="/" target="_blank" class="btn primary">📺 Mở Màn Hình 3D (OBS 9:16 / 16:9)</a>
       </div>
-    </header>
+    </div>
 
+    <!-- MAIN GRID -->
     <div class="grid">
-      <section class="card">
-        <h2>📡 1. Kết Nối Phòng TikTok Live & Giọng Đọc ZeroTTS (Mai Chi)</h2>
+      <!-- 1. KẾT NỐI TIKTOK LIVE -->
+      <div class="card">
+        <h2>📡 KẾT NỐI TIKTOK LIVE CHAT & GIFT</h2>
         <div class="row">
-          <input type="text" id="ttUser" placeholder="Nhập @username TikTok đang phát Live..." />
-          <button class="btn gold" id="btnConn">Kết Nối Live</button>
-          <button class="btn" id="btnDisc">Ngắt</button>
+          <input type="text" id="tiktokUsernameInput" placeholder="Nhập @username hoặc link TikTok Live" value="wuxia_live" />
+          <button class="btn primary" id="btnConnectTikTok">Kết Nối</button>
+          <button class="btn danger" id="btnDisconnectTikTok">Ngắt</button>
         </div>
         <div class="row">
-          <input type="text" id="ttsDirectText" value="Nam mô A Di Đà Phật. Chùa Linh Ứng Online xin kính chào quý thí chủ thập phương." />
-          <button class="btn gold" id="btnSpeakMaiChi">🎙️ Đọc thử Giọng Mai Chi</button>
+          <span>Trạng thái:</span>
+          <span class="badge-status disconnected" id="tiktokStatusBadge">Chưa kết nối</span>
+          <span id="tiktokViewersText" style="font-size: 12px; color: var(--muted); margin-left: 10px;"></span>
         </div>
-        <audio id="adminAudioPreview" controls style="width: 100%; height: 38px;"></audio>
-      </section>
-
-      <section class="card">
-        <h2>🙏 2. Gửi Lệnh Tương Tác JSON-RPC 2.0</h2>
-        <div class="row">
-          <input type="text" id="rpcUser" value="Đại Thí Chủ Minh Tâm" placeholder="Tên người xem..." />
-          <input type="text" id="rpcWish" value="Cầu gia đạo bình an, tài lộc vượng phát" placeholder="Lời cầu nguyện..." />
-        </div>
-        <div class="action-grid">
-          <button class="btn gold" onclick="sendRpc('temple.burnIncense', { count: 3 })">🔥 Thắp 3 Nén Hương</button>
-          <button class="btn" onclick="sendRpc('temple.sendPrayer', {})">🏮 Thả Đèn Hoa Đăng</button>
-          <button class="btn" onclick="sendRpc('temple.strikeWoodenFish', { count: 9 })">🪵 Gõ Mõ 9 Nhịp</button>
-          <button class="btn" onclick="sendRpc('temple.ringBell', { count: 1, readTts: true })">🔔 Thỉnh Đại Hồng Chung</button>
-          <button class="btn" onclick="sendRpc('temple.drawFortune', {})">🎋 Xin Xăm / Gieo Quẻ</button>
-          <button class="btn" onclick="sendRpc('temple.offerGift', { giftType: 'fruit', coins: 30, giftName: 'Mâm Ngũ Quả Cát Tường' })">🍑 Dâng Mâm Ngũ Quả</button>
-          <button class="btn gold" onclick="sendRpc('temple.grandCeremony', { coins: 500, giftName: 'Đại Lễ Kim Long Chầu Phật' })">🐉 Đại Lễ Kim Long</button>
-          <button class="btn" onclick="sendRpc('temple.resetMerit', {})">♻️ Đặt Lại Bảng Công Đức</button>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>💬 3. Giả Lập Bình Luận Người Xem TikTok</h2>
-        <div class="row">
-          <input type="text" id="simComment" value="Con xin gieo quẻ cầu tài lộc đầu tháng ạ" placeholder="Nhập nội dung bình luận TikTok..." />
-          <button class="btn gold" id="btnSendComment">Gửi Comment</button>
-        </div>
-        <p style="font-size: 13px; color: var(--muted);">
-          Từ khóa tự động nhận diện: <code>thắp hương</code>, <code>bái phật</code>, <code>cầu ...</code>, <code>xin xăm / gieo quẻ</code>, <code>thỉnh chuông</code>, <code>gõ mõ</code>.
+        <p style="font-size: 12px; color: var(--muted); line-height: 1.5;">
+          💡 Người xem chỉ cần vào xem livestream TikTok và comment <strong>"chiến"</strong> hoặc tên môn phái/binh khí, nhân vật 3D sẽ xuất hiện trên lôi đài!
         </p>
-      </section>
+      </div>
 
-      <section class="card">
-        <h2>🔌 4. Nhật Ký Phản Hồi JSON-RPC 2.0 (`/rpc`)</h2>
-        <pre id="rpcOutput">{ "status": "Sẵn sàng nhận lệnh JSON-RPC 2.0" }</pre>
-      </section>
+      <!-- 2. THIẾT LẬP HÌNH ẢNH 3D TỪ XA -->
+      <div class="card">
+        <h2>⚙️ THIẾT LẬP HÌNH ẢNH 3D TỪ XA</h2>
+        <div class="row">
+          <label style="width: 120px; font-size: 13px;">Chất lượng 3D:</label>
+          <select id="adminQuality">
+            <option value="high">💎 Tuyệt Đẹp (Ultra 3D)</option>
+            <option value="medium">🌟 Tiêu Chuẩn (Medium)</option>
+            <option value="low">⚡ Tiết Kiệm (Low - Không bóng)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label style="width: 120px; font-size: 13px;">Góc Camera:</label>
+          <select id="adminCamera">
+            <option value="cinematic">🎥 Toàn Cảnh Cinematic</option>
+            <option value="action">🎥 Hành Động Zoom Theo Đấu</option>
+            <option value="champion">👑 Theo Sát Võ Lâm Minh Chủ</option>
+            <option value="topdown">📐 Nhìn Từ Trên Xuống</option>
+            <option value="orbit">🖱️ Tự Do (Orbit Drag)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label style="width: 120px; font-size: 13px;">Thời tiết Lôi Đài:</label>
+          <select id="adminEnvironment">
+            <option value="sakura">🌸 Cánh Hoa Đào Rơi</option>
+            <option value="snow">❄️ Bão Tuyết Sơn Đỉnh</option>
+            <option value="fire">🔥 Hỏa Diễm Tro Tàn</option>
+            <option value="fog">🌫️ Sương Mù Huyền Bí</option>
+            <option value="none">🚫 Tắt</option>
+          </select>
+        </div>
+        <button class="btn primary" id="btnApply3D">Đồng Bộ Cài Đặt 3D Xuống Màn Hình</button>
+      </div>
+
+      <!-- 3. MÔ PHỎNG TEST GIA NHẬP MÔN PHÁI & BINH KHÍ -->
+      <div class="card">
+        <h2>🥋 GIẢ LẬP GIA NHẬP 6 ĐẠI MÔN PHÁI</h2>
+        <div class="row">
+          <input type="text" id="simUserInput" placeholder="Tên hiệp khách giả lập" value="Tiêu Phong" />
+          <button class="btn" id="btnSimRandomJoin">⚔️ Gõ "Chiến" (Ngẫu nhiên)</button>
+        </div>
+        <div class="sect-buttons-grid">
+          <button class="btn" onclick="simJoinSect('thieulam', 'Hàng Ma Côn')">📿 Thiếu Lâm (Côn)</button>
+          <button class="btn" onclick="simJoinSect('vodang', 'Thái Cực Kiếm')">☯️ Võ Đang (Kiếm)</button>
+          <button class="btn" onclick="simJoinSect('caibang', 'Đả Cẩu Bổng')">🐉 Cái Bang (Bổng)</button>
+          <button class="btn" onclick="simJoinSect('ngami', 'Ỷ Thiên Kiếm')">🌸 Nga Mi (Kiếm)</button>
+          <button class="btn" onclick="simJoinSect('minhgiao', 'Huyết Long Đao')">🔥 Minh Giáo (Đao)</button>
+          <button class="btn" onclick="simJoinSect('duongmon', 'Ám Khí Phi Tiêu')">⚡ Đường Môn (Ám Khí)</button>
+        </div>
+      </div>
+
+      <!-- 4. MÔ PHỎNG CHIẾN ĐẤU & GIFT TUYỆT KỸ -->
+      <div class="card">
+        <h2>⚔️ GIẢ LẬP CHIẾN ĐẤU & TUYỆT KỸ</h2>
+        <div class="action-buttons-grid">
+          <button class="btn" id="btnSimAttack">⚔️ Đánh Thường (Liên Hoàn)</button>
+          <button class="btn" id="btnSimCrit">💥 Bạo Kích Vô Song</button>
+          <button class="btn" id="btnSimHeal">💚 Hồi Máu & Khí Công</button>
+          <button class="btn" id="btnSimLike">❤️ Thả 10 Tim (Buff Sức Mạnh)</button>
+          <button class="btn primary" id="btnSimGift">🎁 Tặng Quà (Đại Tuyệt Kỹ Trấn Phái)</button>
+          <button class="btn danger" id="btnResetRound">🔄 Bắt Đầu Vòng Mới (Hồi Sinh)</button>
+        </div>
+        <div class="row" style="margin-top: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="chkAutoSim" style="width: 18px; height: 18px;" />
+            <span style="font-weight: 700; color: var(--gold-light);">🤖 Tự Động Chạy Trận Đấu Giả Lập Liên Tục</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. NHẬT KÝ CHIẾN TRƯỜNG THỜI GIAN THỰC -->
+    <div class="card">
+      <h2>📜 NHẬT KÝ CHIẾN ĐẤU THỜI GIAN THỰC (REAL-TIME EVENT LOG)</h2>
+      <div class="log-box" id="adminLogBox"></div>
     </div>
   </div>
 
   <script>
-    async function sendRpc(method, extraParams = {}) {
-      const user = document.getElementById('rpcUser').value.trim() || 'Thí Chủ';
-      const wish = document.getElementById('rpcWish').value.trim();
-      const body = {
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method,
-        params: { user, wish, ...extraParams }
-      };
-      const res = await fetch('/rpc', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      document.getElementById('rpcOutput').textContent = JSON.stringify(data, null, 2);
-      refreshStatus();
-      return data;
-    }
-
-    document.getElementById('btnConn').onclick = () => {
-      const username = document.getElementById('ttUser').value.trim();
-      sendRpc('live.connect', { username });
-    };
-    document.getElementById('btnDisc').onclick = () => sendRpc('live.disconnect', {});
-    document.getElementById('btnSendComment').onclick = () => {
-      const comment = document.getElementById('simComment').value.trim();
-      sendRpc('temple.comment', { comment });
-    };
-    document.getElementById('btnSpeakMaiChi').onclick = async () => {
-      const text = document.getElementById('ttsDirectText').value.trim();
-      const data = await sendRpc('temple.speak', { text, voice: 'maichi', broadcast: true });
-      if (data?.result?.url) {
-        const player = document.getElementById('adminAudioPreview');
-        player.src = data.result.url;
-        player.play().catch(() => {});
+    async function sendRpc(method, params = {}) {
+      try {
+        const resp = await fetch('/rpc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params })
+        });
+        const data = await resp.json();
+        return data.result;
+      } catch (err) {
+        console.error('RPC Error:', err);
       }
+    }
+
+    // Kết nối TikTok Live
+    document.getElementById('btnConnectTikTok').addEventListener('click', async () => {
+      const user = document.getElementById('tiktokUsernameInput').value.trim();
+      if (!user) return alert('Vui lòng nhập @username TikTok!');
+      try {
+        await sendRpc('live.connect', { username: user });
+      } catch (e) {
+        alert('Lỗi: ' + e.message);
+      }
+    });
+
+    document.getElementById('btnDisconnectTikTok').addEventListener('click', async () => {
+      await sendRpc('live.disconnect');
+    });
+
+    // Cài đặt 3D
+    document.getElementById('btnApply3D').addEventListener('click', async () => {
+      const quality = document.getElementById('adminQuality').value;
+      const cameraMode = document.getElementById('adminCamera').value;
+      const environmentFx = document.getElementById('adminEnvironment').value;
+
+      await sendRpc('wuxia.updateSettings', {
+        graphics3D: { quality, cameraMode, environmentFx }
+      });
+      alert('Đã gửi cấu hình 3D xuống màn hình lôi đài!');
+    });
+
+    // Giả lập
+    function getSimUser() {
+      return document.getElementById('simUserInput').value.trim() || 'Vô Danh';
+    }
+
+    window.simJoinSect = async function(sect, weapon) {
+      const user = getSimUser();
+      await sendRpc('wuxia.join', {
+        user,
+        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
+        chosenSect: sect,
+        chosenWeapon: weapon
+      });
     };
 
-    async function refreshStatus() {
-      const res = await fetch('/api/state');
-      const st = await res.json();
-      document.getElementById('statusBanner').textContent =
-        `Hương đã thắp: ${st.totalIncense} | Tổng Công Đức: ${st.totalMerit} | ZeroTTS: ${st.tts?.status} (Giọng: ${st.tts?.voice})`;
+    document.getElementById('btnSimRandomJoin').addEventListener('click', async () => {
+      const user = getSimUser();
+      await sendRpc('wuxia.comment', {
+        comment: 'chiến',
+        user,
+        uniqueId: user.toLowerCase().replace(/\\s+/g, '')
+      });
+    });
+
+    document.getElementById('btnSimAttack').addEventListener('click', async () => {
+      const user = getSimUser();
+      await sendRpc('wuxia.attack', {
+        user,
+        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
+        isCrit: false
+      });
+    });
+
+    document.getElementById('btnSimCrit').addEventListener('click', async () => {
+      const user = getSimUser();
+      await sendRpc('wuxia.attack', {
+        user,
+        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
+        isCrit: true
+      });
+    });
+
+    document.getElementById('btnSimHeal').addEventListener('click', async () => {
+      const user = getSimUser();
+      await sendRpc('wuxia.heal', {
+        user,
+        uniqueId: user.toLowerCase().replace(/\\s+/g, '')
+      });
+    });
+
+    document.getElementById('btnSimLike').addEventListener('click', async () => {
+      const user = getSimUser();
+      await sendRpc('wuxia.buffLike', {
+        user,
+        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
+        count: 10
+      });
+    });
+
+    document.getElementById('btnSimGift').addEventListener('click', async () => {
+      const user = getSimUser();
+      await sendRpc('wuxia.giftUltimate', {
+        user,
+        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
+        giftName: 'Kim Long Trấn Thiên Kiếm',
+        coins: 199
+      });
+    });
+
+    document.getElementById('btnResetRound').addEventListener('click', async () => {
+      if (confirm('Bắt đầu vòng đấu mới và hồi sinh toàn bộ đấu sĩ?')) {
+        await sendRpc('wuxia.resetRound');
+      }
+    });
+
+    document.getElementById('chkAutoSim').addEventListener('change', async (e) => {
+      await sendRpc('live.setAutoSim', { enabled: e.target.checked });
+    });
+
+    // WebSocket lắng nghe event để ghi log
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.method === 'tiktok.status') {
+          const t = msg.params;
+          const badge = document.getElementById('tiktokStatusBadge');
+          if (t.connected) {
+            badge.className = 'badge-status connected';
+            badge.innerText = `Đã kết nối: @${t.username}`;
+            document.getElementById('tiktokViewersText').innerText = `(${t.viewerCount || 0} người xem)`;
+          } else {
+            badge.className = 'badge-status disconnected';
+            badge.innerText = t.connecting ? 'Đang kết nối...' : 'Chưa kết nối';
+            document.getElementById('tiktokViewersText').innerText = '';
+          }
+        } else if (msg.method === 'wuxia.event') {
+          addLogEntry(msg.params.event);
+        } else if (msg.method === 'wuxia.state') {
+          document.getElementById('chkAutoSim').checked = Boolean(msg.params.settings?.autoSim);
+        }
+      } catch (_) {}
+    };
+
+    function addLogEntry(evt) {
+      const box = document.getElementById('adminLogBox');
+      const item = document.createElement('div');
+      item.className = 'log-entry';
+
+      const time = new Date().toLocaleTimeString('vi-VN');
+      if (evt.type === 'attack') {
+        if (evt.isCrit) item.classList.add('crit');
+        item.innerText = `[${time}] ⚔️ ${evt.attacker.user} xuất chiêu ${evt.skillName} gây ${evt.damage} sát thương lên ${evt.target ? evt.target.user : 'khoảng không'}${evt.isKill ? ' (ĐOẠT MẠNG!)' : ''}`;
+      } else if (evt.type === 'ultimate') {
+        item.classList.add('champ');
+        item.innerText = `[${time}] 💥 ${evt.fighter.user} dâng ${evt.giftName}, phóng thích đại tuyệt kỹ ${evt.ultimateSkill} (Quét ${evt.aoeDamage} sát thương)!`;
+      } else if (evt.type === 'coronation') {
+        item.classList.add('champ');
+        item.innerText = `[${time}] 👑 THIÊN HẠ QUY TÂM! ${evt.champion.user} ĐĂNG QUANG VÕ LÂM MINH CHỦ!`;
+      } else if (evt.type === 'join') {
+        item.innerText = `[${time}] ⚡ Hiệp khách ${evt.user} gia nhập phái ${evt.sect} với ${evt.weapon}!`;
+      } else if (evt.type === 'heal') {
+        item.innerText = `[${time}] 💚 ${evt.fighter.user} hồi phục ${evt.healAmount} sinh lực!`;
+      }
+      box.prepend(item);
+      while (box.children.length > 50) {
+        box.lastChild.remove();
+      }
     }
-    refreshStatus();
-    setInterval(refreshStatus, 4000);
   </script>
 </body>
 </html>

@@ -10,98 +10,104 @@ const { TikTokLiveConnection, WebcastEvent, ControlEvent } = require('tiktok-liv
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const TTS_CACHE_DIR = path.join(DATA_DIR, 'tts-cache');
-const STATE_FILE = path.join(DATA_DIR, 'merit-state.json');
+const STATE_FILE = path.join(DATA_DIR, 'wuxia-state.json');
 
 fs.mkdirSync(TTS_CACHE_DIR, { recursive: true });
 
 // ============================================================================
-// 1. BỘ 18 QUẺ LINH XĂM CHÙA LINH ỨNG (FORTUNE STICKS DECK)
+// 1. CÁC ĐẠI MÔN PHÁI & BINH KHÍ TƯƠNG XỨNG (6 MAJOR WUXIA SECTS & WEAPONS)
 // ============================================================================
-const FORTUNE_DECK = [
-  {
-    number: 1,
-    rank: 'Thượng Thượng Cát',
-    title: 'Nhật Xuất Đông Phương — Mặt Trời Mọc Phương Đông',
-    poem: 'Đông phương nhật xuất chiếu Càn Khôn\nHoa nở đầy cành rạng sắc xuân\nCông danh tài lộc đều viên mãn\nGia đạo bình an phúc lộc tồn.',
-    meaning: 'Mọi sự mưu cầu đều đại cát đại lợi. Công việc hanh thông, quý nhân phù trợ, gia đình hòa thuận ấm êm.',
-    ttsSummary: 'Quẻ số 1, Thượng Thượng Cát, Nhật Xuất Đông Phương. Mọi sự mưu cầu đều đại cát đại lợi, công danh tài lộc viên mãn, quý nhân phù trợ.'
+const SECTS = {
+  thieulam: {
+    id: 'thieulam',
+    name: 'Thiếu Lâm',
+    fullName: 'Thiếu Lâm Tự',
+    weapon: 'Hàng Ma Côn',
+    weaponType: 'con', // côn / trượng
+    weaponName: 'Côn & Thiền Trượng',
+    color: '#f59e0b',
+    glowColor: '#fbbf24',
+    badge: '📿',
+    ultimate: 'Như Lai Thần Chưởng',
+    motto: 'Kim Cang Bất Hoại • Trừ Ma Vệ Đạo',
+    keywords: ['thiếu lâm', 'thieu lam', 'shaolin', 'côn', 'con', 'trượng', 'truong', 'hàng ma côn']
   },
-  {
-    number: 8,
-    rank: 'Thượng Cát',
-    title: 'Kim Liên Khai Nở — Sen Vàng Tỏa Ngát',
-    poem: 'Sen vàng nở rộ giữa hồ trong\nHương thơm lan tỏa khắp non sông\nLòng thành thắp nén nhang cầu nguyện\nTrời Phật chứng tri thỏa ước mong.',
-    meaning: 'Tâm thiện lành ắt gặp phước báu. Cầu tài đắc tài, cầu bình an đắc bình an, bệnh tật tiêu trừ.',
-    ttsSummary: 'Quẻ số 8, Thượng Cát, Kim Liên Khai Nở. Tâm thiện lành ắt gặp phước báu, cầu tài đắc tài, cầu bình an đắc bình an.'
+  vodang: {
+    id: 'vodang',
+    name: 'Võ Đang',
+    fullName: 'Võ Đang Phái',
+    weapon: 'Thái Cực Kiếm',
+    weaponType: 'kiem', // kiếm
+    weaponName: 'Đạo Kiếm',
+    color: '#06b6d4',
+    glowColor: '#38bdf8',
+    badge: '☯️',
+    ultimate: 'Thái Cực Kiếm Trận',
+    motto: 'Lấy Nhu Thắng Cương • Đạo Pháp Tự Nhiên',
+    keywords: ['võ đang', 'vo dang', 'wudang', 'kiếm', 'kiem', 'thái cực', 'thai cuc', 'thái cực kiếm']
   },
-  {
-    number: 12,
-    rank: 'Đại Cát',
-    title: 'Long Vân Tương Hội — Rồng Mây Gặp Gỡ',
-    poem: 'Rồng thiêng gặp hội tầng mây xanh\nVượt Vũ Môn Quan rạng rỡ danh\nThí chủ kiên tâm hành thiện đạo\nPhúc dày lộc vượng khắp gia đình.',
-    meaning: 'Thời vận đang lên mạnh mẽ. Thi cử đỗ đạt, kinh doanh phát đạt, gặp cơ hội lớn đổi đời.',
-    ttsSummary: 'Quẻ số 12, Đại Cát, Long Vân Tương Hội. Thời vận đang lên mạnh mẽ, thi cử đỗ đạt, kinh doanh phát đạt.'
+  caibang: {
+    id: 'caibang',
+    name: 'Cái Bang',
+    fullName: 'Cái Bang Đệ Nhất Bang',
+    weapon: 'Đả Cẩu Bổng',
+    weaponType: 'bong', // bổng
+    weaponName: 'Đả Cẩu Bổng',
+    color: '#10b981',
+    glowColor: '#34d399',
+    badge: '🐉',
+    ultimate: 'Giáng Long Thập Bát Chưởng',
+    motto: 'Trượng Nghĩa Khắp Giang Hồ • Đả Cẩu Xuất Thế',
+    keywords: ['cái bang', 'cai bang', 'bổng', 'bong', 'đả cẩu', 'da cau', 'giáng long', 'giang long']
   },
-  {
-    number: 18,
-    rank: 'Thượng Cát',
-    title: 'Xuân Phong Đắc Ý — Gió Xuân Thuận Buồm',
-    poem: 'Thuận buồm xuôi gió vượt trùng khơi\nBến giác bình yên nắng rạng ngời\nTài lộc dồi dào nhân duyên tốt\nBốn mùa hưng thịnh rộn niềm vui.',
-    meaning: 'Đi xa gặp may, buôn bán thuận lợi, tình duyên êm đẹp, người thân mạnh khỏe.',
-    ttsSummary: 'Quẻ số 18, Thượng Cát, Xuân Phong Đắc Ý. Thuận buồm xuôi gió, tài lộc dồi dào, nhân duyên tốt đẹp.'
+  ngami: {
+    id: 'ngami',
+    name: 'Nga Mi',
+    fullName: 'Nga Mi Phái',
+    weapon: 'Ỷ Thiên Kiếm',
+    weaponType: 'songkiem', // song kiếm / kiếm
+    weaponName: 'Ỷ Thiên Thần Kiếm',
+    color: '#ec4899',
+    glowColor: '#f472b6',
+    badge: '🌸',
+    ultimate: 'Ỷ Thiên Trảm Nguyệt',
+    motto: 'Thanh Phong Kiếm Ảnh • Đoạt Hồn Thần Kiếm',
+    keywords: ['nga mi', 'nga my', 'emei', 'song kiếm', 'song kiem', 'ỷ thiên', 'y thien', 'song kiếm nga mi']
   },
-  {
-    number: 24,
-    rank: 'Trung Cát',
-    title: 'Vũ Quá Thiên Thanh — Mưa Tạnh Trời Trong',
-    poem: 'Mưa qua trời lại sáng trong ngần\nGian khó lùi xa đón phúc phần\nGiữ vững lòng thành đừng nản chí\nHoa thơm trái ngọt đến mười phân.',
-    meaning: 'Khó khăn cũ sắp qua đi, vận may mới đang tới. Hãy kiên nhẫn và giữ tâm bình tĩnh.',
-    ttsSummary: 'Quẻ số 24, Trung Cát, Vũ Quá Thiên Thanh. Mưa qua trời lại sáng trong, gian khó lùi xa để đón phúc phần mới.'
+  minhgiao: {
+    id: 'minhgiao',
+    name: 'Minh Giáo',
+    fullName: 'Quang Minh Đỉnh Minh Giáo',
+    weapon: 'Huyết Long Đao',
+    weaponType: 'dao', // đao
+    weaponName: 'Đại Đao & Thánh Hỏa Lệnh',
+    color: '#ef4444',
+    glowColor: '#f87171',
+    badge: '🔥',
+    ultimate: 'Càn Khôn Đại Na Di',
+    motto: 'Thánh Hỏa Bất Diệt • Càn Khôn Vạn Biến',
+    keywords: ['minh giáo', 'minh giao', 'ma giáo', 'ma giao', 'đao', 'dao', 'huyết đao', 'huyet dao', 'đồ long', 'do long']
   },
-  {
-    number: 36,
-    rank: 'Thượng Thượng Cát',
-    title: 'Phúc Tinh Cao Chiếu — Sao Phúc Chiếu Mệnh',
-    poem: 'Phúc tinh rực sáng giữa đêm rằm\nTừ bi Phật độ suốt quanh năm\nTài lộc tự nhiên về gõ cửa\nTrăm điều như ý vạn điều lành.',
-    meaning: 'Sao Phúc chiếu mạng, tai qua nạn khỏi, tiền tài sung túc, gia đạo hưng long.',
-    ttsSummary: 'Quẻ số 36, Thượng Thượng Cát, Phúc Tinh Cao Chiếu. Sao Phúc chiếu mạng, tài lộc tự nhiên gõ cửa, trăm điều như ý.'
-  },
-  {
-    number: 52,
-    rank: 'Thượng Cát',
-    title: 'Ngọc Xuất Côn Sơn — Ngọc Quý Phát Sáng',
-    poem: 'Ngọc quý Côn Sơn tỏa ánh ngời\nBấy lâu rèn giũa nay gặp thời\nTri âm tương ngộ cùng nâng đỡ\nSự nghiệp thăng hoa rạng rỡ đời.',
-    meaning: 'Nỗ lực bấy lâu nay sắp được đền đáp xứng đáng. Có người tốt nâng đỡ trong công việc và cuộc sống.',
-    ttsSummary: 'Quẻ số 52, Thượng Cát, Ngọc Xuất Côn Sơn. Nỗ lực bấy lâu sắp được đền đáp xứng đáng, sự nghiệp thăng hoa.'
-  },
-  {
-    number: 68,
-    rank: 'Đại Cát',
-    title: 'Lộc Mã Đồng Hương — Lộc Tài Cùng Tới',
-    poem: 'Lộc Mã song hành đến tận nhà\nLàm ăn buôn bán nở như hoa\nTâm thành bố thí thêm công đức\nPhú quý vinh hoa khắp một nhà.',
-    meaning: 'Quẻ đại lợi về tài lộc và kinh doanh. Nên làm nhiều việc thiện để phúc đức càng thêm bền vững.',
-    ttsSummary: 'Quẻ số 68, Đại Cát, Lộc Mã Đồng Hương. Đại lợi về tài lộc và buôn bán, phú quý vinh hoa khắp một nhà.'
-  },
-  {
-    number: 81,
-    rank: 'Thượng Cát',
-    title: 'Nguyệt Nhập Trung Thiên — Trăng Rằm Giữa Đỉnh',
-    poem: 'Trăng tròn vằng vặc giữa trời thu\nSoi sáng muôn phương sạch mây mù\nTình duyên viên mãn gia đình thuận\nTâm an vạn sự chẳng ưu tư.',
-    meaning: 'Tình duyên và gia đạo vô cùng tốt đẹp. Người độc thân dễ gặp ý trung nhân, gia đình thêm tin vui.',
-    ttsSummary: 'Quẻ số 81, Thượng Cát, Nguyệt Nhập Trung Thiên. Tình duyên viên mãn, gia đình hòa thuận, tâm an vạn sự lành.'
-  },
-  {
-    number: 99,
-    rank: 'Thượng Thượng Cát',
-    title: 'Vạn Sự Viên Thành — Cửu Cửu Đại Cát',
-    poem: 'Chín tầng mây trắng ánh hào quang\nTừ bi Phật Tổ độ nhân gian\nThí chủ lòng thành dâng lễ bái\nTrọn đời trường thọ hưởng vinh khang.',
-    meaning: 'Quẻ tối thượng cát tường. Sức khỏe trường thọ, công danh hiển đạt, vạn sự viên thành.',
-    ttsSummary: 'Quẻ số 99, Thượng Thượng Cát, Vạn Sự Viên Thành. Quẻ tối thượng cát tường, sức khỏe trường thọ, vạn sự như ý.'
+  duongmon: {
+    id: 'duongmon',
+    name: 'Đường Môn',
+    fullName: 'Tứ Xuyên Đường Môn',
+    weapon: 'Ám Khí Phi Tiêu',
+    weaponType: 'amkhi', // ám khí / phi tiêu
+    weaponName: 'Bão Vũ Phi Tiêu',
+    color: '#8b5cf6',
+    glowColor: '#a78bfa',
+    badge: '⚡',
+    ultimate: 'Bão Vũ Lê Hoa Châm',
+    motto: 'Ám Ảnh Vô Ngân • Nhất Tiêu Đoạt Mệnh',
+    keywords: ['đường môn', 'duong mon', 'ám khí', 'am khi', 'tiêu', 'phi tieu', 'phi đao', 'phi dao', 'châm', 'cham']
   }
-];
+};
+
+const SECT_KEYS = Object.keys(SECTS);
 
 // ============================================================================
-// 2. ZEROTTS PYTHON WORKER MANAGER (VOICE: MAI CHI)
+// 2. ZEROTTS PYTHON WORKER MANAGER (VOICE: MAI CHI HOẶC FALLBACK)
 // ============================================================================
 class ZeroTTSManager {
   constructor() {
@@ -127,39 +133,44 @@ class ZeroTTSManager {
   startWorker() {
     const pyBin = this.resolvePythonBin();
     const scriptPath = path.join(__dirname, 'tts_worker.py');
-    console.log(`[ZeroTTS] Khởi chạy worker với ${pyBin} (Giọng mặc định: Mai Chi)...`);
+    console.log(`[ZeroTTS] Khởi chạy worker với ${pyBin}...`);
 
     this.status = 'loading';
-    this.proc = spawn(pyBin, [scriptPath], {
-      cwd: __dirname,
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
+    try {
+      this.proc = spawn(pyBin, [scriptPath], {
+        cwd: __dirname,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
 
-    this.proc.stdout.on('data', (chunk) => {
-      this.buffer += chunk.toString('utf8');
-      let lines = this.buffer.split('\n');
-      this.buffer = lines.pop() || '';
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        this.handleWorkerLine(line.trim());
-      }
-    });
+      this.proc.stdout.on('data', (chunk) => {
+        this.buffer += chunk.toString('utf8');
+        let lines = this.buffer.split('\n');
+        this.buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          this.handleWorkerLine(line.trim());
+        }
+      });
 
-    this.proc.stderr.on('data', (chunk) => {
-      const msg = chunk.toString('utf8').trim();
-      if (msg) console.log(`[ZeroTTS stderr] ${msg}`);
-    });
+      this.proc.stderr.on('data', (chunk) => {
+        const msg = chunk.toString('utf8').trim();
+        if (msg) console.log(`[ZeroTTS stderr] ${msg}`);
+      });
 
-    this.proc.on('exit', (code) => {
-      console.warn(`[ZeroTTS] Worker thoát với mã ${code}`);
-      this.ready = false;
-      this.status = 'stopped';
-      for (const [, item] of this.pending) {
-        clearTimeout(item.timer);
-        item.resolve({ ok: false, error: 'ZeroTTS worker exited' });
-      }
-      this.pending.clear();
-    });
+      this.proc.on('exit', (code) => {
+        console.warn(`[ZeroTTS] Worker thoát với mã ${code}`);
+        this.ready = false;
+        this.status = 'stopped';
+        for (const [, item] of this.pending) {
+          clearTimeout(item.timer);
+          item.resolve({ ok: false, error: 'ZeroTTS worker exited' });
+        }
+        this.pending.clear();
+      });
+    } catch (e) {
+      console.warn('[ZeroTTS] Không khởi chạy được Python TTS worker, client sẽ dùng Web Speech:', e.message);
+      this.status = 'fallback_browser';
+    }
   }
 
   handleWorkerLine(line) {
@@ -175,7 +186,7 @@ class ZeroTTSManager {
         this.voice = msg.voice || 'maichi';
         this.voices = msg.voices || ['maichi'];
         this.model = msg.model || this.model;
-        console.log(`[ZeroTTS] Sẵn sàng sau ${msg.loadSec}s! Giọng: ${this.voice} (${this.voices.join(', ')})`);
+        console.log(`[ZeroTTS] Sẵn sàng! Giọng: ${this.voice}`);
         broadcastNotification('tts.status', this.getStatus());
       } else if (msg.type === 'result' && msg.id != null) {
         const entry = this.pending.get(msg.id);
@@ -238,38 +249,50 @@ class ZeroTTSManager {
 }
 
 // ============================================================================
-// 3. TRẠNG THÁI CHÙA ONLINE & BẢNG VÀNG CÔNG ĐỨC
+// 3. TRẠNG THÁI ĐẠI HỘI VÕ LÂM & ĐẤU SĨ (WUXIA GAME STATE)
 // ============================================================================
 const DEFAULT_STATE = {
-  totalIncense: 108,
-  totalMerit: 1080,
-  woodenFishHits: 360,
-  bellRings: 36,
-  lanternCount: 18,
-  fortuneCount: 12,
-  activeIncenseSticks: 9,
-  haloIntensity: 0.45,
-  offerings: {
-    lotus: 3,
-    fruit: 2,
-    lamp: 2,
-    dragon: 1
+  round: 1,
+  roundStatus: 'fighting', // 'fighting', 'intermission'
+  champion: null, // Đương kim Võ Lâm Minh Chủ
+  championHistory: [],
+  fighters: {}, // key: uniqueId -> Fighter
+  sectStats: {
+    thieulam: { members: 0, kills: 0, power: 100 },
+    vodang: { members: 0, kills: 0, power: 100 },
+    caibang: { members: 0, kills: 0, power: 100 },
+    ngami: { members: 0, kills: 0, power: 100 },
+    minhgiao: { members: 0, kills: 0, power: 100 },
+    duongmon: { members: 0, kills: 0, power: 100 }
   },
-  devotees: {},
+  totalKills: 0,
+  totalAttacks: 0,
+  totalLikes: 0,
+  totalGifts: 0,
   recentEvents: [],
   settings: {
     ttsEnabled: true,
     ttsVoice: 'maichi',
     bgMusicEnabled: true,
     sfxEnabled: true,
-    smokeDensity: 1.0,
     autoSim: false,
-    autoSimIntervalMs: 9500
+    autoSimIntervalMs: 5000,
+    // Cài đặt đồ họa 3D lưu trữ trên server
+    graphics3D: {
+      quality: 'high', // 'low', 'medium', 'high'
+      shadows: true,
+      kiAura: true,
+      slashTrails: true,
+      damageNumbers: true,
+      environmentFx: 'sakura', // 'sakura', 'snow', 'fire', 'fog', 'none'
+      cameraMode: 'cinematic', // 'cinematic', 'action', 'champion', 'topdown', 'orbit'
+      aspectMode: '9:16' // '9:16' (OBS Live), '16:9' (Fullscreen)
+    }
   },
   tiktok: {
     connected: false,
     connecting: false,
-    username: 'zenfacts_vn',
+    username: 'wuxia_live',
     roomId: null,
     viewerCount: 0,
     lastError: null
@@ -283,14 +306,21 @@ function loadState() {
       return {
         ...DEFAULT_STATE,
         ...saved,
-        devotees: saved.devotees || {},
-        offerings: { ...DEFAULT_STATE.offerings, ...(saved.offerings || {}) },
-        settings: { ...DEFAULT_STATE.settings, ...(saved.settings || {}) },
+        fighters: saved.fighters || {},
+        sectStats: { ...DEFAULT_STATE.sectStats, ...(saved.sectStats || {}) },
+        settings: {
+          ...DEFAULT_STATE.settings,
+          ...(saved.settings || {}),
+          graphics3D: {
+            ...DEFAULT_STATE.settings.graphics3D,
+            ...((saved.settings && saved.settings.graphics3D) || {})
+          }
+        },
         tiktok: { ...DEFAULT_STATE.tiktok }
       };
     }
   } catch (e) {
-    console.warn('[State] Không đọc được merit-state.json, dùng mặc định:', e.message);
+    console.warn('[State] Không đọc được wuxia-state.json, dùng mặc định:', e.message);
   }
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
 }
@@ -302,119 +332,41 @@ function saveState() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     const toSave = {
-      totalIncense: state.totalIncense,
-      totalMerit: state.totalMerit,
-      woodenFishHits: state.woodenFishHits,
-      bellRings: state.bellRings,
-      lanternCount: state.lanternCount,
-      fortuneCount: state.fortuneCount,
-      activeIncenseSticks: state.activeIncenseSticks,
-      offerings: state.offerings,
-      devotees: state.devotees,
+      round: state.round,
+      champion: state.champion,
+      championHistory: state.championHistory.slice(0, 20),
+      fighters: state.fighters,
+      sectStats: state.sectStats,
+      totalKills: state.totalKills,
+      totalAttacks: state.totalAttacks,
+      totalLikes: state.totalLikes,
+      totalGifts: state.totalGifts,
       settings: state.settings
     };
     fs.promises.writeFile(STATE_FILE, JSON.stringify(toSave, null, 2), 'utf8').catch((e) => {
       console.error('[State] Lỗi lưu file:', e.message);
     });
-  }, 1200);
+  }, 1500);
 }
 
-function getLeaderboard(limit = 6) {
-  return Object.values(state.devotees)
-    .sort((a, b) => b.merit - a.merit)
-    .slice(0, limit)
-    .map((d, index) => ({
-      rank: index + 1,
-      name: d.name,
-      uniqueId: d.uniqueId,
-      avatar: d.avatar || '',
-      merit: d.merit,
-      incense: d.incense || 0,
-      lastWish: d.lastWish || ''
-    }));
-}
-// Bộ lọc chặn ký tự lạ (Cuneiform 𒐫, Zalgo, Braille, ký tự spam) & từ ngữ phản cảm
-const WEIRD_SPAM_RE = /[\u{12000}-\u{1254F}\uFDFD\u2800-\u28FF\u2580-\u259F]|[\u0300-\u036F]{3,}/u;
+// Lọc từ bậy và spam
+const BAD_WORDS_RE = /(đá dái|địt|lồn|cặc|đm|vcl|vl|yamate|i cư|lừa đảo|te-le gram|telegram)/i;
 const BRACKET_EMOTE_RE = /\[[^\]]{1,24}\]/g;
-const ALLOWED_VI_TEXT_RE = /[^0-9a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s.,!?]/g;
 const ALLOWED_VI_NAME_RE = /[^0-9a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s._-]/g;
-const VI_LETTER_RE = /[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ]/g;
-const BAD_WORDS_RE = /(đá dái|địt|lồn|cặc|đm|vcl|vl|yamate|i cư|lừa đảo|lừa à|te-le gram|telegram|bố là trùm)/i;
-
-function isBlockedSpamOrToxic(raw) {
-  if (!raw) return true;
-  const s = String(raw);
-  if (WEIRD_SPAM_RE.test(s)) return true;
-  if (BAD_WORDS_RE.test(s)) return true;
-  return false;
-}
 
 function sanitizeUserName(rawName) {
   const normalized = String(rawName || '')
     .normalize('NFKC')
-    .normalize('NFC')
     .replace(BRACKET_EMOTE_RE, ' ')
     .replace(ALLOWED_VI_NAME_RE, ' ')
-    .replace(/(.)\1{3,}/gi, '$1$1')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 26);
+    .slice(0, 24);
 
-  if (!normalized || BAD_WORDS_RE.test(normalized)) {
-    return 'Thí Chủ Hữu Duyên';
-  }
-  const letters = normalized.match(VI_LETTER_RE) || [];
-  if (letters.length < 2) {
-    return 'Thí Chủ Hữu Duyên';
+  if (!normalized || BAD_WORDS_RE.test(normalized) || normalized.length < 2) {
+    return 'Vô Danh Hiệp';
   }
   return normalized;
-}
-
-function sanitizeWishText(rawWish) {
-  if (!rawWish) return '';
-  const cleaned = String(rawWish)
-    .normalize('NFKC')
-    .normalize('NFC')
-    .replace(BRACKET_EMOTE_RE, ' ')
-    .replace(ALLOWED_VI_TEXT_RE, ' ')
-    .replace(/([.,!?])\1+/g, '$1')
-    .replace(/(.)\1{2,}/gi, '$1$1')
-    .replace(/\s+/g, ' ')
-    .replace(/^[.,!?\s-]+|[.,!?\s-]+$/g, '')
-    .slice(0, 120);
-
-  if (!cleaned || BAD_WORDS_RE.test(cleaned)) return '';
-  const letters = cleaned.match(VI_LETTER_RE) || [];
-  if (letters.length < 2) return '';
-  return cleaned;
-}
-
-function recordDevotee(user, uniqueId, avatar, meritDelta, incenseDelta = 0, giftDelta = 0, wish = '') {
-  const displayName = sanitizeUserName(user || uniqueId);
-  const cleanWish = sanitizeWishText(wish);
-  const key = (uniqueId || displayName).slice(0, 40);
-  if (!state.devotees[key]) {
-    state.devotees[key] = {
-      name: displayName,
-      uniqueId: uniqueId || displayName.toLowerCase().replace(/\s+/g, ''),
-      avatar: avatar || '',
-      merit: 0,
-      incense: 0,
-      gifts: 0,
-      lastWish: ''
-    };
-  }
-  const dev = state.devotees[key];
-  dev.name = displayName;
-  if (avatar) dev.avatar = avatar;
-  dev.merit += meritDelta;
-  dev.incense += incenseDelta;
-  dev.gifts += giftDelta;
-  if (cleanWish) dev.lastWish = cleanWish;
-
-  state.totalMerit += meritDelta;
-  state.haloIntensity = Math.min(1.0, 0.35 + (state.totalMerit % 1000) / 1400);
-  return dev;
 }
 
 function pushEventLog(evt) {
@@ -424,393 +376,629 @@ function pushEventLog(evt) {
     ...evt
   };
   state.recentEvents.unshift(entry);
-  if (state.recentEvents.length > 35) {
-    state.recentEvents.length = 35;
+  if (state.recentEvents.length > 40) {
+    state.recentEvents.length = 40;
   }
   return entry;
 }
 
+function getLeaderboard(limit = 10) {
+  return Object.values(state.fighters)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.kills !== a.kills) return b.kills - a.kills;
+      return b.streak - a.streak;
+    })
+    .slice(0, limit)
+    .map((f, idx) => ({
+      rank: idx + 1,
+      id: f.id,
+      user: f.user,
+      uniqueId: f.uniqueId,
+      avatar: f.avatar,
+      sect: f.sect,
+      weapon: f.weapon,
+      score: f.score,
+      kills: f.kills,
+      streak: f.streak,
+      hp: f.hp,
+      maxHp: f.maxHp,
+      alive: f.alive,
+      isChampion: state.champion?.uniqueId === f.uniqueId
+    }));
+}
+
 function getPublicState() {
   return {
-    totalIncense: state.totalIncense,
-    totalMerit: state.totalMerit,
-    woodenFishHits: state.woodenFishHits,
-    bellRings: state.bellRings,
-    lanternCount: state.lanternCount,
-    fortuneCount: state.fortuneCount,
-    activeIncenseSticks: state.activeIncenseSticks,
-    haloIntensity: state.haloIntensity,
-    offerings: state.offerings,
-    leaderboard: getLeaderboard(24),
+    round: state.round,
+    roundStatus: state.roundStatus,
+    champion: state.champion,
+    championHistory: state.championHistory.slice(0, 6),
+    sects: SECTS,
+    sectStats: state.sectStats,
+    leaderboard: getLeaderboard(12),
+    activeFighters: Object.values(state.fighters)
+      .filter((f) => f.alive)
+      .slice(0, 36)
+      .map((f) => ({
+        id: f.id,
+        user: f.user,
+        uniqueId: f.uniqueId,
+        avatar: f.avatar,
+        sect: f.sect,
+        weapon: f.weapon,
+        weaponType: f.weaponType,
+        hp: f.hp,
+        maxHp: f.maxHp,
+        score: f.score,
+        kills: f.kills,
+        streak: f.streak,
+        title: f.title,
+        isChampion: state.champion?.uniqueId === f.uniqueId
+      })),
+    totalKills: state.totalKills,
+    totalAttacks: state.totalAttacks,
+    totalLikes: state.totalLikes,
+    totalGifts: state.totalGifts,
     recentEvents: state.recentEvents.slice(0, 15),
     settings: state.settings,
     tiktok: state.tiktok,
-    tts: zeroTts ? zeroTts.getStatus() : { ready: false, status: 'init', voice: 'maichi' }
+    tts: zeroTts ? zeroTts.getStatus() : { ready: false, status: 'browser_speech', voice: 'maichi' }
   };
 }
 
 // ============================================================================
-// 4. NGHI THỨC TƯƠNG TÁC (RITUAL HANDLERS)
+// 4. HỆ THỐNG CHIẾN ĐẤU KIẾM HIỆP & QUẢN LÝ ĐẤU SĨ (COMBAT ENGINE)
 // ============================================================================
-const Rituals = {
-  burnIncense(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const count = Math.max(1, Math.min(9, Number(params.count) || 3));
-    const wish = sanitizeWishText(params.wish) || 'Thành tâm dâng hương bái Phật, cầu bình an cát tường';
-    const merit = count * 5;
+const WuxiaGame = {
+  // Tìm môn phái đang ít thành viên nhất để cân bằng
+  getBalancedSect() {
+    let minSect = SECT_KEYS[0];
+    let minMembers = Infinity;
+    for (const key of SECT_KEYS) {
+      const count = state.sectStats[key]?.members || 0;
+      if (count < minMembers) {
+        minMembers = count;
+        minSect = key;
+      }
+    }
+    return minSect;
+  },
 
-    state.totalIncense += count;
-    state.activeIncenseSticks = Math.min(36, state.activeIncenseSticks + count);
-    const devotee = recordDevotee(user, uniqueId, avatar, merit, count, 0, wish);
+  // Đấu sĩ tham gia hoặc tái xuất
+  joinBattle({ user, uniqueId, avatar, chosenSect = null, chosenWeapon = null }) {
+    const cleanUser = sanitizeUserName(user);
+    const key = (uniqueId || cleanUser).slice(0, 40);
 
-    const ttsText = params.readTts === false
-      ? ''
-      : `Nam mô A Di Đà Phật. Cảm tạ thí chủ ${devotee.name} đã thành tâm thắp ${count} nén hương thơm. ${wish}.`;
+    let sectKey = chosenSect;
+    if (!sectKey || !SECTS[sectKey]) {
+      sectKey = this.getBalancedSect();
+    }
+    const sectInfo = SECTS[sectKey];
+    const weaponName = chosenWeapon || sectInfo.weapon;
+
+    let fighter = state.fighters[key];
+    const isNew = !fighter;
+
+    if (isNew) {
+      fighter = {
+        id: `f_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        user: cleanUser,
+        uniqueId: key,
+        avatar: avatar || '',
+        sect: sectKey,
+        weapon: weaponName,
+        weaponType: sectInfo.weaponType,
+        hp: 1000,
+        maxHp: 1000,
+        atk: 120 + Math.floor(Math.random() * 40),
+        defense: 50,
+        score: 100,
+        kills: 0,
+        streak: 0,
+        alive: true,
+        joinedAt: Date.now(),
+        lastAction: Date.now(),
+        title: 'Tân Binh Giang Hồ'
+      };
+      state.fighters[key] = fighter;
+      state.sectStats[sectKey].members = (state.sectStats[sectKey].members || 0) + 1;
+    } else {
+      // Đã có từ trước: nếu chết thì hồi sinh, nếu còn sống thì đổi phái hoặc tăng HP
+      fighter.user = cleanUser;
+      if (avatar) fighter.avatar = avatar;
+      if (chosenSect && chosenSect !== fighter.sect) {
+        // Trừ môn phái cũ, cộng môn phái mới
+        if (state.sectStats[fighter.sect]?.members > 0) {
+          state.sectStats[fighter.sect].members -= 1;
+        }
+        fighter.sect = sectKey;
+        fighter.weapon = weaponName;
+        fighter.weaponType = sectInfo.weaponType;
+        state.sectStats[sectKey].members = (state.sectStats[sectKey].members || 0) + 1;
+      }
+      fighter.alive = true;
+      fighter.hp = fighter.maxHp;
+      fighter.lastAction = Date.now();
+    }
+
+    state.sectStats[sectKey].power += 50;
+
+    const ttsText = isNew
+      ? `Hiệp khách ${fighter.user} gia nhập phái ${sectInfo.name}, vung kiếm ${weaponName} bước lên lôi đài!`
+      : `Hiệp khách ${fighter.user} phái ${sectInfo.name} tái xuất giang hồ, khí thế kinh người!`;
 
     const event = pushEventLog({
-      type: 'burnIncense',
-      user: devotee.name,
-      uniqueId: devotee.uniqueId,
-      avatar: devotee.avatar,
+      type: 'join',
+      fighterId: fighter.id,
+      user: fighter.user,
+      uniqueId: fighter.uniqueId,
+      avatar: fighter.avatar,
+      sect: fighter.sect,
+      weapon: fighter.weapon,
+      weaponType: fighter.weaponType,
+      isNew,
+      ttsText
+    });
+
+    this.checkChampion();
+    saveState();
+    broadcastNotification('wuxia.event', { event, state: getPublicState() });
+    return { event, fighter, state: getPublicState() };
+  },
+
+  // Tấn công / Xuất chiêu
+  attack({ uniqueId, user, avatar, isCrit = false, skillName = null }) {
+    const key = (uniqueId || user).slice(0, 40);
+    let fighter = state.fighters[key];
+
+    if (!fighter) {
+      // Nếu chưa tham gia, tự động cho tham gia trước
+      const joined = this.joinBattle({ user, uniqueId, avatar });
+      fighter = joined.fighter;
+    }
+
+    if (!fighter.alive) {
+      fighter.alive = true;
+      fighter.hp = fighter.maxHp;
+    }
+
+    fighter.lastAction = Date.now();
+    state.totalAttacks += 1;
+
+    // Tìm đối thủ ngẫu nhiên khác môn phái đang còn sống
+    const opponents = Object.values(state.fighters).filter(
+      (f) => f.uniqueId !== fighter.uniqueId && f.alive && f.sect !== fighter.sect
+    );
+
+    let target = null;
+    if (opponents.length > 0) {
+      // Ưu tiên nhắm vào Minh Chủ hoặc người điểm cao nhất
+      if (state.champion && state.champion.uniqueId !== fighter.uniqueId && state.champion.alive) {
+        target = Math.random() < 0.4 ? opponents.find((f) => f.uniqueId === state.champion.uniqueId) || opponents[0] : opponents[Math.floor(Math.random() * opponents.length)];
+      } else {
+        target = opponents[Math.floor(Math.random() * opponents.length)];
+      }
+    } else {
+      // Nếu không có khác phái, chọn bất kỳ ai khác
+      const anyOpponents = Object.values(state.fighters).filter(
+        (f) => f.uniqueId !== fighter.uniqueId && f.alive
+      );
+      if (anyOpponents.length > 0) {
+        target = anyOpponents[Math.floor(Math.random() * anyOpponents.length)];
+      }
+    }
+
+    let damage = Math.floor(fighter.atk * (0.8 + Math.random() * 0.5));
+    if (isCrit) damage = Math.floor(damage * 1.8);
+    let isKill = false;
+    let attackSkill = skillName || (isCrit ? 'Bạo Kích Vô Song' : 'Liên Hoàn Kích');
+
+    if (target) {
+      target.hp = Math.max(0, target.hp - damage);
+      if (target.hp <= 0) {
+        target.alive = false;
+        target.streak = 0;
+        isKill = true;
+        fighter.kills += 1;
+        fighter.streak += 1;
+        fighter.score += 250;
+        state.totalKills += 1;
+        state.sectStats[fighter.sect].kills = (state.sectStats[fighter.sect].kills || 0) + 1;
+        state.sectStats[fighter.sect].power += 150;
+      } else {
+        fighter.score += 30;
+      }
+    } else {
+      fighter.score += 10;
+    }
+
+    // Cập nhật danh hiệu
+    if (fighter.kills >= 10) fighter.title = 'Võ Thánh';
+    else if (fighter.kills >= 6) fighter.title = 'Tuyệt Đỉnh Cao Thủ';
+    else if (fighter.kills >= 3) fighter.title = 'Giang Hồ Danh Hiệp';
+    else fighter.title = 'Hiệp Khách';
+
+    let ttsText = '';
+    if (isKill && target) {
+      ttsText = `${fighter.user} phái ${SECTS[fighter.sect]?.name} xuất chiêu ${attackSkill}, đoạt mạng ${target.user}!`;
+    }
+
+    const event = pushEventLog({
+      type: 'attack',
+      attacker: {
+        id: fighter.id,
+        user: fighter.user,
+        uniqueId: fighter.uniqueId,
+        sect: fighter.sect,
+        weapon: fighter.weapon,
+        weaponType: fighter.weaponType,
+        score: fighter.score,
+        kills: fighter.kills,
+        streak: fighter.streak
+      },
+      target: target
+        ? {
+            id: target.id,
+            user: target.user,
+            uniqueId: target.uniqueId,
+            sect: target.sect,
+            hp: target.hp,
+            maxHp: target.maxHp,
+            alive: target.alive
+          }
+        : null,
+      damage,
+      isCrit,
+      isKill,
+      skillName: attackSkill,
+      ttsText
+    });
+
+    this.checkChampion();
+    saveState();
+    broadcastNotification('wuxia.event', { event, state: getPublicState() });
+    return { event, fighter, target, state: getPublicState() };
+  },
+
+  // Hồi máu / Hộ thể khí công
+  heal({ uniqueId, user, avatar }) {
+    const key = (uniqueId || user).slice(0, 40);
+    let fighter = state.fighters[key];
+    if (!fighter) {
+      const res = this.joinBattle({ user, uniqueId, avatar });
+      fighter = res.fighter;
+    }
+    const healAmount = 250 + Math.floor(Math.random() * 150);
+    fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmount);
+    fighter.alive = true;
+    fighter.score += 20;
+
+    const event = pushEventLog({
+      type: 'heal',
+      fighter: {
+        id: fighter.id,
+        user: fighter.user,
+        uniqueId: fighter.uniqueId,
+        sect: fighter.sect,
+        hp: fighter.hp,
+        maxHp: fighter.maxHp
+      },
+      healAmount,
+      ttsText: `${fighter.user} vận công điều tức, hồi phục ${healAmount} sinh lực!`
+    });
+
+    saveState();
+    broadcastNotification('wuxia.event', { event, state: getPublicState() });
+    return { event, fighter, state: getPublicState() };
+  },
+
+  // Like: Buff nội lực cho môn phái
+  buffLike({ user, uniqueId, avatar, count = 1 }) {
+    state.totalLikes += count;
+    const cleanUser = sanitizeUserName(user);
+    const key = (uniqueId || cleanUser).slice(0, 40);
+    let fighter = state.fighters[key];
+
+    let targetSect = fighter ? fighter.sect : this.getBalancedSect();
+    state.sectStats[targetSect].power += count * 5;
+
+    // Tăng nhẹ HP và ATK cho toàn bộ thành viên trong phái
+    const sectMembers = Object.values(state.fighters).filter((f) => f.sect === targetSect && f.alive);
+    sectMembers.forEach((m) => {
+      m.hp = Math.min(m.maxHp, m.hp + count * 5);
+      m.score += count;
+    });
+
+    const event = pushEventLog({
+      type: 'likeBuff',
+      user: cleanUser,
+      uniqueId: key,
+      sect: targetSect,
       count,
-      merit,
-      wish,
-      ttsText,
-      ttsVoice: state.settings.ttsVoice || 'maichi'
+      ttsText: ''
     });
 
-    saveState();
-    broadcastNotification('temple.event', { event, state: getPublicState() });
+    broadcastNotification('wuxia.event', { event, state: getPublicState() });
     return { event, state: getPublicState() };
   },
 
-  strikeWoodenFish(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const count = Math.max(1, Math.min(50, Number(params.count) || 1));
-    const merit = count;
+  // Tặng quà: Kích hoạt Thần Binh & Tuyệt Kỹ Môn Phái
+  giftUltimate({ user, uniqueId, avatar, giftName, coins = 10 }) {
+    state.totalGifts += 1;
+    const cleanUser = sanitizeUserName(user);
+    const key = (uniqueId || cleanUser).slice(0, 40);
+    let fighter = state.fighters[key];
 
-    state.woodenFishHits += count;
-    const devotee = recordDevotee(user, uniqueId, avatar, merit, 0, 0);
+    if (!fighter) {
+      const res = this.joinBattle({ user, uniqueId, avatar });
+      fighter = res.fighter;
+    }
 
-    const event = pushEventLog({
-      type: 'strikeWoodenFish',
-      user: devotee.name,
-      uniqueId: devotee.uniqueId,
-      avatar: devotee.avatar,
-      count,
-      merit,
-      ttsText: params.ttsText || ''
+    fighter.alive = true;
+    fighter.hp = fighter.maxHp;
+    fighter.atk += Math.floor(coins * 1.5);
+    fighter.score += coins * 20;
+
+    const sectInfo = SECTS[fighter.sect] || SECTS.vodang;
+    const ultimateSkill = sectInfo.ultimate;
+
+    // Sát thương diện rộng quét toàn bộ đối thủ khác phái
+    const opponents = Object.values(state.fighters).filter(
+      (f) => f.uniqueId !== fighter.uniqueId && f.alive && f.sect !== fighter.sect
+    );
+    const aoeDamage = 200 + Math.floor(coins * 4);
+    let killedCount = 0;
+
+    opponents.forEach((opp) => {
+      opp.hp = Math.max(0, opp.hp - aoeDamage);
+      if (opp.hp <= 0) {
+        opp.alive = false;
+        opp.streak = 0;
+        killedCount += 1;
+      }
     });
 
-    saveState();
-    broadcastNotification('temple.event', { event, state: getPublicState() });
-    return { event, state: getPublicState() };
-  },
+    fighter.kills += killedCount;
+    fighter.streak += killedCount;
+    state.totalKills += killedCount;
 
-  ringBell(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const count = Math.max(1, Math.min(9, Number(params.count) || 1));
-    const wish = sanitizeWishText(params.wish) || 'Thỉnh chuông Bát Nhã, phiền não tiêu tan, trí tuệ sáng ngời';
-    const merit = count * 10;
-
-    state.bellRings += count;
-    const devotee = recordDevotee(user, uniqueId, avatar, merit, 0, 0, wish);
-
-    const ttsText = params.readTts
-      ? `Thí chủ ${devotee.name} thỉnh Đại Hồng Chung cầu nguyện: ${wish}.`
-      : '';
+    const ttsText = `Kinh thiên động địa! Hiệp khách ${fighter.user} dâng bảo vật ${giftName}, phóng thích đại tuyệt kỹ ${ultimateSkill} phái ${sectInfo.name}, chấn động lôi đài!`;
 
     const event = pushEventLog({
-      type: 'ringBell',
-      user: devotee.name,
-      uniqueId: devotee.uniqueId,
-      avatar: devotee.avatar,
-      count,
-      merit,
-      wish,
-      ttsText,
-      ttsVoice: state.settings.ttsVoice || 'maichi'
-    });
-
-    saveState();
-    broadcastNotification('temple.event', { event, state: getPublicState() });
-    return { event, state: getPublicState() };
-  },
-
-  sendPrayer(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const wish = sanitizeWishText(params.wish) || 'Cầu cho quốc thái dân an, gia đình mạnh khỏe hạnh phúc';
-    const merit = 10;
-
-    state.lanternCount += 1;
-    const devotee = recordDevotee(user, uniqueId, avatar, merit, 1, 0, wish);
-
-    const ttsText = params.readTts === false
-      ? ''
-      : `Lời cầu nguyện của thí chủ ${devotee.name}: ${wish}. Nam mô A Di Đà Phật.`;
-
-    const event = pushEventLog({
-      type: 'sendPrayer',
-      user: devotee.name,
-      uniqueId: devotee.uniqueId,
-      avatar: devotee.avatar,
-      wish,
-      merit,
-      ttsText,
-      ttsVoice: state.settings.ttsVoice || 'maichi'
-    });
-
-    saveState();
-    broadcastNotification('temple.event', { event, state: getPublicState() });
-    return { event, state: getPublicState() };
-  },
-
-  offerGift(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const coins = Math.max(1, Number(params.coins) || 10);
-    const giftType = ['lotus', 'fruit', 'lamp', 'dragon'].includes(params.giftType)
-      ? params.giftType
-      : (coins >= 100 ? 'dragon' : coins >= 20 ? 'fruit' : coins >= 5 ? 'lamp' : 'lotus');
-
-    const giftLabels = {
-      lotus: 'Đài Hoa Sen Vàng',
-      fruit: 'Mâm Ngũ Quả Cát Tường',
-      lamp: 'Đèn Lưu Ly Trí Tuệ',
-      dragon: 'Đại Lễ Kim Long Chầu Phật'
-    };
-    const giftName = params.giftName || giftLabels[giftType];
-    const multiplier = coins >= 100 ? 50 : coins >= 10 ? 30 : 20;
-    const merit = Math.max(20, coins * multiplier);
-
-    state.offerings[giftType] = (state.offerings[giftType] || 0) + 1;
-    state.totalIncense += 3;
-    state.activeIncenseSticks = Math.min(36, state.activeIncenseSticks + 3);
-
-    const wish = params.wish || `Dâng cúng ${giftName} lên Tam Bảo`;
-    const devotee = recordDevotee(user, uniqueId, avatar, merit, 3, 1, wish);
-
-    const ttsText = params.readTts === false
-      ? ''
-      : `Công đức vô lượng! Cảm tạ thí chủ ${devotee.name} đã phát tâm dâng cúng ${giftName}, tích thêm ${merit} điểm công đức. Nguyện cầu chư Phật gia hộ cho thí chủ vạn sự cát tường như ý.`;
-
-    const event = pushEventLog({
-      type: giftType === 'dragon' ? 'grandCeremony' : 'offerGift',
-      user: devotee.name,
-      uniqueId: devotee.uniqueId,
-      avatar: devotee.avatar,
-      giftType,
+      type: 'ultimate',
+      fighter: {
+        id: fighter.id,
+        user: fighter.user,
+        uniqueId: fighter.uniqueId,
+        sect: fighter.sect,
+        weapon: fighter.weapon,
+        weaponType: fighter.weaponType,
+        score: fighter.score,
+        kills: fighter.kills
+      },
       giftName,
       coins,
-      merit,
-      wish,
-      ttsText,
-      ttsVoice: state.settings.ttsVoice || 'maichi'
+      ultimateSkill,
+      aoeDamage,
+      killedCount,
+      ttsText
     });
 
+    this.checkChampion();
     saveState();
-    broadcastNotification('temple.event', { event, state: getPublicState() });
+    broadcastNotification('wuxia.event', { event, state: getPublicState() });
     return { event, state: getPublicState() };
   },
 
-  drawFortune(params = {}) {
-    const user = sanitizeUserName(params.user);
-    const uniqueId = params.uniqueId || '';
-    const avatar = params.avatar || '';
-    const topic = sanitizeWishText(params.topic) || 'Gia đạo, Tài lộc và Bình an';
-    const fortune = FORTUNE_DECK[Math.floor(Math.random() * FORTUNE_DECK.length)];
-    const merit = 10;
+  // Kiểm tra và phong vị VÕ LÂM MINH CHỦ
+  checkChampion() {
+    const aliveFighters = Object.values(state.fighters).filter((f) => f.alive);
+    if (aliveFighters.length === 0) return null;
 
-    state.fortuneCount += 1;
-    const devotee = recordDevotee(user, uniqueId, avatar, merit, 0, 0, `Xin xăm: Quẻ số ${fortune.number} (${fortune.rank})`);
-
-    const ttsText = params.readTts === false
-      ? ''
-      : `Thí chủ ${devotee.name} vừa gieo được ${fortune.ttsSummary}`;
-
-    const event = pushEventLog({
-      type: 'drawFortune',
-      user: devotee.name,
-      uniqueId: devotee.uniqueId,
-      avatar: devotee.avatar,
-      topic,
-      fortune,
-      merit,
-      ttsText,
-      ttsVoice: state.settings.ttsVoice || 'maichi'
+    // Sắp xếp theo score -> kills -> streak
+    aliveFighters.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.kills !== a.kills) return b.kills - a.kills;
+      return b.streak - a.streak;
     });
 
-    saveState();
-    broadcastNotification('temple.event', { event, state: getPublicState() });
-    return { event, state: getPublicState() };
-  },
+    const topCandidate = aliveFighters[0];
+    if (!state.champion || state.champion.uniqueId !== topCandidate.uniqueId) {
+      const oldChamp = state.champion;
+      state.champion = {
+        id: topCandidate.id,
+        user: topCandidate.user,
+        uniqueId: topCandidate.uniqueId,
+        avatar: topCandidate.avatar,
+        sect: topCandidate.sect,
+        weapon: topCandidate.weapon,
+        score: topCandidate.score,
+        kills: topCandidate.kills,
+        crownedAt: Date.now()
+      };
 
-  grandCeremony(params = {}) {
-    return this.offerGift({
-      ...params,
-      giftType: 'dragon',
-      coins: Math.max(100, Number(params.coins) || 199),
-      giftName: params.giftName || 'Đại Lễ Hào Quang Vạn Trượng'
-    });
-  },
+      topCandidate.title = '👑 VÕ LÂM MINH CHỦ';
 
-  updateSettings(params = {}) {
-    state.settings = {
-      ...state.settings,
-      ...params
-    };
-    if (typeof params.autoSim === 'boolean') {
-      configureAutoSim(params.autoSim);
+      state.championHistory.unshift({
+        user: topCandidate.user,
+        uniqueId: topCandidate.uniqueId,
+        sect: topCandidate.sect,
+        time: new Date().toLocaleTimeString('vi-VN'),
+        kills: topCandidate.kills
+      });
+
+      const ttsText = `Vạn chúng quy phục! Chúc mừng hiệp khách ${topCandidate.user} phái ${SECTS[topCandidate.sect]?.name} chính thức đoạt ngôi VÕ LÂM MINH CHỦ!`;
+
+      pushEventLog({
+        type: 'coronation',
+        champion: state.champion,
+        oldChampion: oldChamp,
+        ttsText
+      });
     }
+
+    return state.champion;
+  },
+
+  // Reset vòng đấu mới
+  resetRound() {
+    state.round += 1;
+    // Hồi sinh toàn bộ đấu sĩ và reset HP
+    Object.values(state.fighters).forEach((f) => {
+      f.alive = true;
+      f.hp = f.maxHp;
+    });
+    this.checkChampion();
     saveState();
-    broadcastNotification('temple.state', getPublicState());
+    broadcastNotification('wuxia.state', getPublicState());
     return getPublicState();
   },
 
-  resetMerit() {
-    state.totalIncense = 9;
-    state.totalMerit = 0;
-    state.woodenFishHits = 0;
-    state.bellRings = 0;
-    state.lanternCount = 0;
-    state.fortuneCount = 0;
-    state.activeIncenseSticks = 3;
-    state.offerings = { lotus: 1, fruit: 1, lamp: 1, dragon: 0 };
-    state.devotees = {};
-    state.recentEvents = [];
+  // Cập nhật cấu hình & Thiết lập hình ảnh 3D
+  updateSettings(newSettings = {}) {
+    state.settings = {
+      ...state.settings,
+      ...newSettings,
+      graphics3D: {
+        ...state.settings.graphics3D,
+        ...(newSettings.graphics3D || {})
+      }
+    };
+    if (typeof newSettings.autoSim === 'boolean') {
+      configureAutoSim(newSettings.autoSim);
+    }
     saveState();
-    broadcastNotification('temple.state', getPublicState());
+    broadcastNotification('wuxia.state', getPublicState());
     return getPublicState();
   }
 };
 
 // ============================================================================
-// 5. TIKTOK LIVE CONNECTOR & COMMENT PARSER
+// 5. BỘ PHÂN TÍCH BÌNH LUẬN TIKTOK LIVE (TIKTOK CHAT PARSER)
 // ============================================================================
-let tiktokConn = null;
-
 const commentCooldownMap = new Map();
 
 function parseViewerComment(commentText, user, uniqueId, avatar) {
   const raw = String(commentText || '').trim();
-  if (!raw || isBlockedSpamOrToxic(raw)) {
-    return null;
-  }
+  if (!raw || BAD_WORDS_RE.test(raw)) return null;
 
-  const cleanWish = sanitizeWishText(raw);
-  if (!cleanWish || cleanWish.length < 3) {
-    return null;
-  }
-
-  // Chống 1 người spam bình luận liên tục làm nghẽn hàng đợi TTS (cooldown 3.5 giây/người)
+  // Chống spam: cooldown 1.5s/người
   const userKey = uniqueId || user || '';
   const now = Date.now();
   if (userKey) {
     const lastTs = commentCooldownMap.get(userKey) || 0;
-    if (now - lastTs < 3500) {
-      return null;
-    }
+    if (now - lastTs < 1500) return null;
     commentCooldownMap.set(userKey, now);
-    if (commentCooldownMap.size > 600) {
+    if (commentCooldownMap.size > 800) {
       const oldestKey = commentCooldownMap.keys().next().value;
       commentCooldownMap.delete(oldestKey);
     }
   }
 
   const cleanUser = sanitizeUserName(user);
-  const lower = cleanWish.toLowerCase();
+  const lower = raw.toLowerCase().trim();
 
-  // 1. Xin xăm / Gieo quẻ
+  // 1. Kiểm tra gia nhập theo Môn Phái hoặc Binh Khí
+  for (const sectKey of SECT_KEYS) {
+    const sect = SECTS[sectKey];
+    for (const kw of sect.keywords) {
+      if (lower.includes(kw)) {
+        return WuxiaGame.joinBattle({
+          user: cleanUser,
+          uniqueId,
+          avatar,
+          chosenSect: sectKey,
+          chosenWeapon: sect.weapon
+        });
+      }
+    }
+  }
+
+  // 2. Lệnh 'chiến' / 'pk' / 'đấu' / 'tham gia': Tự động vào lôi đài với môn phái ngẫu nhiên
   if (
-    lower.includes('xin xăm') ||
-    lower.includes('xin xam') ||
-    lower.includes('gieo quẻ') ||
-    lower.includes('gieo que') ||
-    lower.includes('rút quẻ') ||
-    lower.includes('rut que') ||
-    lower.includes('quẻ') ||
-    lower.includes('que')
+    lower === 'chiến' ||
+    lower === 'chien' ||
+    lower === 'pk' ||
+    lower === 'đấu' ||
+    lower === 'dau' ||
+    lower.startsWith('chiến') ||
+    lower.startsWith('chien') ||
+    lower.includes('tham gia') ||
+    lower.includes('len dai') ||
+    lower.includes('lên đài')
   ) {
-    return Rituals.drawFortune({ user: cleanUser, uniqueId, avatar, topic: cleanWish });
+    return WuxiaGame.joinBattle({
+      user: cleanUser,
+      uniqueId,
+      avatar
+    });
   }
 
-  // 2. Thỉnh chuông
-  if (lower.includes('chuông') || lower.includes('chuong') || lower.includes('thỉnh chuông')) {
-    return Rituals.ringBell({ user: cleanUser, uniqueId, avatar, count: 1, wish: cleanWish, readTts: true });
-  }
-
-  // 3. Gõ mõ
-  if (lower.includes('gõ mõ') || lower.includes('go mo') || lower.includes('tụng kinh')) {
-    return Rituals.strikeWoodenFish({ user: cleanUser, uniqueId, avatar, count: 3 });
-  }
-
-  // 4. Thắp hương / Bái Phật
+  // 3. Lệnh đánh / chém / chưởng / xuất chiêu
   if (
-    lower.includes('thắp hương') ||
-    lower.includes('thap huong') ||
-    lower.includes('dâng hương') ||
-    lower.includes('dang huong') ||
-    lower.includes('bái phật') ||
-    lower.includes('bai phat') ||
-    lower.includes('lạy phật') ||
-    lower.includes('lay phat')
+    lower.includes('đánh') ||
+    lower.includes('danh') ||
+    lower.includes('chém') ||
+    lower.includes('chem') ||
+    lower.includes('chưởng') ||
+    lower.includes('chuong') ||
+    lower.includes('tấn công') ||
+    lower.includes('tan cong') ||
+    lower.includes('bạo kích') ||
+    lower.includes('bao kich') ||
+    lower.includes('xuat chieu') ||
+    lower.includes('xuất chiêu')
   ) {
-    return Rituals.burnIncense({ user: cleanUser, uniqueId, avatar, count: 3, wish: cleanWish });
+    const isCrit = lower.includes('bạo kích') || lower.includes('bao kich') || Math.random() < 0.25;
+    return WuxiaGame.attack({
+      user: cleanUser,
+      uniqueId,
+      avatar,
+      isCrit
+    });
   }
 
-  // 5. Cầu nguyện / Thả đèn hoa đăng
+  // 4. Lệnh hồi máu / né đòn / hộ thể
   if (
-    lower.includes('cầu') ||
-    lower.includes('cau ') ||
-    lower.includes('nguyện') ||
-    lower.includes('nguyen') ||
-    lower.includes('nam mô') ||
-    lower.includes('nam mo') ||
-    lower.includes('mô phật') ||
-    lower.includes('mo phat') ||
-    lower.includes('a di đà') ||
-    lower.includes('a di da') ||
-    lower.includes('bình an') ||
-    lower.includes('tài lộc') ||
-    lower.includes('chúc')
+    lower.includes('hồi máu') ||
+    lower.includes('hoi mau') ||
+    lower.includes('né') ||
+    lower.includes('ne') ||
+    lower.includes('hộ thể') ||
+    lower.includes('buff')
   ) {
-    return Rituals.sendPrayer({ user: cleanUser, uniqueId, avatar, wish: cleanWish });
+    return WuxiaGame.heal({
+      user: cleanUser,
+      uniqueId,
+      avatar
+    });
   }
 
-  return Rituals.burnIncense({ user: cleanUser, uniqueId, avatar, count: 1, wish: cleanWish });
+  // 5. Bình luận cổ vũ bất kỳ: Tự động đánh thường
+  return WuxiaGame.attack({
+    user: cleanUser,
+    uniqueId,
+    avatar,
+    isCrit: false
+  });
 }
 
-const giftComboTracker = new Map();
+// ============================================================================
+// 6. KẾT NỐI TIKTOK LIVE CONNECTOR
+// ============================================================================
+let tiktokConn = null;
 
 async function resolveTikTokUsername(rawInput) {
   let input = String(rawInput || '').trim();
   if (!input) {
-    throw new Error('Vui lòng nhập @username hoặc link TikTok Live cần kết nối');
+    throw new Error('Vui lòng nhập @username hoặc link TikTok Live');
   }
   if (input.startsWith('http://') || input.startsWith('https://') || input.includes('tiktok.com/')) {
     const urlToFetch = input.startsWith('http') ? input : `https://${input}`;
     const directMatch = urlToFetch.match(/tiktok\.com\/@([^/?#]+)/i);
     if (directMatch && directMatch[1]) {
       return directMatch[1];
-    }
-    try {
-      const resp = await fetch(urlToFetch, { redirect: 'follow' });
-      const finalUrl = resp.url || '';
-      const resolvedMatch = finalUrl.match(/tiktok\.com\/@([^/?#]+)/i);
-      if (resolvedMatch && resolvedMatch[1]) {
-        return resolvedMatch[1];
-      }
-    } catch (e) {
-      console.warn('[TikTok URL Resolve Warning]', e.message);
     }
   }
   return input.replace(/^@/, '').split(/[/?#]/)[0].trim();
@@ -819,7 +1007,7 @@ async function resolveTikTokUsername(rawInput) {
 function extractUserFromEvent(data) {
   const u = data?.user || data || {};
   const uniqueId = u.uniqueId || u.displayId || data?.uniqueId || '';
-  const user = u.nickname || uniqueId || data?.nickname || 'Thí Chủ';
+  const user = u.nickname || uniqueId || data?.nickname || 'Võ Lâm Hiệp';
   const avatar =
     u.profilePictureUrl ||
     u.avatarLarge?.urlList?.[0] ||
@@ -833,7 +1021,7 @@ function extractUserFromEvent(data) {
 async function connectTikTokLive(usernameOrUrl) {
   const cleanUser = await resolveTikTokUsername(usernameOrUrl);
   if (!cleanUser) {
-    throw new Error('Không tìm thấy @username hợp lệ từ dữ liệu nhập vào');
+    throw new Error('Không tìm thấy @username hợp lệ');
   }
 
   if (tiktokConn) {
@@ -851,48 +1039,37 @@ async function connectTikTokLive(usernameOrUrl) {
     viewerCount: 0,
     lastError: null
   };
-  broadcastNotification('temple.state', getPublicState());
+  broadcastNotification('tiktok.status', state.tiktok);
 
+  console.log(`[TikTok Live] Đang kết nối tới kênh @${cleanUser}...`);
   tiktokConn = new TikTokLiveConnection(cleanUser, {
-    processInitialData: true,
-    fetchRoomInfoOnConnect: false,
-    enableExtendedGiftInfo: false
+    processInitialData: false,
+    enableExtendedGiftInfo: true,
+    clientParams: { app_language: 'vi-VN', device_platform: 'web' },
+    requestHeaders: { 'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8' }
   });
 
-  tiktokConn.on(ControlEvent.CONNECTED, (roomState) => {
+  tiktokConn.on(WebcastEvent.CONNECTED, (stateData) => {
     state.tiktok.connected = true;
     state.tiktok.connecting = false;
-    state.tiktok.roomId = roomState?.roomId || tiktokConn?.roomId || null;
+    state.tiktok.roomId = stateData?.roomId || null;
     state.tiktok.lastError = null;
-    console.log(`[TikTok Live] Đã kết nối phòng @${cleanUser} (roomId: ${state.tiktok.roomId})`);
-    broadcastNotification('temple.state', getPublicState());
+    console.log(`[TikTok Live] Đã kết nối thành công phòng ${state.tiktok.roomId}`);
+    broadcastNotification('tiktok.status', state.tiktok);
   });
 
-  tiktokConn.on(ControlEvent.DISCONNECTED, () => {
+  tiktokConn.on(WebcastEvent.DISCONNECTED, () => {
     state.tiktok.connected = false;
     state.tiktok.connecting = false;
-    console.log(`[TikTok Live] Đã ngắt kết nối @${cleanUser}`);
-    broadcastNotification('temple.state', getPublicState());
-  });
-
-  tiktokConn.on(ControlEvent.ERROR, (err) => {
-    state.tiktok.lastError = err?.message || String(err);
-    console.warn('[TikTok Live Warning]', state.tiktok.lastError);
-    broadcastNotification('temple.state', getPublicState());
+    console.log('[TikTok Live] Đã ngắt kết nối');
+    broadcastNotification('tiktok.status', state.tiktok);
   });
 
   tiktokConn.on(WebcastEvent.ROOM_USER, (data) => {
-    const viewerCount = Number(data?.total ?? data?.viewerCount ?? 0);
-    if (viewerCount > 0) {
-      state.tiktok.viewerCount = viewerCount;
-      broadcastNotification('temple.viewerCount', { viewerCount });
+    if (data?.viewerCount != null) {
+      state.tiktok.viewerCount = Number(data.viewerCount);
+      broadcastNotification('tiktok.status', state.tiktok);
     }
-  });
-
-  tiktokConn.on(WebcastEvent.MEMBER, (data) => {
-    const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    recordDevotee(user, uniqueId, avatar, 1, 0, 0, 'Đã vào Chánh Điện lễ Phật');
-    broadcastNotification('temple.state', getPublicState());
   });
 
   tiktokConn.on(WebcastEvent.CHAT, (data) => {
@@ -904,80 +1081,36 @@ async function connectTikTokLive(usernameOrUrl) {
 
   tiktokConn.on(WebcastEvent.LIKE, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    const likeCount = Math.min(15, Math.max(1, Number(data?.count ?? data?.likeCount ?? 1)));
-    Rituals.strikeWoodenFish({ user, uniqueId, avatar, count: likeCount });
-  });
-
-  const handleSocialEvent = (data) => {
-    const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    Rituals.ringBell({
-      user,
-      uniqueId,
-      avatar,
-      count: 1,
-      wish: 'Hữu duyên tương ngộ nơi cửa Phật, cầu bình an may mắn',
-      readTts: false
-    });
-  };
-  tiktokConn.on(WebcastEvent.FOLLOW, handleSocialEvent);
-  tiktokConn.on(WebcastEvent.SHARE, handleSocialEvent);
-  tiktokConn.on(WebcastEvent.SOCIAL, (data) => {
-    const action = String(data?.action || '');
-    const disp = String(data?.common?.displayText?.displayType || data?.displayType || '').toLowerCase();
-    if (action === '1' || action === '3' || disp.includes('follow') || disp.includes('share')) {
-      handleSocialEvent(data);
-    }
+    const likeCount = Math.min(20, Math.max(1, Number(data?.count ?? data?.likeCount ?? 1)));
+    WuxiaGame.buffLike({ user, uniqueId, avatar, count: likeCount });
   });
 
   tiktokConn.on(WebcastEvent.GIFT, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    const giftObj = data?.gift || data?.giftDetails || {};
-    const giftId = String(data?.giftId || giftObj?.id || 'rose');
-    const groupId = String(data?.groupId || `${uniqueId}_${giftId}`);
-    const repeatCount = Math.max(1, Number(data?.repeatCount || data?.comboCount || 1));
-
-    const prevCount = giftComboTracker.get(groupId) || 0;
-    if (repeatCount <= prevCount && data?.repeatEnd) {
-      giftComboTracker.delete(groupId);
-      return;
-    }
-    const deltaCount = Math.max(1, repeatCount - prevCount);
-    giftComboTracker.set(groupId, repeatCount);
-    if (giftComboTracker.size > 500) {
-      const firstKey = giftComboTracker.keys().next().value;
-      giftComboTracker.delete(firstKey);
-    }
-
-    const diamondCount = Math.max(1, Number(giftObj?.diamondCount || data?.diamondCount || 1));
-    const totalCoins = diamondCount * deltaCount;
-    const rawGiftName = giftObj?.name || data?.giftName || giftObj?.describe || 'Hoa Hồng Tâm Thành';
-    const displayGiftName = deltaCount > 1 ? `${deltaCount}x ${rawGiftName}` : rawGiftName;
-
-    console.log(`[TikTok Gift] ${user} gửi ${displayGiftName} (${totalCoins} xu)`);
-
-    Rituals.offerGift({
-      user,
-      uniqueId,
-      avatar,
-      coins: totalCoins,
-      giftName: displayGiftName,
-      wish: `Thành tâm dâng ${displayGiftName} kính lễ Đức Phật A Di Đà`
-    });
+    const giftName = data?.giftName || data?.extendedGiftInfo?.name || 'Hoa Hồng Thần Khí';
+    const diamondCount = Number(data?.diamondCount || data?.cost || 1);
+    const repeatCount = Number(data?.repeatCount || 1);
+    const totalCoins = Math.max(1, diamondCount * repeatCount);
+    WuxiaGame.giftUltimate({ user, uniqueId, avatar, giftName, coins: totalCoins });
   });
 
+  const handleSocialEvent = (data) => {
+    const { user, uniqueId, avatar } = extractUserFromEvent(data);
+    WuxiaGame.joinBattle({ user, uniqueId, avatar });
+  };
+  tiktokConn.on(WebcastEvent.FOLLOW, handleSocialEvent);
+  tiktokConn.on(WebcastEvent.SHARE, handleSocialEvent);
+
   try {
-    const roomState = await tiktokConn.connect();
-    state.tiktok.connected = true;
-    state.tiktok.connecting = false;
-    state.tiktok.roomId = roomState?.roomId || tiktokConn?.roomId || null;
-    broadcastNotification('temple.state', getPublicState());
+    await tiktokConn.connect();
     return state.tiktok;
   } catch (err) {
     state.tiktok.connected = false;
     state.tiktok.connecting = false;
-    state.tiktok.lastError = err?.message || 'Không thể kết nối phòng Live (kiểm tra tài khoản đang phát Live chưa)';
-    broadcastNotification('temple.state', getPublicState());
-    throw new Error(state.tiktok.lastError);
+    state.tiktok.lastError = err.message || 'Lỗi kết nối TikTok';
+    console.error(`[TikTok Live] Lỗi kết nối: ${err.message}`);
+    broadcastNotification('tiktok.status', state.tiktok);
+    throw err;
   }
 }
 
@@ -990,37 +1123,67 @@ function disconnectTikTokLive() {
   }
   state.tiktok.connected = false;
   state.tiktok.connecting = false;
-  state.tiktok.viewerCount = 0;
-  broadcastNotification('temple.state', getPublicState());
+  broadcastNotification('tiktok.status', state.tiktok);
   return state.tiktok;
 }
 
 // ============================================================================
-// 6. AUTO-SIMULATION ENGINE (CHẾ ĐỘ TỰ ĐỘNG GIẢ LẬP ĐÔNG NGƯỜI XEM)
+// 7. GIẢ LẬP ĐẤU SĨ TỰ ĐỘNG (AUTO SIMULATION ENGINE)
 // ============================================================================
 let autoSimTimer = null;
-const SIM_DEVOTEES = [
-  { user: 'Ngọc Anh Nguyễn', uniqueId: 'ngocanh.98', wish: 'Con thành tâm cầu cho bố mẹ luôn mạnh khỏe, bình an' },
-  { user: 'Trần Minh Quân', uniqueId: 'minhquan_bds', wish: 'Cầu tháng mới công việc thuận buồm xuôi gió, tài lộc hanh thông' },
-  { user: 'Diệu Thảo Tâm An', uniqueId: 'tam_an_99', wish: 'Nam Mô A Di Đà Phật, nguyện cầu thế giới hòa bình chúng sinh an lạc' },
-  { user: 'Lê Hoàng Nam', uniqueId: 'hoangnam.dev', wish: 'Cầu thi cử đỗ đạt điểm cao, sự nghiệp rộng mở' },
-  { user: 'Phạm Thanh Hà', uniqueId: 'thanhha.lotus', wish: 'Cầu gia đạo êm ấm, con cái ngoan ngoãn học giỏi' },
-  { user: 'Vũ Đức Thịnh', uniqueId: 'ducthinh88', wish: 'Con xin gieo một quẻ cầu tài lộc đầu năm' }
+const SIM_FIGHTERS = [
+  { user: 'Lệnh Hồ Xung', uniqueId: 'lenhhoxung', sect: 'vodang', weapon: 'Độc Cô Cửu Kiếm' },
+  { user: 'Kiều Phong', uniqueId: 'kieuphong', sect: 'caibang', weapon: 'Đả Cẩu Bổng' },
+  { user: 'Trương Vô Kỵ', uniqueId: 'truongvoky', sect: 'minhgiao', weapon: 'Huyết Long Đao' },
+  { user: 'Chu Chỉ Nhược', uniqueId: 'chuchinhuoc', sect: 'ngami', weapon: 'Ỷ Thiên Kiếm' },
+  { user: 'Hư Trúc', uniqueId: 'hutruc', sect: 'thieulam', weapon: 'Hàng Ma Côn' },
+  { user: 'Đường Tam', uniqueId: 'duongtam', sect: 'duongmon', weapon: 'Bão Vũ Lê Hoa Châm' },
+  { user: 'Dương Quá', uniqueId: 'duongqua', sect: 'vodang', weapon: 'Huyền Thiết Trọng Kiếm' },
+  { user: 'Tiểu Long Nữ', uniqueId: 'tieulongnu', sect: 'ngami', weapon: 'Ngọc Nữ Tố Tâm Kiếm' },
+  { user: 'Hồng Thất Công', uniqueId: 'hongthatcong', sect: 'caibang', weapon: 'Đả Cẩu Bổng' },
+  { user: 'Tạ Tốn', uniqueId: 'taton', sect: 'minhgiao', weapon: 'Đồ Long Đao' }
 ];
 
 function runSingleSimulationStep() {
-  const pick = SIM_DEVOTEES[Math.floor(Math.random() * SIM_DEVOTEES.length)];
+  const pick = SIM_FIGHTERS[Math.floor(Math.random() * SIM_FIGHTERS.length)];
   const roll = Math.random();
-  if (roll < 0.30) {
-    Rituals.burnIncense({ user: pick.user, uniqueId: pick.uniqueId, count: 3, wish: pick.wish });
-  } else if (roll < 0.55) {
-    Rituals.sendPrayer({ user: pick.user, uniqueId: pick.uniqueId, wish: pick.wish });
-  } else if (roll < 0.75) {
-    Rituals.drawFortune({ user: pick.user, uniqueId: pick.uniqueId, topic: pick.wish });
-  } else if (roll < 0.90) {
-    Rituals.offerGift({ user: pick.user, uniqueId: pick.uniqueId, giftType: 'lotus', coins: 15, giftName: 'Hoa Sen Vàng Tinh Khiết' });
+
+  if (roll < 0.25) {
+    // Gia nhập / Xuất hiện
+    WuxiaGame.joinBattle({
+      user: pick.user,
+      uniqueId: pick.uniqueId,
+      chosenSect: pick.sect,
+      chosenWeapon: pick.weapon
+    });
+  } else if (roll < 0.65) {
+    // Tấn công
+    WuxiaGame.attack({
+      user: pick.user,
+      uniqueId: pick.uniqueId,
+      isCrit: Math.random() < 0.3
+    });
+  } else if (roll < 0.82) {
+    // Thả tim buff nội lực
+    WuxiaGame.buffLike({
+      user: pick.user,
+      uniqueId: pick.uniqueId,
+      count: Math.floor(1 + Math.random() * 8)
+    });
+  } else if (roll < 0.94) {
+    // Hồi máu
+    WuxiaGame.heal({
+      user: pick.user,
+      uniqueId: pick.uniqueId
+    });
   } else {
-    Rituals.ringBell({ user: pick.user, uniqueId: pick.uniqueId, count: 1, wish: pick.wish, readTts: true });
+    // Kích hoạt Tuyệt Kỹ Thần Binh
+    WuxiaGame.giftUltimate({
+      user: pick.user,
+      uniqueId: pick.uniqueId,
+      giftName: 'Long Phụng Hoàng Kim Trượng',
+      coins: 99
+    });
   }
 }
 
@@ -1032,38 +1195,34 @@ function configureAutoSim(enabled) {
   }
   if (state.settings.autoSim) {
     runSingleSimulationStep();
-    autoSimTimer = setInterval(runSingleSimulationStep, state.settings.autoSimIntervalMs || 9500);
+    autoSimTimer = setInterval(runSingleSimulationStep, state.settings.autoSimIntervalMs || 4500);
   }
 }
 
 // ============================================================================
-// 7. JSON-RPC 2.0 DISPATCHER
+// 8. JSON-RPC 2.0 DISPATCHER
 // ============================================================================
 async function handleRpcCall(method, params = {}) {
   switch (method) {
-    case 'temple.getState':
+    case 'wuxia.getState':
       return getPublicState();
-    case 'temple.burnIncense':
-      return Rituals.burnIncense(params);
-    case 'temple.strikeWoodenFish':
-      return Rituals.strikeWoodenFish(params);
-    case 'temple.ringBell':
-      return Rituals.ringBell(params);
-    case 'temple.sendPrayer':
-      return Rituals.sendPrayer(params);
-    case 'temple.offerGift':
-      return Rituals.offerGift(params);
-    case 'temple.drawFortune':
-      return Rituals.drawFortune(params);
-    case 'temple.grandCeremony':
-      return Rituals.grandCeremony(params);
-    case 'temple.updateSettings':
-      return Rituals.updateSettings(params);
-    case 'temple.resetMerit':
-      return Rituals.resetMerit();
-    case 'temple.comment':
+    case 'wuxia.join':
+      return WuxiaGame.joinBattle(params);
+    case 'wuxia.attack':
+      return WuxiaGame.attack(params);
+    case 'wuxia.heal':
+      return WuxiaGame.heal(params);
+    case 'wuxia.buffLike':
+      return WuxiaGame.buffLike(params);
+    case 'wuxia.giftUltimate':
+      return WuxiaGame.giftUltimate(params);
+    case 'wuxia.resetRound':
+      return WuxiaGame.resetRound();
+    case 'wuxia.updateSettings':
+      return WuxiaGame.updateSettings(params);
+    case 'wuxia.comment':
       return parseViewerComment(params.comment, params.user, params.uniqueId, params.avatar);
-    case 'temple.speak': {
+    case 'wuxia.speak': {
       const res = await zeroTts.synthesize(params.text, params.voice || 'maichi');
       if (res.ok && params.broadcast !== false) {
         broadcastNotification('tts.play', {
@@ -1074,16 +1233,12 @@ async function handleRpcCall(method, params = {}) {
       }
       return res;
     }
-    case 'temple.ttsStatus':
-      return zeroTts.getStatus();
     case 'live.connect':
       return await connectTikTokLive(params.username);
     case 'live.disconnect':
       return disconnectTikTokLive();
     case 'live.setAutoSim':
       configureAutoSim(Boolean(params.enabled));
-      saveState();
-      broadcastNotification('temple.state', getPublicState());
       return getPublicState();
     default:
       throw new Error(`Không tìm thấy phương thức JSON-RPC: ${method}`);
@@ -1091,12 +1246,17 @@ async function handleRpcCall(method, params = {}) {
 }
 
 // ============================================================================
-// 8. EXPRESS + WEBSOCKET SERVER
+// 9. EXPRESS + WEBSOCKET SERVER
 // ============================================================================
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use('/tts-cache', express.static(TTS_CACHE_DIR, { maxAge: '7d' }));
+
+// Static Three.js routes from node_modules
+app.use('/vendor/three', express.static(path.join(__dirname, 'node_modules/three/build')));
+app.use('/vendor/three/examples/jsm', express.static(path.join(__dirname, 'node_modules/three/examples/jsm')));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/admin', (_req, res) => {
@@ -1110,7 +1270,7 @@ app.post('/rpc', async (req, res) => {
     return res.status(400).json({
       jsonrpc: '2.0',
       id: id ?? null,
-      error: { code: -32600, message: 'Invalid JSON-RPC Request: thiếu method' }
+      error: { code: -32600, message: 'Invalid JSON-RPC: missing method' }
     });
   }
   try {
@@ -1127,17 +1287,6 @@ app.post('/rpc', async (req, res) => {
       error: { code: -32000, message: err.message || 'Server error' }
     });
   }
-});
-
-// ZeroTTS HTTP Endpoint (Mai Chi default)
-app.all('/api/tts', async (req, res) => {
-  const text = (req.body?.text || req.query?.text || '').trim();
-  const voice = (req.body?.voice || req.query?.voice || state.settings.ttsVoice || 'maichi').trim();
-  if (!text) {
-    return res.status(400).json({ ok: false, error: 'Thiếu nội dung text cần đọc' });
-  }
-  const result = await zeroTts.synthesize(text, voice);
-  res.json(result);
 });
 
 app.get('/api/state', (_req, res) => {
@@ -1164,7 +1313,7 @@ wss.on('connection', (ws) => {
   ws.send(
     JSON.stringify({
       jsonrpc: '2.0',
-      method: 'temple.state',
+      method: 'wuxia.state',
       params: getPublicState()
     })
   );
@@ -1204,19 +1353,30 @@ wss.on('connection', (ws) => {
 
 const zeroTts = new ZeroTTSManager();
 
+// Khởi tạo một số đấu sĩ ban đầu nếu danh sách rỗng
+if (Object.keys(state.fighters).length === 0) {
+  SIM_FIGHTERS.slice(0, 6).forEach((f) => {
+    WuxiaGame.joinBattle({
+      user: f.user,
+      uniqueId: f.uniqueId,
+      chosenSect: f.sect,
+      chosenWeapon: f.weapon
+    });
+  });
+}
+
 server.listen(PORT, () => {
   console.log(`============================================================`);
-  console.log(`🪷 CHÙA ONLINE TIKTOK LIVE RPC ĐÃ KHỞI ĐỘNG`);
-  console.log(`📺 Màn hình Live (9:16 OBS): http://localhost:${PORT}`);
-  console.log(`🎛️ Bảng điều khiển RPC Admin: http://localhost:${PORT}/admin`);
-  console.log(`🔌 JSON-RPC 2.0 Endpoint   : http://localhost:${PORT}/rpc (ws://localhost:${PORT}/ws)`);
+  console.log(`⚔️ HOA SƠN LUẬN KIẾM 3D — ĐẠI HỘI VÕ LÂM MINH CHỦ ĐÃ KHỞI ĐỘNG`);
+  console.log(`📺 Màn hình Lôi Đài 3D (OBS 9:16): http://localhost:${PORT}`);
+  console.log(`🎛️ Bảng Điều Khiển Admin: http://localhost:${PORT}/admin`);
+  console.log(`🔌 JSON-RPC 2.0 Endpoint : http://localhost:${PORT}/rpc (ws://localhost:${PORT}/ws)`);
   console.log(`============================================================`);
 
-  // Tự động kết nối tới @zenfacts_vn ngay khi khởi động server
-  const defaultChannel = process.env.TIKTOK_USER || state.tiktok?.username || 'zenfacts_vn';
-  if (defaultChannel) {
+  const defaultChannel = process.env.TIKTOK_USER || state.tiktok?.username;
+  if (defaultChannel && defaultChannel !== 'wuxia_live') {
     connectTikTokLive(defaultChannel).catch((err) => {
-      console.warn(`[Auto-Connect @${defaultChannel}] Chưa kết nối được ngay:`, err.message);
+      console.warn(`[Auto-Connect @${defaultChannel}] Chưa kết nối:`, err.message);
     });
   }
 });
