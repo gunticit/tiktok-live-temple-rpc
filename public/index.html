@@ -24,20 +24,41 @@
         <div class="highway-lanes-lines"></div>
 
         <!-- CỌC TIÊU GIAO THÔNG Ở HAI BÊN ĐƯỜNG -->
-        <svg class="road-traffic-cone" style="left: 45px; bottom: 380px; width: 44px; height: 58px;" viewBox="0 0 40 50">
+        <svg class="road-traffic-cone" style="left: 45px; bottom: 380px; width: 44px; height: 58px;" viewBox="0 0 40 50" aria-hidden="true">
           <polygon points="12,46 28,46 22,12 18,12" fill="#ff5722" />
           <polygon points="15,34 25,34 23,24 17,24" fill="#ffffff" />
           <rect x="6" y="44" width="28" height="6" rx="2" fill="#212121" />
         </svg>
-        <svg class="road-traffic-cone" style="right: 45px; bottom: 380px; width: 44px; height: 58px;" viewBox="0 0 40 50">
+        <svg class="road-traffic-cone" style="right: 45px; bottom: 380px; width: 44px; height: 58px;" viewBox="0 0 40 50" aria-hidden="true">
           <polygon points="12,46 28,46 22,12 18,12" fill="#ff5722" />
           <polygon points="15,34 25,34 23,24 17,24" fill="#ffffff" />
           <rect x="6" y="44" width="28" height="6" rx="2" fill="#212121" />
         </svg>
 
+        <!-- POPUP THÔNG BÁO QUÀ TẶNG TIKTOK x2 ĐIỂM (FLOATING OVERLAY) -->
+        <div class="gplx-gift-toast" id="gplxGiftToast" role="status" aria-live="polite">
+          <div class="gift-toast-avatar-wrap">
+            <img id="giftToastAvatar" class="gift-toast-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=vip" alt="" referrerpolicy="no-referrer" />
+            <span class="gift-toast-x2-pill">x2</span>
+          </div>
+          <div class="gift-toast-info">
+            <div class="gift-toast-title" id="giftToastUser">@Minh_B2 vừa tặng Hoa hồng</div>
+            <div class="gift-toast-sub" id="giftToastMessage">⚡ Đã kích hoạt x2 điểm cho câu trả lời!</div>
+          </div>
+          <div class="gift-toast-icon-wrap">
+            <img id="giftToastImg" class="gift-toast-img" src="/assets/gifts/hoa_hong.svg" alt="Quà tặng TikTok" referrerpolicy="no-referrer" />
+            <span class="gift-toast-count" id="giftToastCount">x1</span>
+          </div>
+        </div>
+
+        <!-- NÚT MỞ KHÓA ÂM THANH MC NẾU TRÌNH DUYỆT CHẶN AUTOPLAY -->
+        <button type="button" class="audio-unlock-pill" id="btnUnlockAudio" hidden>
+          🔊 Bấm để bật giọng đọc MC AI
+        </button>
+
         <!-- NỘI DUNG CHÍNH (9:16 VERTICAL LAYOUT TỪ TRÊN XUỐNG DƯỚI) -->
         <div class="gplx-content-container">
-          
+
           <!-- ================================================================
                1. TOP HEADER
                ================================================================ -->
@@ -46,22 +67,22 @@
             <div class="header-status-row">
               <div class="live-badge-red" id="liveStatusBadge">
                 <span class="live-pulse-dot" id="livePulseDot"></span>
-                <span>LIVE STREAM • ĐANG THI ĐẤU</span>
+                <span id="liveBadgeLabel">LIVE STREAM • ĐANG THI ĐẤU</span>
               </div>
               <div class="question-counter-pill" id="questionCounterText">
-                CÂU HỎI: 12 / 35
+                CÂU HỎI: 486 / 600
               </div>
             </div>
 
             <!-- Đồng hồ đếm ngược kỹ thuật số phát sáng 00:15 có vòng tròn tiến độ cam -->
-            <div class="circular-timer-container">
-              <svg class="timer-svg" viewBox="0 0 120 120">
+            <div class="circular-timer-container" id="timerContainer">
+              <svg class="timer-svg" viewBox="0 0 120 120" aria-hidden="true">
                 <circle class="timer-circle-bg" cx="60" cy="60" r="50"></circle>
                 <circle class="timer-circle-progress" id="timerCircleProgress" cx="60" cy="60" r="50"></circle>
               </svg>
               <div class="timer-digital-text">
                 <span class="timer-seconds-big" id="timerSeconds">00:15</span>
-                <span class="timer-ms-small" id="timerMs">15</span>
+                <span class="timer-ms-small" id="timerMs">MC ĐỌC</span>
               </div>
             </div>
 
@@ -73,6 +94,7 @@
                 <span class="class-pill">[B1/B2]</span>
                 <span class="class-pill">[C1]</span>
                 <span class="class-pill">[C]</span>
+                <span class="class-pill global-x2-pill" id="globalX2Badge" hidden>⚡ x2 TOÀN PHÒNG</span>
               </div>
             </div>
           </header>
@@ -89,16 +111,16 @@
 
             <!-- Tiêu đề câu hỏi -->
             <h1 class="question-text-title" id="questionText">
-              Câu 12: Xe nào được quyền đi trước trong trường hợp này?
+              Câu 486: Đang tải câu hỏi sát hạch GPLX...
             </h1>
 
             <!-- Khung sơ đồ Sa-hình chi tiết -->
             <div class="question-diagram-wrapper">
-              <img src="/assets/sa_hinh_12.svg" alt="Sa hình ngã ba có CSGT điều khiển" class="sa-hinh-svg" id="saHinhImage" />
+              <img src="/assets/sa_hinh_12.svg" alt="Sa hình giao thông" class="sa-hinh-svg" id="saHinhImage" />
             </div>
 
             <!-- Cảnh báo Điểm Liệt -->
-            <div class="fatal-warning-badge" id="fatalBadge">
+            <div class="fatal-warning-badge" id="fatalBadge" style="display: none;">
               <span>⚠️ Điểm liệt! (Câu hỏi quan trọng)</span>
             </div>
           </section>
@@ -112,47 +134,55 @@
               <button class="answer-card-btn card-opt-a" id="optBtn_a" type="button">
                 <div class="opt-letter-badge">A</div>
                 <div class="opt-text-wrap">
-                  <div class="opt-main-label">Xe con</div>
-                  <div class="opt-sub-desc">(Red Sedan)</div>
+                  <div class="opt-main-label">Đáp án A</div>
+                  <div class="opt-sub-desc"></div>
                 </div>
+                <span class="opt-correct-tag" aria-hidden="true">✓ ĐÚNG</span>
+                <div class="opt-vote-bar" id="optVoteBar_a"></div>
               </button>
 
-              <!-- [B] Nút Vàng Ánh Kim Phát Sáng (Active / Highlighted) -->
-              <button class="answer-card-btn card-opt-b is-highlighted" id="optBtn_b" type="button">
+              <!-- [B] Nút Vàng Ánh Kim -->
+              <button class="answer-card-btn card-opt-b" id="optBtn_b" type="button">
                 <div class="opt-letter-badge">B</div>
                 <div class="opt-text-wrap">
-                  <div class="opt-main-label">Xe tải</div>
-                  <div class="opt-sub-desc">(Blue Truck)</div>
+                  <div class="opt-main-label">Đáp án B</div>
+                  <div class="opt-sub-desc"></div>
                 </div>
+                <span class="opt-correct-tag" aria-hidden="true">✓ ĐÚNG</span>
+                <div class="opt-vote-bar" id="optVoteBar_b"></div>
               </button>
 
               <!-- [C] Nút Xanh Lá Cây -->
               <button class="answer-card-btn card-opt-c" id="optBtn_c" type="button">
                 <div class="opt-letter-badge">C</div>
                 <div class="opt-text-wrap">
-                  <div class="opt-main-label">Xe mô tô</div>
-                  <div class="opt-sub-desc">(Green Motorcycle)</div>
+                  <div class="opt-main-label">Đáp án C</div>
+                  <div class="opt-sub-desc"></div>
                 </div>
+                <span class="opt-correct-tag" aria-hidden="true">✓ ĐÚNG</span>
+                <div class="opt-vote-bar" id="optVoteBar_c"></div>
               </button>
 
               <!-- [D] Nút Tím -->
               <button class="answer-card-btn card-opt-d" id="optBtn_d" type="button">
                 <div class="opt-letter-badge">D</div>
                 <div class="opt-text-wrap">
-                  <div class="opt-main-label">Tất cả xe</div>
-                  <div class="opt-sub-desc">dừng lại</div>
+                  <div class="opt-main-label">Đáp án D</div>
+                  <div class="opt-sub-desc"></div>
                 </div>
+                <span class="opt-correct-tag" aria-hidden="true">✓ ĐÚNG</span>
+                <div class="opt-vote-bar" id="optVoteBar_d"></div>
               </button>
             </div>
 
             <!-- Phân bổ số lượt bình chọn -->
             <div class="vote-distribution-text" id="voteDistribution">
-              A (234 người) • B (512 người) • C (89 người) • D (12 người)
+              A (0 người) • B (0 người) • C (0 người)
             </div>
 
             <!-- Banner kêu gọi tương tác -->
-            <div class="comment-action-banner">
-              <span>💬 BÌNH LUẬN A, B, C HOẶC D ĐỂ TRẢ LỜI NGAY!</span>
+            <div class="comment-action-banner" id="commentActionBanner">
+              <span>💬 BÌNH LUẬN A, B, C, D (HOẶC 1, 2, 3, 4) TRONG 15 GIÂY!</span>
             </div>
           </section>
 
@@ -170,12 +200,13 @@
               <div class="podium-card podium-rank-2">
                 <span class="podium-crown-badge">🥈</span>
                 <div class="podium-avatar-wrap">
-                  <img class="podium-avatar-img" id="podiumAvatar2" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver2" alt="" />
+                  <img class="podium-avatar-img" id="podiumAvatar2" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver2" alt="" referrerpolicy="no-referrer" />
                 </div>
                 <div class="podium-user-name" id="podiumUser2">@Thanh_TaiXe_C</div>
                 <div class="podium-score-row">
                   <span class="podium-pts" id="podiumScore2">790đ</span>
                   <span class="podium-delta" id="podiumDelta2">+0.6s</span>
+                  <span class="podium-x2-badge" id="podiumX2_2" hidden></span>
                   <span class="podium-car-icon">🚙</span>
                 </div>
               </div>
@@ -184,12 +215,13 @@
               <div class="podium-card podium-rank-1">
                 <span class="podium-crown-badge">👑</span>
                 <div class="podium-avatar-wrap">
-                  <img class="podium-avatar-img" id="podiumAvatar1" src="https://api.dicebear.com/7.x/bottts/svg?seed=champion1" alt="" />
+                  <img class="podium-avatar-img" id="podiumAvatar1" src="https://api.dicebear.com/7.x/bottts/svg?seed=champion1" alt="" referrerpolicy="no-referrer" />
                 </div>
                 <div class="podium-user-name" id="podiumUser1">@Minh_B2</div>
                 <div class="podium-score-row">
                   <span class="podium-pts" id="podiumScore1">820đ</span>
                   <span class="podium-delta" id="podiumDelta1">+0.4s</span>
+                  <span class="podium-x2-badge" id="podiumX2_1" hidden></span>
                   <span class="podium-car-icon">🚗</span>
                 </div>
               </div>
@@ -198,12 +230,13 @@
               <div class="podium-card podium-rank-3">
                 <span class="podium-crown-badge">🥉</span>
                 <div class="podium-avatar-wrap">
-                  <img class="podium-avatar-img" id="podiumAvatar3" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver3" alt="" />
+                  <img class="podium-avatar-img" id="podiumAvatar3" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver3" alt="" referrerpolicy="no-referrer" />
                 </div>
                 <div class="podium-user-name" id="podiumUser3">@Phuong_C1</div>
                 <div class="podium-score-row">
                   <span class="podium-pts" id="podiumScore3">750đ</span>
                   <span class="podium-delta" id="podiumDelta3">+0.8s</span>
+                  <span class="podium-x2-badge" id="podiumX2_3" hidden></span>
                   <span class="podium-car-icon">🏎️</span>
                 </div>
               </div>
@@ -213,21 +246,23 @@
             <div class="podium-runners-row">
               <div class="runner-card">
                 <span class="runner-rank-num">#4</span>
-                <img class="runner-avatar-sm" id="runnerAvatar4" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver4" alt="" />
+                <img class="runner-avatar-sm" id="runnerAvatar4" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver4" alt="" referrerpolicy="no-referrer" />
                 <div class="runner-info-col">
                   <div class="runner-user-sm" id="runnerUser4">@Tuan_LaiMoi</div>
                   <div class="runner-score-sm" id="runnerScore4">710đ • +1.1s</div>
                 </div>
+                <span class="podium-x2-badge" id="podiumX2_4" hidden></span>
                 <span>🚕</span>
               </div>
 
               <div class="runner-card">
                 <span class="runner-rank-num">#5</span>
-                <img class="runner-avatar-sm" id="runnerAvatar5" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver5" alt="" />
+                <img class="runner-avatar-sm" id="runnerAvatar5" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver5" alt="" referrerpolicy="no-referrer" />
                 <div class="runner-info-col">
                   <div class="runner-user-sm" id="runnerUser5">@Hoa_SaHinh</div>
                   <div class="runner-score-sm" id="runnerScore5">680đ • +1.3s</div>
                 </div>
+                <span class="podium-x2-badge" id="podiumX2_5" hidden></span>
                 <span>🚗</span>
               </div>
             </div>
@@ -239,23 +274,66 @@
           </section>
 
           <!-- ================================================================
-               5. BOTTOM BANNER & HOST OVERLAY
+               5. BOTTOM BANNER (TIKTOK GIFTS x2 SHOWCASE) & MC HOST OVERLAY
                ================================================================ -->
           <footer class="gplx-bottom-wrapper">
-            <!-- Banner Quà tặng x2 điểm -->
-            <div class="gift-multiplier-banner">
-              <span>🎁 QUÀ TẶNG x2 ĐIỂM • COMMENT ĐÚNG + NHANH ĐỂ LÊN TOP!</span>
+            <!-- Thanh Quà Tặng TikTok x2 Điểm kèm hình ảnh quà tặng thật -->
+            <div class="gift-multiplier-banner" id="giftMultiplierBanner">
+              <div class="gift-banner-lead">
+                <span class="gift-x2-chip">x2 ĐIỂM</span>
+                <span class="gift-banner-text">TẶNG QUÀ TIKTOK ĐỂ NHÂN ĐÔI ĐIỂM CÂU NÀY:</span>
+              </div>
+              <div class="gift-icons-strip" id="stageGiftStrip">
+                <div class="stage-gift-chip">
+                  <img src="/assets/gifts/hoa_hong.svg" alt="Hoa hồng" width="32" height="32" decoding="async" />
+                  <span>1🪙</span>
+                </div>
+                <div class="stage-gift-chip">
+                  <img src="/assets/gifts/tiktok.svg" alt="TikTok" width="32" height="32" decoding="async" />
+                  <span>1🪙</span>
+                </div>
+                <div class="stage-gift-chip">
+                  <img src="/assets/gifts/ban_tim.svg" alt="Bắn tim" width="32" height="32" decoding="async" />
+                  <span>5🪙</span>
+                </div>
+                <div class="stage-gift-chip">
+                  <img src="/assets/gifts/chu_heo.svg" alt="Chú heo may mắn" width="32" height="32" decoding="async" />
+                  <span>10🪙</span>
+                </div>
+                <div class="stage-gift-chip">
+                  <img src="/assets/gifts/banh_donut.svg" alt="Bánh Donut" width="32" height="32" decoding="async" />
+                  <span>30🪙</span>
+                </div>
+                <div class="stage-gift-chip">
+                  <img src="/assets/gifts/tay_cam.svg" alt="Tay cầm chơi game" width="32" height="32" decoding="async" />
+                  <span>100🪙</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Thống kê tỷ lệ đúng & Khung webcam Thầy Giáo Live -->
+            <!-- Thanh học viên đang sở hữu buff x2 ở câu này -->
+            <div class="active-boosters-strip" id="activeBoostersBar" hidden></div>
+
+            <!-- Thống kê tỷ lệ đúng, phụ đề MC & Khung webcam Thầy Giáo Live -->
             <div class="bottom-stats-and-host-row">
-              <div class="accuracy-stats-pill" id="accuracyStatsText">
-                ✓ Tỷ lệ đúng: 68% • Thời gian trung bình: 1.2 giây
+              <div class="bottom-left-stack">
+                <!-- Phụ đề MC đang đọc trực tiếp -->
+                <div class="mc-subtitle-pill" id="mcSubtitlePill">
+                  <span class="mc-eq-bars" id="mcEqBars" aria-hidden="true">
+                    <i></i><i></i><i></i><i></i>
+                  </span>
+                  <span class="mc-subtitle-text" id="mcSubtitleText">🎙️ MC AI sẵn sàng đọc câu hỏi &amp; đáp án...</span>
+                </div>
+
+                <div class="accuracy-stats-pill" id="accuracyStatsText">
+                  ✓ Tỷ lệ đúng: 68% • Thời gian trung bình: 1.2 giây
+                </div>
               </div>
 
-              <!-- Khung Streamer Thầy Giáo Live -->
-              <div class="host-webcam-frame">
+              <!-- Khung Streamer Thầy Giáo Live (MC) -->
+              <div class="host-webcam-frame" id="mcHostFrame">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=TeacherLive&clothing=blazerAndShirt&accessories=round&top=shortHairShortFlat" alt="Thầy Giáo Live" class="host-avatar-img" />
+                <div class="mc-live-pill" id="mcSpeakingBadge" hidden>🎙️ ĐANG ĐỌC</div>
                 <div class="host-tag-red">THẦY GIÁO LIVE</div>
               </div>
             </div>
@@ -279,22 +357,108 @@
         <div class="dock-section-title">📡 Kết Nối TikTok Live</div>
         <div style="display: flex; gap: 8px;">
           <input type="text" id="inputTikTokUser" class="dock-input" value="@thaygiao_gplx" placeholder="@username TikTok..." />
-          <button class="dock-btn gold" id="btnConnectTikTok">Kết Nối</button>
+          <button class="dock-btn gold" id="btnConnectTikTok" type="button">Kết Nối</button>
+          <button class="dock-btn" id="btnDisconnectTikTok" type="button" title="Ngắt kết nối">Ngắt</button>
+        </div>
+        <div class="dock-status-line" id="dockTikTokStatus">⚪ Chưa kết nối phòng TikTok Live</div>
+      </div>
+
+      <!-- Điều khiển MC Đọc Câu Hỏi & Câu Trả Lời (ZeroTTS AI) -->
+      <div class="dock-section">
+        <div class="dock-section-head">
+          <div class="dock-section-title">🎙️ MC Đọc Câu Hỏi &amp; Đáp Án</div>
+          <span class="dock-tts-badge" id="dockTtsStatus">🟡 Kiểm tra ZeroTTS...</span>
+        </div>
+        <select id="selectMcVoice" class="dock-input dock-select" aria-label="Chọn giọng đọc MC">
+          <option value="quangminh" selected>Quang Minh (Nam - Rõ ràng, dứt khoát)</option>
+          <option value="tiendat">Tiến Đạt (Nam - Sôi nổi, bình luận)</option>
+          <option value="maichi">Mai Chi (Nữ - Thân thiện, nhẹ nhàng)</option>
+          <option value="baotrang">Bảo Trang (Nữ - Tin tức, chuẩn xác)</option>
+          <option value="giahuy">Gia Huy (Nam - Trầm ấm)</option>
+          <option value="huuduc">Hữu Đức (Nam - Điềm đạm)</option>
+          <option value="kimoanh">Kim Oanh (Nữ - Truyền cảm)</option>
+          <option value="hamy">Hà My (Nữ - Trẻ trung, biểu cảm)</option>
+        </select>
+        <div class="dock-grid-2">
+          <button class="dock-btn gold" id="btnToggleMcAuto" type="button">🎙️ MC Tự Đọc: BẬT</button>
+          <button class="dock-btn" id="btnMcStop" type="button">⏹️ Dừng Đọc</button>
+          <button class="dock-btn" id="btnMcReadQuestion" type="button">🔊 Đọc Câu Hỏi</button>
+          <button class="dock-btn" id="btnMcReadAnswer" type="button">📣 Đọc Đáp Án</button>
+        </div>
+        <div class="dock-volume-row">
+          <label for="mcVolumeRange">🔊 Âm lượng MC:</label>
+          <input type="range" id="mcVolumeRange" min="0" max="100" value="95" />
+          <span id="mcVolumeValue">95%</span>
         </div>
       </div>
 
-      <!-- Điều khiển Câu Hỏi & Thời Gian -->
+      <!-- Điều khiển Câu Hỏi & Thời Gian 15s -->
       <div class="dock-section">
-        <div class="dock-section-title">⏱️ Trận Đấu & Chọn Câu Hỏi</div>
+        <div class="dock-section-title">⏱️ Trận Đấu &amp; Chọn Câu Hỏi (15s)</div>
         <div style="display: flex; gap: 8px; margin-bottom: 6px;">
           <input type="number" id="inputJumpQ" class="dock-input" value="486" placeholder="Nhập số câu (vd: 486)..." style="width: 140px;" />
-          <button class="dock-btn gold" id="btnJumpQ" style="flex: 1;">Nhảy Tới Câu</button>
+          <button class="dock-btn gold" id="btnJumpQ" type="button" style="flex: 1;">Nhảy Tới Câu</button>
         </div>
         <div class="dock-grid-2">
-          <button class="dock-btn" id="btnPrevQ">⬅️ Câu Trước</button>
-          <button class="dock-btn gold" id="btnNextQ">➡️ Câu Tiếp</button>
-          <button class="dock-btn" id="btnRestartTimer">🔄 Đếm Lại 15s</button>
-          <button class="dock-btn" id="btnTogglex2">🎁 Bật / Tắt x2 Điểm</button>
+          <button class="dock-btn" id="btnPrevQ" type="button">⬅️ Câu Trước</button>
+          <button class="dock-btn gold" id="btnNextQ" type="button">➡️ Câu Tiếp</button>
+          <button class="dock-btn" id="btnRestartTimer" type="button">🔄 Đọc &amp; Đếm Lại 15s</button>
+          <button class="dock-btn" id="btnStartCountdownNow" type="button">▶️ Đếm Giờ Ngay</button>
+          <button class="dock-btn" id="btnRevealNow" type="button">✅ Mở Đáp Án</button>
+          <button class="dock-btn" id="btnTogglex2" type="button">⚡ Bật / Tắt x2 Phòng</button>
+        </div>
+      </div>
+
+      <!-- Quà Tặng TikTok & Giả Lập Tặng Quà x2 Điểm -->
+      <div class="dock-section">
+        <div class="dock-section-title">🎁 Quà Tặng TikTok (Kích Hoạt x2 Điểm)</div>
+        <input type="text" id="inputGiftUser" class="dock-input" value="@Minh_B2" placeholder="@username người tặng quà..." />
+        <div class="dock-gift-grid" id="dockGiftGrid">
+          <button class="dock-gift-btn" data-gift-id="hoa_hong" type="button">
+            <img src="/assets/gifts/hoa_hong.svg" alt="Hoa hồng" width="32" height="32" />
+            <span class="dg-name">Hoa hồng</span>
+            <span class="dg-coins">1🪙 • x2</span>
+          </button>
+          <button class="dock-gift-btn" data-gift-id="ban_tim" type="button">
+            <img src="/assets/gifts/ban_tim.svg" alt="Bắn tim" width="32" height="32" />
+            <span class="dg-name">Bắn tim</span>
+            <span class="dg-coins">5🪙 • x2</span>
+          </button>
+          <button class="dock-gift-btn" data-gift-id="tiktok" type="button">
+            <img src="/assets/gifts/tiktok.svg" alt="TikTok" width="32" height="32" />
+            <span class="dg-name">TikTok</span>
+            <span class="dg-coins">1🪙 • x2</span>
+          </button>
+          <button class="dock-gift-btn" data-gift-id="gg" type="button">
+            <img src="/assets/gifts/gg.svg" alt="GG" width="32" height="32" />
+            <span class="dg-name">GG</span>
+            <span class="dg-coins">1🪙 • x2</span>
+          </button>
+          <button class="dock-gift-btn" data-gift-id="dinh" type="button">
+            <img src="/assets/gifts/dinh.svg" alt="Đỉnh" width="32" height="32" />
+            <span class="dg-name">Đỉnh</span>
+            <span class="dg-coins">1🪙 • x2</span>
+          </button>
+          <button class="dock-gift-btn" data-gift-id="yeu_ban" type="button">
+            <img src="/assets/gifts/yeu_ban.svg" alt="Yêu bạn" width="32" height="32" />
+            <span class="dg-name">Yêu bạn</span>
+            <span class="dg-coins">1🪙 • x2</span>
+          </button>
+          <button class="dock-gift-btn" data-gift-id="chu_heo" type="button">
+            <img src="/assets/gifts/chu_heo.svg" alt="Chú heo may mắn" width="32" height="32" />
+            <span class="dg-name">Chú heo</span>
+            <span class="dg-coins">10🪙 • x2</span>
+          </button>
+          <button class="dock-gift-btn" data-gift-id="banh_donut" type="button">
+            <img src="/assets/gifts/banh_donut.svg" alt="Bánh Donut" width="32" height="32" />
+            <span class="dg-name">Donut</span>
+            <span class="dg-coins">30🪙 • x2</span>
+          </button>
+          <button class="dock-gift-btn is-vip" data-gift-id="tay_cam" type="button">
+            <img src="/assets/gifts/tay_cam.svg" alt="Tay cầm chơi game" width="32" height="32" />
+            <span class="dg-name">Tay cầm</span>
+            <span class="dg-coins">100🪙 • x2</span>
+          </button>
         </div>
       </div>
 
@@ -302,10 +466,10 @@
       <div class="dock-section">
         <div class="dock-section-title">💬 Giả Lập Bình Luận (A, B, C, D)</div>
         <div class="dock-grid-4">
-          <button class="dock-btn" id="btnSimA" style="border-color: #42a5f5;">Vote A</button>
-          <button class="dock-btn gold" id="btnSimB" style="border-color: #fbbf24;">Vote B</button>
-          <button class="dock-btn" id="btnSimC" style="border-color: #34d399;">Vote C</button>
-          <button class="dock-btn" id="btnSimD" style="border-color: #a78bfa;">Vote D</button>
+          <button class="dock-btn" id="btnSimA" type="button" style="border-color: #42a5f5;">Vote A</button>
+          <button class="dock-btn gold" id="btnSimB" type="button" style="border-color: #fbbf24;">Vote B</button>
+          <button class="dock-btn" id="btnSimC" type="button" style="border-color: #34d399;">Vote C</button>
+          <button class="dock-btn" id="btnSimD" type="button" style="border-color: #a78bfa;">Vote D</button>
         </div>
       </div>
 

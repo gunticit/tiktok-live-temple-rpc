@@ -64,6 +64,9 @@ def clean_and_normalize_text(raw_text: str) -> str:
     text = unicodedata.normalize("NFC", unicodedata.normalize("NFKC", str(raw_text)))
     # 2. Xóa các mã emote kiểu [thanks], [rose]
     text = BRACKET_EMOTE_RE.sub(" ", text)
+    # 2.5. Chuyển dấu ngắt mệnh đề (: ; – — /) thành dấu phẩy/khoảng trắng để MC đọc ngắt nhịp tự nhiên
+    text = re.sub(r"[:;–—]", ", ", text)
+    text = text.replace("/", " ")
     # 3. Xóa sạch ký tự lạ (𒐫, emoji, ký tự ngoại ngữ, ký tự điều khiển)
     text = VIETNAMESE_ALLOWED_RE.sub(" ", text)
     # 4. Thu gọn ký tự lặp quá 2 lần (ví dụ: aaaaa -> aa, ..... -> .)
@@ -76,9 +79,9 @@ def clean_and_normalize_text(raw_text: str) -> str:
     if len(letters) < 2:
         return ""
 
-    # Giới hạn độ dài an toàn cho 1 câu đọc TTS (tối đa 160 ký tự)
-    if len(text) > 160:
-        text = text[:160].rsplit(" ", 1)[0]
+    # Giới hạn độ dài an toàn cho 1 câu đọc TTS (tối đa 240 ký tự)
+    if len(text) > 240:
+        text = text[:240].rsplit(" ", 1)[0]
 
     normalized = normalize_vi_text(text)
     normalized = normalize_punctuation(normalized).strip()

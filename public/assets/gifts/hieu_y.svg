@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="winkFace" cx="40%" cy="32%" r="65%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="55%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </radialGradient>
+    <filter id="winkShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <g filter="url(#winkShadow)">
+    <circle cx="62" cy="66" r="48" fill="url(#winkFace)" stroke="#fffbeb" stroke-width="3"/>
+    <!-- Open Eye -->
+    <circle cx="44" cy="56" r="7" fill="#3b1d06"/>
+    <circle cx="42" cy="53.5" r="2.5" fill="#ffffff"/>
+    <!-- Winking Eye -->
+    <path d="M70 57 Q80 48 90 57" fill="none" stroke="#3b1d06" stroke-width="5" stroke-linecap="round"/>
+    <!-- Cheek Blushes -->
+    <ellipse cx="32" cy="70" rx="8" ry="5" fill="#fb7185" opacity="0.65"/>
+    <ellipse cx="90" cy="70" rx="8" ry="5" fill="#fb7185" opacity="0.65"/>
+    <!-- Playful Smile -->
+    <path d="M44 76 Q62 94 82 76" fill="none" stroke="#3b1d06" stroke-width="5" stroke-linecap="round"/>
+    <!-- Floating Pink Heart -->
+    <path d="M104 42 C104 42, 86 30, 86 19 C86 13, 91 9, 96 9 C100 9, 103 11, 104 14 C105 11, 108 9, 112 9 C117 9, 122 13, 122 19 C122 30, 104 42, 104 42 Z" fill="#fe2c55" stroke="#ffe4e6" stroke-width="2"/>
+  </g>
+</svg>

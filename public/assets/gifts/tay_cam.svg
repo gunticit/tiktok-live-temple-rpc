@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="padBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="padNeon" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#25f4ee"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#fe2c55"/>
+    </linearGradient>
+    <filter id="padShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <g filter="url(#padShadow)">
+    <!-- Controller Silhouette -->
+    <path d="M34 36 H94 C108 36, 118 52, 118 76 C118 96, 108 106, 98 104 C90 102, 85 92, 81 84 H47 C43 92, 38 102, 30 104 C20 106, 10 96, 10 76 C10 52, 20 36, 34 36 Z" fill="url(#padBody)" stroke="url(#padNeon)" stroke-width="4"/>
+    <!-- D-Pad -->
+    <path d="M32 52 H40 V60 H48 V68 H40 V76 H32 V68 H24 V60 H32 Z" fill="#25f4ee"/>
+    <!-- Action Buttons -->
+    <circle cx="92" cy="54" r="5.5" fill="#4ade80"/>
+    <circle cx="103" cy="64" r="5.5" fill="#fe2c55"/>
+    <circle cx="92" cy="74" r="5.5" fill="#38bdf8"/>
+    <circle cx="81" cy="64" r="5.5" fill="#facc15"/>
+    <!-- Analog Sticks -->
+    <circle cx="52" cy="74" r="8" fill="#0f172a" stroke="#94a3b8" stroke-width="2.5"/>
+    <circle cx="76" cy="74" r="8" fill="#0f172a" stroke="#94a3b8" stroke-width="2.5"/>
+    <!-- Center Light Bar -->
+    <rect x="56" y="47" width="16" height="5" rx="2.5" fill="url(#padNeon)"/>
+    <!-- Top Sparkle -->
+    <path d="M64 12 L67 20 L75 23 L67 26 L64 34 L61 26 L53 23 L61 20 Z" fill="#fef08a"/>
+  </g>
+</svg>

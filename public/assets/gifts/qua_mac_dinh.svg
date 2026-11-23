@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fe2c55"/>
+      <stop offset="100%" stop-color="#9f1239"/>
+    </linearGradient>
+    <linearGradient id="ribbonGold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="boxShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <g filter="url(#boxShadow)">
+    <!-- Bow -->
+    <path d="M64 42 C46 18, 22 24, 34 42 Z" fill="url(#ribbonGold)" stroke="#b45309" stroke-width="2"/>
+    <path d="M64 42 C82 18, 106 24, 94 42 Z" fill="url(#ribbonGold)" stroke="#b45309" stroke-width="2"/>
+    <!-- Lid -->
+    <rect x="18" y="40" width="92" height="22" rx="6" fill="url(#boxGrad)" stroke="#fda4af" stroke-width="2"/>
+    <!-- Body -->
+    <rect x="24" y="62" width="80" height="52" rx="8" fill="url(#boxGrad)" stroke="#fda4af" stroke-width="2"/>
+    <!-- Vertical Ribbon -->
+    <rect x="55" y="40" width="18" height="74" fill="url(#ribbonGold)"/>
+    <!-- Horizontal Ribbon -->
+    <rect x="24" y="80" width="80" height="14" fill="url(#ribbonGold)" opacity="0.9"/>
+    <!-- Cyan & Gold Sparkles -->
+    <path d="M22 20 L25 26 L31 29 L25 32 L22 38 L19 32 L13 29 L19 26 Z" fill="#25f4ee"/>
+    <path d="M108 18 L110 23 L115 25 L110 27 L108 32 L106 27 L101 25 L106 23 Z" fill="#fef08a"/>
+  </g>
+</svg>

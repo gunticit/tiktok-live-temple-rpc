@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="pigBody" cx="42%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#ffd1dc"/>
+      <stop offset="55%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#db2777"/>
+    </radialGradient>
+    <linearGradient id="pigCrown" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="pigShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <g filter="url(#pigShadow)">
+    <!-- Ears -->
+    <path d="M24 52 C14 34, 24 20, 42 32 Z" fill="#f472b6" stroke="#fbcfe8" stroke-width="2.5"/>
+    <path d="M104 52 C114 34, 104 20, 86 32 Z" fill="#f472b6" stroke="#fbcfe8" stroke-width="2.5"/>
+    <!-- Head -->
+    <circle cx="64" cy="70" r="44" fill="url(#pigBody)" stroke="#fbcfe8" stroke-width="3"/>
+    <!-- Golden Crown -->
+    <path d="M44 30 L48 12 L58 22 L64 8 L70 22 L80 12 L84 30 Z" fill="url(#pigCrown)" stroke="#b45309" stroke-width="2" stroke-linejoin="round"/>
+    <!-- Eyes -->
+    <circle cx="47" cy="60" r="5.5" fill="#1e1b4b"/>
+    <circle cx="45.5" cy="58" r="2" fill="#ffffff"/>
+    <circle cx="81" cy="60" r="5.5" fill="#1e1b4b"/>
+    <circle cx="79.5" cy="58" r="2" fill="#ffffff"/>
+    <!-- Blushes -->
+    <ellipse cx="34" cy="72" rx="7" ry="4.5" fill="#fb7185" opacity="0.6"/>
+    <ellipse cx="94" cy="72" rx="7" ry="4.5" fill="#fb7185" opacity="0.6"/>
+    <!-- Snout -->
+    <ellipse cx="64" cy="77" rx="18" ry="13" fill="#fbcfe8" stroke="#ec4899" stroke-width="2.2"/>
+    <ellipse cx="58" cy="77" rx="3.2" ry="5" fill="#9d174d"/>
+    <ellipse cx="70" cy="77" rx="3.2" ry="5" fill="#9d174d"/>
+    <!-- Lucky Coin Badge -->
+    <circle cx="96" cy="98" r="15" fill="url(#pigCrown)" stroke="#fffbeb" stroke-width="2.5"/>
+    <rect x="91" y="93" width="10" height="10" rx="1.5" fill="#b45309"/>
+  </g>
+</svg>
