@@ -3,309 +3,315 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hồ Câu Cá Giải Trí — TikTok Live RPC (9:16 Cần Thủ Online)</title>
+  <title>ĐẤU TRƯỜNG GPLX: HẠNG B - C1 - C — TikTok Live Interactive Trivia</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/live.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/gplx.css" />
 </head>
 <body>
   <div class="app-workspace">
     <!-- ====================================================================
          KHUNG 9:16 CHUẨN TIKTOK LIVE / OBS BROWSER SOURCE (1080 x 1920)
          ==================================================================== -->
-    <div class="stage-wrapper" id="stageWrapper">
+    <main class="stage-wrapper" id="stageWrapper">
       <div class="stage-9x16" id="stage9x16">
-        <!-- 1. HÌNH NỀN HỒ CÂU SƠN THỦY HỮU TÌNH 9:16 -->
-        <img
-          src="/assets/fishing_lake_bg.png"
-          alt="Hồ Câu Cá Giải Trí"
-          class="fishing-lake-bg"
-        />
+        <!-- NỀN ĐƯỜNG CAO TỐC & TEXTURE NHỰA ĐƯỜNG ASPHALT -->
+        <div class="gplx-highway-bg"></div>
+        <div class="gplx-asphalt-overlay"></div>
+        <div class="highway-guardrails-left"></div>
+        <div class="highway-guardrails-right"></div>
+        <div class="highway-lanes-lines"></div>
 
-        <div class="water-ambient-overlay"></div>
+        <!-- CỌC TIÊU GIAO THÔNG Ở HAI BÊN ĐƯỜNG -->
+        <svg class="road-traffic-cone" style="left: 45px; bottom: 380px; width: 44px; height: 58px;" viewBox="0 0 40 50">
+          <polygon points="12,46 28,46 22,12 18,12" fill="#ff5722" />
+          <polygon points="15,34 25,34 23,24 17,24" fill="#ffffff" />
+          <rect x="6" y="44" width="28" height="6" rx="2" fill="#212121" />
+        </svg>
+        <svg class="road-traffic-cone" style="right: 45px; bottom: 380px; width: 44px; height: 58px;" viewBox="0 0 40 50">
+          <polygon points="12,46 28,46 22,12 18,12" fill="#ff5722" />
+          <polygon points="15,34 25,34 23,24 17,24" fill="#ffffff" />
+          <rect x="6" y="44" width="28" height="6" rx="2" fill="#212121" />
+        </svg>
 
-        <!-- 2. THANH TRẠNG THÁI MỎNG TRÊN ĐỈNH -->
-        <header class="minimal-top-bar">
-          <div class="live-pill" id="liveStatusPill">
-            <span class="live-dot" id="liveDot"></span>
-            <span id="liveStatusText">HỒ CÂU CÁ GIẢI TRÍ • TRỰC TIẾP</span>
-          </div>
-          <div class="top-Right-badges">
-            <div class="mini-stat-pill">
-              🐟 <strong id="statCatches">48</strong> cá • ⚖️ <strong id="statWeight">186.5</strong> kg • 🪱 <strong id="statBait">360</strong> mồi
-            </div>
-          </div>
-        </header>
-
-        <!-- 2.1. MỤC TIÊU CỘNG ĐỒNG: BÃO CÁ HỒ SÂU (FISH FRENZY GOAL) -->
-        <div class="community-goal-bar" id="communityGoalBar">
-          <div class="cg-info-row">
-            <div class="cg-title" id="cgTitle">🌊 MỤC TIÊU BÃO CÁ CỘNG ĐỒNG</div>
-            <div class="cg-progress-text"><span id="cgCurrent">185</span> / <span id="cgTarget">500</span> ĐIỂM</div>
-          </div>
-          <div class="cg-track">
-            <div class="cg-fill" id="cgFill" style="width: 37%;"></div>
-          </div>
-        </div>
-
-        <!-- 2.2. POPUP THÔNG BÁO DONATE QUÀ TẶNG NỔI BẬT -->
-        <div class="gift-alert-toast" id="giftAlertToast">
-          <div class="gift-alert-avatar-wrap">
-            <img class="gift-alert-avatar" id="giftAlertAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=vip" alt="" />
-            <span class="gift-alert-crown">👑</span>
-          </div>
-          <div class="gift-alert-info">
-            <div class="gift-alert-sender" id="giftAlertSender">Cần Thủ VIP</div>
-            <div class="gift-alert-action" id="giftAlertAction">Vừa gửi tặng <strong>Hoa hồng</strong> 🌹</div>
-          </div>
-          <div class="gift-alert-badge" id="giftAlertBadge">1 🪙</div>
-        </div>
-
-        <!-- 3. HỆ THỐNG DÂY CƯỚC CÂU NỐI TỪ CẦN THỦ RA PHAO CÂU (SVG DYNAMIC CURVED LINES) -->
-        <svg class="lake-fishing-lines-svg" id="lakeFishingLinesSvg"></svg>
-
-        <!-- 4. LỚP PHAO CÂU ĐA CẦN THỦ NHẤP NHÔ TRÊN MẶT HỒ -->
-        <div class="lake-bobbers-layer" id="lakeBobbersLayer"></div>
-
-        <!-- 5. HỆ THỐNG CÁC CẦN THỦ NGỒI VÒNG QUANH HỒ (18 VỊ TRÍ BỜ HỒ) -->
-        <div class="shore-anglers-container" id="shoreAnglersContainer"></div>
-
-        <!-- 6. THANH ĐIỀU KHIỂN TƯƠNG TÁC HỒ CÂU TRÊN BẦU TRỜ (LAKE ACTION TOOLBAR) -->
-        <div class="lake-action-toolbar" id="lakeActionToolbar">
-          <button class="lake-action-btn btn-bait" id="spotBait" type="button" title="Bấm để Thả Thính Dụ Cá">
-            <span class="action-btn-icon">🪱</span>
-            <span class="action-btn-label">Thả Thính</span>
-          </button>
-
-          <button class="lake-action-btn btn-cast" id="spotCast" type="button" title="Bấm để Quăng Cần Câu Cá (Đợi 1 Phút)">
-            <span class="action-btn-icon">🎣</span>
-            <span class="action-btn-label">Quăng Cần (1p)</span>
-          </button>
-
-          <button class="lake-action-btn btn-horn" id="spotHorn" type="button" title="Bấm để Thổi Còi Báo Cá">
-            <span class="action-btn-icon">📯</span>
-            <span class="action-btn-label">Báo Cá (<span id="statHorn">24</span>)</span>
-          </button>
-        </div>
-
-        <!-- 7. DÒNG CHAT & HOẠT ĐỘNG TRỰC TIẾP NỔI TRÊN MÀN HÌNH (TIKTOK LIVE OVERLAY) -->
-        <div class="live-chat-overlay" id="liveChatOverlay"></div>
-
-        <!-- 7. LỚP CANVAS HIỆU ỨNG BONG BÓNG, SÓNG NƯỚC, GIỌT NƯỚC BẮN & BÓNG CÁ -->
-        <canvas id="fishingCanvas"></canvas>
-
-        <!-- 8. THANH HUD GỌN GÀNG DƯỚI ĐÁY -->
-        <footer class="bottom-hud-bar">
-          <div class="hud-left-col">
-            <div class="hud-active-notice" id="hudActiveNotice">
-              <img id="activeAnglerAvatar" class="hud-mini-avatar" src="" alt="" style="display:none;" />
-              <span id="activeAnglerIcon">🐟</span>
-              <strong id="activeAnglerName">Cần Thủ Hải Đăng</strong>
-              <span>—</span>
-              <span id="activeActionTag">Vừa giật được Cá Chép Vàng 4.8kg</span>
-              <span>🎣</span>
-            </div>
-
-            <!-- KHAY QUÀ TẶNG TIKTOK LIVE CHUẨN 9 MÓN TƯƠNG TÁC -->
-            <div class="hud-gift-tray" id="hudGiftTray">
-              <div class="hud-gift-chip" data-gift-id="hoa_hong" title="Hoa hồng (1 xu)">
-                <span class="chip-icon">🌹</span>
-                <span class="chip-name">Hoa hồng</span>
-                <span class="chip-coin">1🪙</span>
+        <!-- NỘI DUNG CHÍNH (9:16 VERTICAL LAYOUT TỪ TRÊN XUỐNG DƯỚI) -->
+        <div class="gplx-content-container">
+          
+          <!-- ================================================================
+               1. TOP HEADER
+               ================================================================ -->
+          <header class="gplx-top-header">
+            <!-- Dòng trạng thái Live & Số thứ tự câu hỏi -->
+            <div class="header-status-row">
+              <div class="live-badge-red" id="liveStatusBadge">
+                <span class="live-pulse-dot" id="livePulseDot"></span>
+                <span>LIVE STREAM • ĐANG THI ĐẤU</span>
               </div>
-              <div class="hud-gift-chip" data-gift-id="dinh" title="Đỉnh (1 xu)">
-                <span class="chip-icon">🐱</span>
-                <span class="chip-name">Đỉnh</span>
-                <span class="chip-coin">1🪙</span>
-              </div>
-              <div class="hud-gift-chip" data-gift-id="gg" title="GG (1 xu)">
-                <span class="chip-icon">🎮</span>
-                <span class="chip-name">GG</span>
-                <span class="chip-coin">1🪙</span>
-              </div>
-              <div class="hud-gift-chip highlight-chip" data-gift-id="tay_cam" title="Tay cầm chơi game (100 xu)">
-                <span class="chip-icon">🕹️</span>
-                <span class="chip-name">Tay cầm</span>
-                <span class="chip-coin gold-coin">100🪙</span>
-              </div>
-              <div class="hud-gift-chip" data-gift-id="yeu_ban" title="Yêu bạn (1 xu)">
-                <span class="chip-icon">🥰</span>
-                <span class="chip-name">Yêu bạn</span>
-                <span class="chip-coin">1🪙</span>
-              </div>
-              <div class="hud-gift-chip highlight-chip" data-gift-id="chu_heo" title="Chú heo may mắn (10 xu)">
-                <span class="chip-icon">🐷</span>
-                <span class="chip-name">Chú heo</span>
-                <span class="chip-coin gold-coin">10🪙</span>
-              </div>
-              <div class="hud-gift-chip" data-gift-id="tiktok" title="TikTok (1 xu)">
-                <span class="chip-icon">🎵</span>
-                <span class="chip-name">TikTok</span>
-                <span class="chip-coin">1🪙</span>
-              </div>
-              <div class="hud-gift-chip highlight-chip" data-gift-id="ban_tim" title="Bắn tim (5 xu)">
-                <span class="chip-icon">🫰</span>
-                <span class="chip-name">Bắn tim</span>
-                <span class="chip-coin gold-coin">5🪙</span>
-              </div>
-              <div class="hud-gift-chip" data-gift-id="hieu_y" title="Hiểu ý tôi chứ (1 xu)">
-                <span class="chip-icon">😉</span>
-                <span class="chip-name">Hiểu ý</span>
-                <span class="chip-coin">1🪙</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bên phải: Bảng VUA SÁT CÁ (Top Cần Thủ) -->
-          <div class="hud-right-leaderboard">
-            <div class="hud-lb-header">👑 VUA SÁT CÁ BỜ HỒ</div>
-            <div class="hud-lb-list" id="leaderboardList"></div>
-          </div>
-        </footer>
-
-        <!-- BANNER ĐẠI CHIẾN THỦY QUÁI CÓ AVATAR -->
-        <div class="leviathan-banner" id="leviathanBanner">
-          <div class="leviathan-top-row">
-            <div class="leviathan-avatar-wrap">
-              <img id="leviathanAvatar" class="leviathan-donor-avatar" src="" alt="" />
-              <span class="leviathan-crown">👑</span>
-            </div>
-            <div class="leviathan-title" id="leviathanTitle">🐉 ĐẠI CHIẾN THỦY QUÁI HỒ SÂU 🐉</div>
-          </div>
-          <div class="leviathan-sub" id="leviathanSub">Cần thủ giật được Cá Rồng Kim Long Khổng Lồ!</div>
-        </div>
-
-        <!-- MODAL CHIẾN TÍCH BẮT CÁ CÓ AVATAR CẦN THỦ -->
-        <div class="catch-modal-overlay" id="catchModal">
-          <div class="catch-card">
-            <div class="catch-badge" id="catchBadge">QUÝ HIẾM</div>
-            <div class="catch-icon" id="catchIcon">🐠</div>
-            <div class="catch-fish-name" id="catchFishName">Cá Chép Vàng Cát Tường</div>
-            <div class="catch-weight-pill" id="catchWeight">4.8 kg</div>
-            
-            <div class="catch-angler-row">
-              <div class="catch-angler-avatar-box">
-                <img class="catch-angler-avatar-img" id="catchAnglerAvatarImg" src="" alt="" />
-              </div>
-              <div class="catch-angler-meta">
-                <div class="catch-angler-title" id="catchAnglerTitle">Cần Thủ Xuất Sắc</div>
-                <div class="catch-angler-name" id="catchAnglerName">Hải Đăng</div>
+              <div class="question-counter-pill" id="questionCounterText">
+                CÂU HỎI: 12 / 35
               </div>
             </div>
 
-            <div class="catch-quote" id="catchQuote">“Chép vàng vượt vũ môn hóa rồng, rước đại cát đại lợi về nhà!”</div>
-          </div>
+            <!-- Đồng hồ đếm ngược kỹ thuật số phát sáng 00:15 có vòng tròn tiến độ cam -->
+            <div class="circular-timer-container">
+              <svg class="timer-svg" viewBox="0 0 120 120">
+                <circle class="timer-circle-bg" cx="60" cy="60" r="50"></circle>
+                <circle class="timer-circle-progress" id="timerCircleProgress" cx="60" cy="60" r="50"></circle>
+              </svg>
+              <div class="timer-digital-text">
+                <span class="timer-seconds-big" id="timerSeconds">00:15</span>
+                <span class="timer-ms-small" id="timerMs">15</span>
+              </div>
+            </div>
+
+            <!-- Logo Esport 3D: ĐẤU TRƯỜNG GPLX -->
+            <div class="esport-title-badge-wrap">
+              <img src="/assets/gplx_logo.svg" alt="Đấu Trường GPLX" class="esport-badge-svg" />
+              <!-- Badge chỉ thị phân hạng bằng lái -->
+              <div class="class-badge-indicators">
+                <span class="class-pill">[B1/B2]</span>
+                <span class="class-pill">[C1]</span>
+                <span class="class-pill">[C]</span>
+              </div>
+            </div>
+          </header>
+
+          <!-- ================================================================
+               2. CENTER UPPER (QUESTION BOX & SA-HÌNH INTERSECTION DIAGRAM)
+               ================================================================ -->
+          <section class="question-signboard-box">
+            <!-- Đinh tán biển báo 4 góc -->
+            <div class="signboard-bolts bolt-tl"></div>
+            <div class="signboard-bolts bolt-tr"></div>
+            <div class="signboard-bolts bolt-bl"></div>
+            <div class="signboard-bolts bolt-br"></div>
+
+            <!-- Tiêu đề câu hỏi -->
+            <h1 class="question-text-title" id="questionText">
+              Câu 12: Xe nào được quyền đi trước trong trường hợp này?
+            </h1>
+
+            <!-- Khung sơ đồ Sa-hình chi tiết -->
+            <div class="question-diagram-wrapper">
+              <img src="/assets/sa_hinh_12.svg" alt="Sa hình ngã ba có CSGT điều khiển" class="sa-hinh-svg" id="saHinhImage" />
+            </div>
+
+            <!-- Cảnh báo Điểm Liệt -->
+            <div class="fatal-warning-badge" id="fatalBadge">
+              <span>⚠️ Điểm liệt! (Câu hỏi quan trọng)</span>
+            </div>
+          </section>
+
+          <!-- ================================================================
+               3. CENTER (ANSWER OPTIONS A, B, C, D)
+               ================================================================ -->
+          <section class="answer-section-wrap">
+            <div class="answer-options-grid">
+              <!-- [A] Nút Xanh Dương -->
+              <button class="answer-card-btn card-opt-a" id="optBtn_a" type="button">
+                <div class="opt-letter-badge">A</div>
+                <div class="opt-text-wrap">
+                  <div class="opt-main-label">Xe con</div>
+                  <div class="opt-sub-desc">(Red Sedan)</div>
+                </div>
+              </button>
+
+              <!-- [B] Nút Vàng Ánh Kim Phát Sáng (Active / Highlighted) -->
+              <button class="answer-card-btn card-opt-b is-highlighted" id="optBtn_b" type="button">
+                <div class="opt-letter-badge">B</div>
+                <div class="opt-text-wrap">
+                  <div class="opt-main-label">Xe tải</div>
+                  <div class="opt-sub-desc">(Blue Truck)</div>
+                </div>
+              </button>
+
+              <!-- [C] Nút Xanh Lá Cây -->
+              <button class="answer-card-btn card-opt-c" id="optBtn_c" type="button">
+                <div class="opt-letter-badge">C</div>
+                <div class="opt-text-wrap">
+                  <div class="opt-main-label">Xe mô tô</div>
+                  <div class="opt-sub-desc">(Green Motorcycle)</div>
+                </div>
+              </button>
+
+              <!-- [D] Nút Tím -->
+              <button class="answer-card-btn card-opt-d" id="optBtn_d" type="button">
+                <div class="opt-letter-badge">D</div>
+                <div class="opt-text-wrap">
+                  <div class="opt-main-label">Tất cả xe</div>
+                  <div class="opt-sub-desc">dừng lại</div>
+                </div>
+              </button>
+            </div>
+
+            <!-- Phân bổ số lượt bình chọn -->
+            <div class="vote-distribution-text" id="voteDistribution">
+              A (234 người) • B (512 người) • C (89 người) • D (12 người)
+            </div>
+
+            <!-- Banner kêu gọi tương tác -->
+            <div class="comment-action-banner">
+              <span>💬 BÌNH LUẬN A, B, C HOẶC D ĐỂ TRẢ LỜI NGAY!</span>
+            </div>
+          </section>
+
+          <!-- ================================================================
+               4. LOWER CENTER (REAL-TIME LEADERBOARD)
+               ================================================================ -->
+          <section class="leaderboard-high-tech-box">
+            <div class="leaderboard-title-ribbon">
+              XẾP HẠNG HỌC VIÊN TRẢ LỜI NHANH NHẤT
+            </div>
+
+            <!-- Top 3 Podium (Rank 2 - Rank 1 - Rank 3) -->
+            <div class="podium-top3-row">
+              <!-- #2 Bạc (Bên Trái) -->
+              <div class="podium-card podium-rank-2">
+                <span class="podium-crown-badge">🥈</span>
+                <div class="podium-avatar-wrap">
+                  <img class="podium-avatar-img" id="podiumAvatar2" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver2" alt="" />
+                </div>
+                <div class="podium-user-name" id="podiumUser2">@Thanh_TaiXe_C</div>
+                <div class="podium-score-row">
+                  <span class="podium-pts" id="podiumScore2">790đ</span>
+                  <span class="podium-delta" id="podiumDelta2">+0.6s</span>
+                  <span class="podium-car-icon">🚙</span>
+                </div>
+              </div>
+
+              <!-- #1 Vàng (Ở Giữa - Nhô cao nổi bật) -->
+              <div class="podium-card podium-rank-1">
+                <span class="podium-crown-badge">👑</span>
+                <div class="podium-avatar-wrap">
+                  <img class="podium-avatar-img" id="podiumAvatar1" src="https://api.dicebear.com/7.x/bottts/svg?seed=champion1" alt="" />
+                </div>
+                <div class="podium-user-name" id="podiumUser1">@Minh_B2</div>
+                <div class="podium-score-row">
+                  <span class="podium-pts" id="podiumScore1">820đ</span>
+                  <span class="podium-delta" id="podiumDelta1">+0.4s</span>
+                  <span class="podium-car-icon">🚗</span>
+                </div>
+              </div>
+
+              <!-- #3 Đồng (Bên Phải) -->
+              <div class="podium-card podium-rank-3">
+                <span class="podium-crown-badge">🥉</span>
+                <div class="podium-avatar-wrap">
+                  <img class="podium-avatar-img" id="podiumAvatar3" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver3" alt="" />
+                </div>
+                <div class="podium-user-name" id="podiumUser3">@Phuong_C1</div>
+                <div class="podium-score-row">
+                  <span class="podium-pts" id="podiumScore3">750đ</span>
+                  <span class="podium-delta" id="podiumDelta3">+0.8s</span>
+                  <span class="podium-car-icon">🏎️</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rank 4 & 5 Hàng Dưới -->
+            <div class="podium-runners-row">
+              <div class="runner-card">
+                <span class="runner-rank-num">#4</span>
+                <img class="runner-avatar-sm" id="runnerAvatar4" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver4" alt="" />
+                <div class="runner-info-col">
+                  <div class="runner-user-sm" id="runnerUser4">@Tuan_LaiMoi</div>
+                  <div class="runner-score-sm" id="runnerScore4">710đ • +1.1s</div>
+                </div>
+                <span>🚕</span>
+              </div>
+
+              <div class="runner-card">
+                <span class="runner-rank-num">#5</span>
+                <img class="runner-avatar-sm" id="runnerAvatar5" src="https://api.dicebear.com/7.x/bottts/svg?seed=driver5" alt="" />
+                <div class="runner-info-col">
+                  <div class="runner-user-sm" id="runnerUser5">@Hoa_SaHinh</div>
+                  <div class="runner-score-sm" id="runnerScore5">680đ • +1.3s</div>
+                </div>
+                <span>🚗</span>
+              </div>
+            </div>
+
+            <!-- Chỉ số người đang online -->
+            <div class="online-learner-count-row" id="onlineCountText">
+              👤 Đang online: 2.4K người tham gia
+            </div>
+          </section>
+
+          <!-- ================================================================
+               5. BOTTOM BANNER & HOST OVERLAY
+               ================================================================ -->
+          <footer class="gplx-bottom-wrapper">
+            <!-- Banner Quà tặng x2 điểm -->
+            <div class="gift-multiplier-banner">
+              <span>🎁 QUÀ TẶNG x2 ĐIỂM • COMMENT ĐÚNG + NHANH ĐỂ LÊN TOP!</span>
+            </div>
+
+            <!-- Thống kê tỷ lệ đúng & Khung webcam Thầy Giáo Live -->
+            <div class="bottom-stats-and-host-row">
+              <div class="accuracy-stats-pill" id="accuracyStatsText">
+                ✓ Tỷ lệ đúng: 68% • Thời gian trung bình: 1.2 giây
+              </div>
+
+              <!-- Khung Streamer Thầy Giáo Live -->
+              <div class="host-webcam-frame">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=TeacherLive&clothing=blazerAndShirt&accessories=round&top=shortHairShortFlat" alt="Thầy Giáo Live" class="host-avatar-img" />
+                <div class="host-tag-red">THẦY GIÁO LIVE</div>
+              </div>
+            </div>
+          </footer>
+
         </div>
       </div>
-    </div>
+    </main>
 
     <!-- ====================================================================
-         BẢNG ĐIỀU KHIỂN NHANH RPC & GIẢ LẬP TRỰC TIẾP (ẨN KHI ?obs=1)
+         BẢNG ĐIỀU KHIỂN BÊN CẠNH DÀNH CHO HOST / STREAMER (CONTROL DOCK)
          ==================================================================== -->
-    <aside class="quick-dock" id="quickDock">
+    <aside class="control-dock" id="controlDock">
       <div class="dock-header">
-        <div class="dock-title">🎛️ Bảng Điều Khiển Hồ Câu</div>
-        <a href="/admin" target="_blank" class="dock-link">Mở Admin Đầy Đủ ↗</a>
+        <h2 class="dock-title">🚦 ĐIỀU KHIỂN GPLX LIVE</h2>
+        <span style="font-size: 13px; color: #94a3b8;">JSON-RPC 2.0</span>
       </div>
 
-      <div class="dock-section">
-        <div class="dock-section-title">🔊 Thiết Lập Âm Thanh & Giọng Đọc</div>
-        <button class="dock-btn gold" id="btnUnlockAudio">
-          🔔 Bật Âm Thanh Hồ & Thử Giọng
-        </button>
-        <div class="dock-grid-2">
-          <button class="dock-btn active-toggle" id="btnToggleTts">🎙️ Giọng Đọc: BẬT</button>
-          <button class="dock-btn active-toggle" id="btnToggleMusic">🎵 Âm Hồ Nước: BẬT</button>
-        </div>
-
-        <!-- BỘ CHỌN GIỌNG ĐỌC ZEROTTS (8 GIỌNG TIẾNG VIỆT) -->
-        <div class="volume-control-row" style="margin-top: 6px;">
-          <div class="volume-label-line">
-            <span>🗣️ Chọn Giọng Đọc (ZeroTTS)</span>
-          </div>
-          <select id="selectTtsVoice" class="dock-input" style="padding: 6px 10px; cursor: pointer; background: #071e2e; color: #fff; border: 1px solid rgba(41,182,246,0.4); border-radius: 8px;">
-            <option value="maichi" selected>Mai Chi (Nữ miền Bắc - Dịu dàng, chuẩn)</option>
-            <option value="kimoanh">Kim Oanh (Nữ miền Trung - Truyền cảm)</option>
-            <option value="hamy">Hà My (Nữ miền Nam - Ngọt ngào)</option>
-            <option value="baotrang">Bảo Trang (Nữ miền Bắc - Trong sáng)</option>
-            <option value="giahuy">Gia Huy (Nam miền Bắc - Hào sảng, trầm ấm)</option>
-            <option value="huuduc">Hữu Đức (Nam miền Nam - Rõ ràng, dứt khoát)</option>
-            <option value="quangminh">Quang Minh (Nam miền Bắc - Dứt khoát)</option>
-            <option value="tiendat">Tiến Đạt (Nam miền Bắc - Trẻ trung)</option>
-          </select>
-        </div>
-
-        <button class="dock-btn" id="btnTestVoice" style="margin-top: 6px;">
-          📢 Thử Phát Giọng Đọc Ngay
-        </button>
-
-        <div class="volume-control-row">
-          <div class="volume-label-line">
-            <span>🎵 Âm lượng Hồ Nước</span>
-            <strong id="valMusicVol">60%</strong>
-          </div>
-          <input type="range" id="sliderMusicVol" class="volume-slider" min="0" max="100" value="60" />
-        </div>
-        <div class="volume-control-row">
-          <div class="volume-label-line">
-            <span>🎙️ Âm lượng Giọng đọc</span>
-            <strong id="valTtsVol">95%</strong>
-          </div>
-          <input type="range" id="sliderTtsVol" class="volume-slider" min="0" max="100" value="95" />
-        </div>
-      </div>
-
+      <!-- Kết nối TikTok Live -->
       <div class="dock-section">
         <div class="dock-section-title">📡 Kết Nối TikTok Live</div>
-        <div class="dock-input-row">
-          <input type="text" id="inputTikTokUser" class="dock-input" value="@zenfacts_vn" placeholder="Nhập @username hoặc link TikTok Live..." />
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="inputTikTokUser" class="dock-input" value="@thaygiao_gplx" placeholder="@username TikTok..." />
           <button class="dock-btn gold" id="btnConnectTikTok">Kết Nối</button>
         </div>
-        <button class="dock-btn" id="btnToggleAutoSim">
-          🤖 Tự động Giả lập Cần Thủ: TẮT
-        </button>
       </div>
 
+      <!-- Điều khiển Câu Hỏi & Thời Gian -->
       <div class="dock-section">
-        <div class="dock-section-title">🎣 Kích Hoạt Hành Động Câu Cá (RPC)</div>
-        <input type="text" id="inputAnglerName" class="dock-input" value="Tuấn_Cần_Thủ" placeholder="Tên cần thủ..." />
-        <input type="text" id="inputAnglerWish" class="dock-input" value="Săn con cá chép giòn 5 ký làm tiệc!" placeholder="Lời chúc / mong ước..." />
-
+        <div class="dock-section-title">⏱️ Trận Đấu & Câu Hỏi</div>
         <div class="dock-grid-2">
-          <button class="dock-btn gold" id="btnRpcHook">🐟 Giật Cần Lên Cá</button>
-          <button class="dock-btn" id="btnRpcCast">🎣 Quăng Cần Thả Phao</button>
-          <button class="dock-btn" id="btnRpcBait">🪱 Thả Thính (+5)</button>
-          <button class="dock-btn" id="btnRpcHorn">📯 Thổi Còi Báo Cá</button>
-          <button class="dock-btn" id="btnRpcBigFish">🦐 Mồi Thượng Hạng</button>
-          <button class="dock-btn gold" id="btnRpcLeviathan">🐉 Săn Thủy Quái (Quà Lớn)</button>
+          <button class="dock-btn gold" id="btnNextQ">➡️ Câu Tiếp Theo</button>
+          <button class="dock-btn" id="btnRestartTimer">🔄 Đếm Lại 15s</button>
+          <button class="dock-btn" id="btnTogglex2">🎁 Bật / Tắt x2 Điểm</button>
         </div>
       </div>
 
+      <!-- Giả Lập Bình Luận Của Học Viên -->
       <div class="dock-section">
-        <div class="dock-section-title">🎁 Thử Nghiệm Quà Tặng TikTok Live</div>
-        <div class="dock-grid-3">
-          <button class="dock-btn-sm" data-sim-gift="hoa_hong">🌹 Hoa hồng (1🪙)</button>
-          <button class="dock-btn-sm" data-sim-gift="dinh">🐱 Đỉnh (1🪙)</button>
-          <button class="dock-btn-sm" data-sim-gift="gg">🎮 GG (1🪙)</button>
-          <button class="dock-btn-sm" data-sim-gift="ban_tim">🫰 Bắn tim (5🪙)</button>
-          <button class="dock-btn-sm" data-sim-gift="chu_heo">🐷 Chú heo (10🪙)</button>
-          <button class="dock-btn-sm gold" data-sim-gift="tay_cam">🕹️ Tay cầm (100🪙)</button>
-          <button class="dock-btn-sm" data-sim-gift="yeu_ban">🥰 Yêu bạn (1🪙)</button>
-          <button class="dock-btn-sm" data-sim-gift="tiktok">🎵 TikTok (1🪙)</button>
-          <button class="dock-btn-sm" data-sim-gift="hieu_y">😉 Hiểu ý (1🪙)</button>
+        <div class="dock-section-title">💬 Giả Lập Bình Luận (A, B, C, D)</div>
+        <div class="dock-grid-4">
+          <button class="dock-btn" id="btnSimA" style="border-color: #42a5f5;">Vote A</button>
+          <button class="dock-btn gold" id="btnSimB" style="border-color: #fbbf24;">Vote B</button>
+          <button class="dock-btn" id="btnSimC" style="border-color: #34d399;">Vote C</button>
+          <button class="dock-btn" id="btnSimD" style="border-color: #a78bfa;">Vote D</button>
         </div>
       </div>
 
+      <!-- Nhật ký sự kiện tương tác -->
       <div class="dock-section">
-        <div class="dock-section-title">📜 Nhật Ký Bắt Cá Mới Nhất</div>
-        <div class="event-feed" id="eventFeed"></div>
+        <div class="dock-section-title">📜 Nhật Ký Hoạt Động Thời Gian Thực</div>
+        <div class="dock-event-feed" id="dockEventFeed"></div>
       </div>
     </aside>
   </div>
 
-  <script src="/js/audio.js"></script>
-  <script src="/js/particles.js"></script>
-  <script src="/js/live.js"></script>
+  <script src="/js/gplx.js"></script>
 </body>
 </html>

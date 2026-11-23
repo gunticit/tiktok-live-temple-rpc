@@ -1635,6 +1635,13 @@ async function connectTikTokLive(usernameOrUrl) {
       timestamp: Date.now()
     });
 
+    const trimmedVote = String(commentText || '').trim().toUpperCase();
+    if (['A', 'B', 'C', 'D'].includes(trimmedVote)) {
+      if (gplxEngine) {
+        gplxEngine.submitAnswer({ user, uniqueId, avatar, answer: trimmedVote });
+      }
+    }
+
     parseViewerComment(commentText, user, uniqueId, avatar);
   });
 
@@ -1771,8 +1778,24 @@ function configureAutoSim(enabled) {
 // ============================================================================
 // 7. BỘ ĐIỀU PHỐI JSON-RPC 2.0 (RPC DISPATCHER)
 // ============================================================================
+const GplxEngine = require('./gplx_engine');
+let gplxEngine = null;
+
 async function handleRpcCall(method, params = {}) {
   switch (method) {
+    // GPLX Trivia Game Methods
+    case 'gplx.getState':
+      return gplxEngine ? gplxEngine.getState() : {};
+    case 'gplx.submitAnswer':
+      return gplxEngine ? gplxEngine.submitAnswer(params) : null;
+    case 'gplx.nextQuestion':
+      return gplxEngine ? gplxEngine.nextQuestion() : {};
+    case 'gplx.restartTimer':
+      return gplxEngine ? gplxEngine.restartTimer() : {};
+    case 'gplx.toggleMultiplier':
+      return gplxEngine ? gplxEngine.toggleMultiplier() : {};
+    case 'gplx.simulateComment':
+      return gplxEngine ? gplxEngine.simulateComment(params) : null;
     // Fishing Methods
     case 'fishing.castBait':
     case 'temple.incense': // Backward-compatible alias
@@ -1928,10 +1951,23 @@ function broadcastNotification(method, params) {
   }
 }
 
+gplxEngine = new GplxEngine(broadcastNotification);
+
 wss.on('connection', (ws) => {
   ws.on('error', (err) => {
     console.warn('[WS Client Error]', err?.message || err);
   });
+
+  // Gửi trạng thái ban đầu GPLX
+  if (gplxEngine) {
+    ws.send(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'gplx.state',
+        params: gplxEngine.getState()
+      })
+    );
+  }
 
   // Gửi trạng thái ban đầu
   ws.send(

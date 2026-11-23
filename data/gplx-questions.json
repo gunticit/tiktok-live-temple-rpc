@@ -1,0 +1,68 @@
+[
+  {
+    "id": 12,
+    "category": "HẠNG B - C1 - C",
+    "questionNumber": 12,
+    "totalQuestions": 35,
+    "isFatal": true,
+    "fatalLabel": "⚠️ Điểm liệt! (Câu hỏi quan trọng)",
+    "question": "Xe nào được quyền đi trước trong trường hợp này?",
+    "diagramType": "sa_hinh_t_junction_csgt",
+    "diagramTitle": "Sa hình ngã ba có Cảnh sát Giao thông điều khiển",
+    "options": [
+      { "key": "A", "text": "Xe con (Red Sedan)", "color": "blue" },
+      { "key": "B", "text": "Xe tải (Blue Truck)", "color": "gold" },
+      { "key": "C", "text": "Xe mô tô (Green Motorcycle)", "color": "green" },
+      { "key": "D", "text": "Tất cả các xe dừng lại", "color": "purple" }
+    ],
+    "correctKey": "B",
+    "explanation": "Theo hiệu lệnh của người điều khiển giao thông (CSGT giơ tay sang ngang/hướng đi): Xe tải và các xe trên trục được phép đi trước. Hiệu lệnh CSGT cao nhất so với đèn tín hiệu và biển báo.",
+    "mockVotes": { "A": 234, "B": 512, "C": 89, "D": 12 },
+    "accuracyRate": 68,
+    "avgSpeed": "1.2 giây"
+  },
+  {
+    "id": 13,
+    "category": "HẠNG B - C1 - C",
+    "questionNumber": 13,
+    "totalQuestions": 35,
+    "isFatal": false,
+    "fatalLabel": "Câu hỏi sa hình ưu tiên",
+    "question": "Thứ tự các xe đi như thế nào là đúng quy tắc giao thông?",
+    "diagramType": "sa_hinh_crossroad_priority",
+    "diagramTitle": "Ngã tư có xe ưu tiên (Cứu hỏa, Công an)",
+    "options": [
+      { "key": "A", "text": "Xe cứu hỏa, Xe công an, Xe con", "color": "blue" },
+      { "key": "B", "text": "Xe công an, Xe cứu hỏa, Xe con", "color": "gold" },
+      { "key": "C", "text": "Xe con, Xe cứu hỏa, Xe công an", "color": "green" },
+      { "key": "D", "text": "Xe cứu hỏa, Xe con, Xe công an", "color": "purple" }
+    ],
+    "correctKey": "A",
+    "explanation": "Thứ tự xe ưu tiên: Hỏa - Sự - An - Thương (Cứu hỏa -> Quân sự -> Công an -> Cứu thương). Xe cứu hỏa luôn được quyền đi trước xe công an.",
+    "mockVotes": { "A": 640, "B": 120, "C": 15, "D": 45 },
+    "accuracyRate": 78,
+    "avgSpeed": "0.9 giây"
+  },
+  {
+    "id": 14,
+    "category": "HẠNG B - C1 - C",
+    "questionNumber": 14,
+    "totalQuestions": 35,
+    "isFatal": true,
+    "fatalLabel": "⚠️ Điểm liệt! (Nghiêm cấm)",
+    "question": "Người điều khiển phương tiện tham gia giao thông mà trong máu hoặc hơi thở có nồng độ cồn có bị nghiêm cấm không?",
+    "diagramType": "none",
+    "diagramTitle": "Quy tắc an toàn nồng độ cồn",
+    "options": [
+      { "key": "A", "text": "Bị nghiêm cấm tuyệt đối", "color": "blue" },
+      { "key": "B", "text": "Không bị cấm nếu nồng độ thấp", "color": "gold" },
+      { "key": "C", "text": "Chỉ cấm trên đường cao tốc", "color": "green" },
+      { "key": "D", "text": "Chỉ cấm đối với xe tải và xe khách", "color": "purple" }
+    ],
+    "correctKey": "A",
+    "explanation": "Luật Phòng chống tác hại của rượu bia quy định: Nghiêm cấm tuyệt đối điều khiển phương tiện tham gia giao thông mà trong máu hoặc hơi thở có nồng độ cồn.",
+    "mockVotes": { "A": 890, "B": 24, "C": 8, "D": 15 },
+    "accuracyRate": 95,
+    "avgSpeed": "0.7 giây"
+  }
+]

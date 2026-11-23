@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="grassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7da862" />
+      <stop offset="100%" stop-color="#5f8c47" />
+    </linearGradient>
+    <linearGradient id="roadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#566270" />
+      <stop offset="100%" stop-color="#414c58" />
+    </linearGradient>
+    <linearGradient id="pavementGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ccd1d9" />
+      <stop offset="100%" stop-color="#aab2bd" />
+    </linearGradient>
+    <linearGradient id="truckBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2196f3" />
+      <stop offset="100%" stop-color="#1565c0" />
+    </linearGradient>
+    <linearGradient id="carRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ef5350" />
+      <stop offset="100%" stop-color="#c62828" />
+    </linearGradient>
+    <linearGradient id="bikeGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4caf50" />
+      <stop offset="100%" stop-color="#2e7d32" />
+    </linearGradient>
+    <linearGradient id="csgtUniform" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3d489" />
+      <stop offset="100%" stop-color="#deb887" />
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.45" />
+    </filter>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Marker Arrowheads -->
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef5350" />
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#4ade80" />
+    </marker>
+  </defs>
+
+  <!-- BACKGROUND: GRASS CORNERS & ISOMETRIC ROAD JUNCTION -->
+  <rect width="800" height="500" fill="url(#grassGrad)" />
+
+  <!-- PAVEMENTS / SIDEWALKS -->
+  <!-- Top Left Pavement -->
+  <polygon points="0,0 260,0 260,180 0,340" fill="url(#pavementGrad)" stroke="#8e9aa8" stroke-width="3" />
+  <polygon points="0,0 240,0 240,165 0,320" fill="url(#grassGrad)" />
+
+  <!-- Top Right Pavement -->
+  <polygon points="540,0 800,0 800,340 540,180" fill="url(#pavementGrad)" stroke="#8e9aa8" stroke-width="3" />
+  <polygon points="560,0 800,0 800,320 560,165" fill="url(#grassGrad)" />
+
+  <!-- Bottom Island / Road Verge -->
+  <polygon points="0,420 220,500 0,500" fill="url(#pavementGrad)" />
+  <polygon points="580,500 800,420 800,500" fill="url(#pavementGrad)" />
+
+  <!-- ASPHALT ROAD T-JUNCTION -->
+  <polygon points="260,0 540,0 800,340 800,420 580,500 220,500 0,420 0,340" fill="url(#roadGrad)" />
+
+  <!-- ROAD CENTER DIVIDER LINES (YELLOW DASHED) -->
+  <!-- Top Road Divider -->
+  <line x1="400" y1="0" x2="400" y2="160" stroke="#ffc700" stroke-width="4" stroke-dasharray="16,12" />
+  <!-- Bottom Left Road Divider -->
+  <line x1="0" y1="380" x2="300" y2="380" stroke="#ffc700" stroke-width="4" stroke-dasharray="16,12" />
+  <!-- Bottom Right Road Divider -->
+  <line x1="500" y1="380" x2="800" y2="380" stroke="#ffc700" stroke-width="4" stroke-dasharray="16,12" />
+
+  <!-- PEDESTRIAN CROSSWALKS (WHITE ZEBRA STRIPES) -->
+  <!-- Top Crosswalk -->
+  <g fill="#ffffff" opacity="0.88">
+    <polygon points="275,140 305,140 305,160 275,160" />
+    <polygon points="320,140 350,140 350,160 320,160" />
+    <polygon points="365,140 395,140 395,160 365,160" />
+    <polygon points="410,140 440,140 440,160 410,160" />
+    <polygon points="455,140 485,140 485,160 455,160" />
+    <polygon points="500,140 530,140 530,160 500,160" />
+  </g>
+
+  <!-- Bottom Crosswalk -->
+  <g fill="#ffffff" opacity="0.88">
+    <polygon points="430,340 455,355 440,380 415,365" />
+    <polygon points="465,360 490,375 475,400 450,385" />
+    <polygon points="500,380 525,395 510,420 485,405" />
+    <polygon points="535,400 560,415 545,440 520,425" />
+  </g>
+
+  <!-- TRAFFIC SIGNS -->
+  <!-- 1. Priority Road Sign (Triangle inverted / Tam giác ngược vàng viền đỏ) -->
+  <g transform="translate(390, 100)" filter="url(#dropShadow)">
+    <line x1="0" y1="0" x2="0" y2="35" stroke="#718096" stroke-width="4" />
+    <polygon points="0,-24 -22,14 22,14" fill="#ffd166" stroke="#d90429" stroke-width="4" />
+    <polygon points="0,-14 -12,8 12,8" fill="#ffd166" />
+  </g>
+
+  <!-- 2. STOP Sign (Octagon red on right) -->
+  <g transform="translate(520, 135)" filter="url(#dropShadow)">
+    <line x1="0" y1="0" x2="0" y2="35" stroke="#718096" stroke-width="4" />
+    <polygon points="-14,-14 0,-20 14,-14 20,0 14,14 0,20 -14,14 -20,0" fill="#d90429" stroke="#ffffff" stroke-width="2" />
+    <text x="0" y="4" font-family="'Montserrat', sans-serif" font-weight="900" font-size="9" fill="#ffffff" text-anchor="middle">STOP</text>
+  </g>
+
+  <!-- TRAFFIC POLICE OFFICER (CSGT) IN CENTER -->
+  <g transform="translate(355, 175)" filter="url(#dropShadow)">
+    <!-- Shadow -->
+    <ellipse cx="0" cy="50" rx="16" ry="6" fill="rgba(0,0,0,0.35)" />
+    <!-- Legs (Tan Trousers) -->
+    <rect x="-8" y="24" width="6" height="26" rx="2" fill="#d4a373" />
+    <rect x="2" y="24" width="6" height="26" rx="2" fill="#d4a373" />
+    <!-- Black Shoes -->
+    <ellipse cx="-5" cy="50" rx="5" ry="2.5" fill="#1a202c" />
+    <ellipse cx="5" cy="50" rx="5" ry="2.5" fill="#1a202c" />
+    <!-- Body (Tan Uniform Shirt & Tie) -->
+    <polygon points="-12,0 12,0 10,25 -10,25" fill="url(#csgtUniform)" stroke="#b08968" stroke-width="1" />
+    <!-- Red Epaulets (Cầu vai đỏ) -->
+    <rect x="-14" y="0" width="5" height="3" fill="#d90429" />
+    <rect x="9" y="0" width="5" height="3" fill="#d90429" />
+    <!-- White Left Arm Outstretched (directing blue truck) -->
+    <path d="M -12,4 L -36,8 L -34,14 L -10,8 Z" fill="url(#csgtUniform)" />
+    <!-- White Glove -->
+    <ellipse cx="-37" cy="11" rx="4" ry="4" fill="#ffffff" />
+    <!-- Traffic Baton (Gậy chỉ huy giao thông đỏ trắng) -->
+    <rect x="-56" y="9" width="18" height="4" rx="1" fill="#ef233c" />
+    <rect x="-48" y="9" width="5" height="4" fill="#ffffff" />
+    <!-- Right Arm -->
+    <path d="M 10,4 L 18,16 L 14,19 L 8,8 Z" fill="url(#csgtUniform)" />
+    <ellipse cx="16" cy="19" rx="3.5" ry="3.5" fill="#ffffff" />
+    <!-- Head & Skin -->
+    <circle cx="0" cy="-6" r="7" fill="#fcd5b4" />
+    <!-- Tan Peaked Cap (Mũ k职责 / Mũ kepi CSGT) -->
+    <path d="M -9,-9 Q 0,-16 9,-9 L 10,-6 Q 0,-9 -10,-6 Z" fill="#d4a373" stroke="#b08968" stroke-width="1" />
+    <polygon points="-8,-6 8,-6 6,-3 -6,-3" fill="#1a202c" />
+    <!-- Gold Cap Badge -->
+    <circle cx="0" cy="-8" r="2.5" fill="#ffc700" />
+  </g>
+
+  <!-- BLUE CARGO TRUCK (XE TẢI) ENTERING FROM LEFT -->
+  <g transform="translate(230, 290)" filter="url(#dropShadow)">
+    <!-- Wheels -->
+    <rect x="10" y="55" width="22" height="8" rx="3" fill="#1a202c" />
+    <rect x="80" y="55" width="22" height="8" rx="3" fill="#1a202c" />
+    <!-- White Cargo Container -->
+    <polygon points="0,0 85,-20 85,50 0,55" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2" />
+    <line x1="28" y1="-7" x2="28" y2="52" stroke="#94a3b8" stroke-width="1.5" />
+    <line x1="56" y1="-14" x2="56" y2="51" stroke="#94a3b8" stroke-width="1.5" />
+    <!-- Blue Cabin -->
+    <polygon points="85,-20 115,-15 125,25 125,50 85,50" fill="url(#truckBlue)" stroke="#0d47a1" stroke-width="2" />
+    <!-- Windshield -->
+    <polygon points="88,-14 110,-10 118,15 88,15" fill="#b3e5fc" opacity="0.85" />
+    <!-- Headlight -->
+    <polygon points="120,32 125,32 124,40 119,40" fill="#ffeb3b" />
+    <!-- Truck direction arrow (Straight forward into junction) -->
+    <path d="M 135,25 Q 170,20 200,10" fill="none" stroke="#4ade80" stroke-width="4" marker-end="url(#arrowGreen)" stroke-dasharray="6,4" />
+  </g>
+
+  <!-- RED CAR (XE CON) WAITING AT RIGHT/BOTTOM -->
+  <g transform="translate(480, 280)" filter="url(#dropShadow)">
+    <!-- Wheels -->
+    <rect x="15" y="42" width="18" height="6" rx="2" fill="#1a202c" />
+    <rect x="65" y="42" width="18" height="6" rx="2" fill="#1a202c" />
+    <!-- Car Body -->
+    <path d="M 0,26 Q 10,12 25,10 L 45,5 Q 65,5 75,14 L 92,20 Q 98,24 96,38 L 5,38 Z" fill="url(#carRed)" stroke="#991b1b" stroke-width="1.5" />
+    <!-- Roof / Windows -->
+    <polygon points="26,12 45,7 68,7 62,20 20,20" fill="#e0f2fe" opacity="0.85" />
+    <!-- Headlight -->
+    <circle cx="8" cy="28" r="3.5" fill="#ffeb3b" />
+    <!-- Red Turning Curved Arrow (turning left across truck path) -->
+    <path d="M 5,20 Q -40,10 -35,-80" fill="none" stroke="#ef5350" stroke-width="4" marker-end="url(#arrowRed)" stroke-dasharray="6,4" />
+  </g>
+
+  <!-- GREEN MOTORCYCLE (XE MÔ TÔ) AT TOP ROAD -->
+  <g transform="translate(460, 100)" filter="url(#dropShadow)">
+    <!-- Wheels -->
+    <circle cx="10" cy="25" r="7" fill="#1a202c" />
+    <circle cx="32" cy="25" r="7" fill="#1a202c" />
+    <!-- Body -->
+    <polygon points="8,22 18,12 30,14 34,22 22,24" fill="url(#bikeGreen)" />
+    <!-- Rider -->
+    <circle cx="20" cy="4" r="5" fill="#2d3748" /> <!-- Helmet -->
+    <rect x="17" y="9" width="7" height="10" rx="2" fill="#1e3a8a" /> <!-- Jacket -->
+    <!-- Turning Curved Arrow -->
+    <path d="M 12,28 Q -10,50 -20,95" fill="none" stroke="#4ade80" stroke-width="3.5" marker-end="url(#arrowGreen)" stroke-dasharray="5,3" />
+  </g>
+</svg>
