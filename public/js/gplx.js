@@ -12,14 +12,150 @@
   const DEFAULT_GIFT_IMAGE = '/assets/gifts/qua_mac_dinh.svg';
 
   /**
+   * Bộ điều khiển nhép miệng thời gian thực cho avatar Thầy Giáo Live (#teacherAvatarSvg)
+   * - Khi ZeroTTS phát file WAV: đọc trực tiếp biên độ & phổ âm thanh qua Web Audio AnalyserNode (60fps)
+   *   để đóng/mở 5 khẩu hình miệng (closed / small / medium / wide / round) khớp với từng âm tiết thật.
+   * - Khi dùng Web Speech API dự phòng: mô phỏng nhịp âm tiết tiếng Việt tự nhiên.
+   */
+  class TeacherLipSyncAnimator {
+    constructor(svgEl) {
+      this.svgEl = svgEl;
+      this.mode = 'idle'; // 'idle' | 'audio' | 'synthetic'
+      this.analyser = null;
+      this.timeData = null;
+      this.freqData = null;
+      this.rafId = null;
+      this.smoothedAmp = 0;
+      this.lastViseme = 'closed';
+      this.lastSwitchTs = 0;
+    }
+
+    attachAnalyser(analyser) {
+      this.analyser = analyser;
+      if (analyser) {
+        this.timeData = new Uint8Array(analyser.fftSize);
+        this.freqData = new Uint8Array(analyser.frequencyBinCount);
+      }
+    }
+
+    setMode(mode) {
+      this.mode = mode || 'idle';
+      if (this.mode === 'idle') {
+        this.stop();
+        return;
+      }
+      if (!this.rafId) {
+        this.rafId = requestAnimationFrame((ts) => this.tick(ts));
+      }
+    }
+
+    stop() {
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+      this.smoothedAmp = 0;
+      this.applyVisual('closed', 0, 0);
+    }
+
+    applyVisual(viseme, amp, nowMs) {
+      if (!this.svgEl) return;
+      if (viseme !== this.lastViseme) {
+        this.svgEl.setAttribute('data-mouth', viseme);
+        this.lastViseme = viseme;
+      }
+      const clampedAmp = Math.max(0, Math.min(1, amp));
+      const tiltDeg = clampedAmp > 0.08 ? Math.sin(nowMs * 0.0055) * (1.8 * clampedAmp + 0.6) : 0;
+      const browPx = clampedAmp > 0.45 ? -((clampedAmp - 0.45) * 4.5) : 0;
+
+      this.svgEl.style.setProperty('--talk-amp', clampedAmp.toFixed(3));
+      this.svgEl.style.setProperty('--talk-tilt', `${tiltDeg.toFixed(2)}deg`);
+      this.svgEl.style.setProperty('--brow-lift', `${browPx.toFixed(2)}px`);
+    }
+
+    computeAudioLevel() {
+      if (!this.analyser || !this.timeData || !this.freqData) return null;
+      this.analyser.getByteTimeDomainData(this.timeData);
+      let sumSq = 0;
+      for (let i = 0; i < this.timeData.length; i++) {
+        const norm = (this.timeData[i] - 128) / 128;
+        sumSq += norm * norm;
+      }
+      const rms = Math.sqrt(sumSq / this.timeData.length);
+
+      // Phân biệt năng lượng trầm (môi tròn O/U) với năng lượng sáng (mở rộng A/E)
+      this.analyser.getByteFrequencyData(this.freqData);
+      let lowEnergy = 0;
+      let highEnergy = 0;
+      const splitBin = Math.min(14, Math.floor(this.freqData.length * 0.16));
+      for (let i = 1; i < splitBin; i++) lowEnergy += this.freqData[i];
+      for (let i = splitBin; i < Math.min(48, this.freqData.length); i++) highEnergy += this.freqData[i];
+      const isRoundVowel = lowEnergy > highEnergy * 1.45 && rms > 0.08;
+
+      return { rms, isRoundVowel };
+    }
+
+    tick(nowMs) {
+      if (this.mode === 'idle') {
+        this.stop();
+        return;
+      }
+
+      let rawAmp = 0;
+      let isRound = false;
+
+      if (this.mode === 'audio' && this.analyser) {
+        const res = this.computeAudioLevel();
+        if (res) {
+          rawAmp = Math.min(1, res.rms * 4.4);
+          isRound = res.isRoundVowel;
+        }
+      } else {
+        // Nhịp âm tiết tự nhiên cho Web Speech API dự phòng
+        const syllableWave = Math.abs(Math.sin(nowMs * 0.022));
+        const cadence = Math.sin(nowMs * 0.0067) * 0.5 + 0.5;
+        const microPause = Math.sin(nowMs * 0.0029) > -0.76 ? 1 : 0.05;
+        rawAmp = syllableWave * (0.35 + 0.65 * cadence) * microPause;
+        isRound = Math.sin(nowMs * 0.011) > 0.55;
+      }
+
+      this.smoothedAmp = this.smoothedAmp * 0.45 + rawAmp * 0.55;
+
+      // Chống nháy quá nhanh (< 45ms) giúp chuyển khẩu hình mượt mà
+      let targetViseme = this.lastViseme;
+      if (nowMs - this.lastSwitchTs >= 45 || this.smoothedAmp < 0.07) {
+        if (this.smoothedAmp < 0.07) {
+          targetViseme = 'closed';
+        } else if (this.smoothedAmp < 0.22) {
+          targetViseme = 'small';
+        } else if (isRound && this.smoothedAmp < 0.62) {
+          targetViseme = 'round';
+        } else if (this.smoothedAmp < 0.54) {
+          targetViseme = 'medium';
+        } else {
+          targetViseme = isRound ? 'round' : 'wide';
+        }
+        if (targetViseme !== this.lastViseme) {
+          this.lastSwitchTs = nowMs;
+        }
+      }
+
+      this.applyVisual(targetViseme, this.smoothedAmp, nowMs);
+      this.rafId = requestAnimationFrame((ts) => this.tick(ts));
+    }
+  }
+
+  /**
    * Trình đọc MC AI theo đường ống (Pipelined ZeroTTS + Web Speech API fallback)
    * - Đọc tuần tự từng đoạn câu hỏi / đáp án A-B-C-D
    * - Tự động tải trước đoạn tiếp theo trong khi đang phát đoạn hiện tại (giảm tối đa độ trễ)
-   * - Cho phép ngắt ngay lập tức khi sang câu mới hoặc hết giờ công bố đáp án
+   * - Kết nối Web Audio AnalyserNode để nhép miệng avatar Thầy Giáo Live theo sóng âm thực tế
    */
   class GplxMcSpeaker {
     constructor(callbacks = {}) {
       this.onSpeakingChange = callbacks.onSpeakingChange || (() => {});
+      this.onLipSyncMode = callbacks.onLipSyncMode || (() => {});
+      this.onAnalyserReady = callbacks.onAnalyserReady || (() => {});
       this.onAutoplayBlocked = callbacks.onAutoplayBlocked || (() => {});
       this.onLog = callbacks.onLog || (() => {});
 
@@ -34,10 +170,54 @@
       this.zeroTtsReady = false;
       this.sessionId = 0;
       this.isSpeaking = false;
-      this.currentAudio = null;
+      this.audioEl = null;
+      this.audioCtx = null;
+      this.mediaSource = null;
+      this.analyser = null;
       this.pendingSegments = null;
       this.pendingOptions = null;
       this.autoplayBlocked = false;
+    }
+
+    resumeAudioContext() {
+      try {
+        if (!this.audioCtx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.audioCtx = new AudioCtx();
+        }
+        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+          this.audioCtx.resume().catch(() => {});
+        }
+      } catch (_) {}
+    }
+
+    ensureAudioPipeline() {
+      if (!this.audioEl) {
+        this.audioEl = new Audio();
+        this.audioEl.preload = 'auto';
+        this.audioEl.crossOrigin = 'anonymous';
+        this.audioEl.volume = this.volume;
+      }
+
+      this.resumeAudioContext();
+
+      // Chỉ gắn MediaElementAudioSourceNode khi AudioContext đã mở ('running')
+      // để tránh trường hợp trình duyệt chặn autoplay làm AudioContext ở trạng thái suspended gây mất tiếng
+      if (!this.mediaSource && this.audioCtx && this.audioCtx.state === 'running') {
+        try {
+          this.mediaSource = this.audioCtx.createMediaElementSource(this.audioEl);
+          this.analyser = this.audioCtx.createAnalyser();
+          this.analyser.fftSize = 256;
+          this.analyser.smoothingTimeConstant = 0.45;
+          this.mediaSource.connect(this.analyser);
+          this.analyser.connect(this.audioCtx.destination);
+          this.onAnalyserReady(this.analyser);
+        } catch (err) {
+          console.warn('[MC LipSync Analyser Fallback]', err?.message || err);
+        }
+      }
+
+      return this.audioEl;
     }
 
     setZeroTtsReady(ready) {
@@ -69,8 +249,8 @@
       try {
         localStorage.setItem('gplx_mc_volume', String(v));
       } catch (_) {}
-      if (this.currentAudio) {
-        this.currentAudio.volume = v;
+      if (this.audioEl) {
+        this.audioEl.volume = v;
       }
     }
 
@@ -78,12 +258,14 @@
       this.sessionId++;
       this.pendingSegments = null;
       this.pendingOptions = null;
-      if (this.currentAudio) {
+      this.onLipSyncMode('idle');
+      if (this.audioEl) {
         try {
-          this.currentAudio.pause();
-          this.currentAudio.src = '';
+          this.audioEl.onended = null;
+          this.audioEl.onerror = null;
+          this.audioEl.pause();
+          this.audioEl.currentTime = 0;
         } catch (_) {}
-        this.currentAudio = null;
       }
       if ('speechSynthesis' in window) {
         try {
@@ -99,6 +281,9 @@
     unlockAndResume() {
       this.autoplayBlocked = false;
       this.onAutoplayBlocked(false);
+      if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume().catch(() => {});
+      }
       if (this.pendingSegments && this.pendingSegments.length && this.enabled) {
         const segs = this.pendingSegments;
         const opts = this.pendingOptions || {};
@@ -131,18 +316,19 @@
           resolve({ status: 'cancelled' });
           return;
         }
-        const audio = new Audio(url);
+        const audio = this.ensureAudioPipeline();
         audio.volume = this.volume;
-        this.currentAudio = audio;
-        let settled = false;
+        audio.onended = null;
+        audio.onerror = null;
 
+        let settled = false;
         const finish = (result) => {
           if (settled) return;
           settled = true;
           clearTimeout(guardTimer);
-          if (this.currentAudio === audio) {
-            this.currentAudio = null;
-          }
+          audio.onended = null;
+          audio.onerror = null;
+          this.onLipSyncMode('idle');
           resolve(result);
         };
 
@@ -150,15 +336,24 @@
         audio.onended = () => finish({ status: 'ended' });
         audio.onerror = () => finish({ status: 'error' });
 
+        audio.src = url;
         const playPromise = audio.play();
-        if (playPromise && typeof playPromise.catch === 'function') {
-          playPromise.catch((err) => {
-            if (err && err.name === 'NotAllowedError') {
-              finish({ status: 'blocked' });
-            } else {
-              finish({ status: 'error' });
-            }
-          });
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise
+            .then(() => {
+              if (!settled && mySessionId === this.sessionId) {
+                this.onLipSyncMode(this.analyser ? 'audio' : 'synthetic');
+              }
+            })
+            .catch((err) => {
+              if (err && err.name === 'NotAllowedError') {
+                finish({ status: 'blocked' });
+              } else {
+                finish({ status: 'error' });
+              }
+            });
+        } else {
+          this.onLipSyncMode(this.analyser ? 'audio' : 'synthetic');
         }
       });
     }
@@ -185,14 +380,22 @@
             if (settled) return;
             settled = true;
             clearTimeout(guard);
+            this.onLipSyncMode('idle');
             resolve({ status });
           };
 
           const guard = setTimeout(() => finish('timeout'), 18000);
+          u.onstart = () => {
+            if (!settled && mySessionId === this.sessionId) {
+              this.onLipSyncMode('synthetic');
+            }
+          };
           u.onend = () => finish('ended');
           u.onerror = () => finish('error');
+          this.onLipSyncMode('synthetic');
           window.speechSynthesis.speak(u);
         } catch (_) {
+          this.onLipSyncMode('idle');
           resolve({ status: 'error' });
         }
       });
@@ -298,8 +501,11 @@
       }
 
       this.audio = null;
+      this.lipSync = new TeacherLipSyncAnimator(document.getElementById('teacherAvatarSvg'));
       this.mc = new GplxMcSpeaker({
         onSpeakingChange: (speaking, caption) => this.updateMcVisual(speaking, caption),
+        onLipSyncMode: (mode) => this.lipSync.setMode(mode),
+        onAnalyserReady: (analyser) => this.lipSync.attachAnalyser(analyser),
         onAutoplayBlocked: (blocked) => this.toggleAudioUnlockButton(blocked),
         onLog: (msg) => this.logDockEvent(msg)
       });
@@ -1015,6 +1221,7 @@
       // Tự động mở khóa âm thanh trên lần tương tác đầu tiên của host
       const unlockOnce = () => {
         this.ensureAudioCtx();
+        this.mc.resumeAudioContext();
         if (this.mc.autoplayBlocked) {
           this.mc.unlockAndResume();
         }
