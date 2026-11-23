@@ -1790,6 +1790,10 @@ async function handleRpcCall(method, params = {}) {
       return gplxEngine ? gplxEngine.submitAnswer(params) : null;
     case 'gplx.nextQuestion':
       return gplxEngine ? gplxEngine.nextQuestion() : {};
+    case 'gplx.prevQuestion':
+      return gplxEngine ? gplxEngine.prevQuestion() : {};
+    case 'gplx.jumpToQuestion':
+      return gplxEngine ? gplxEngine.jumpToQuestion(params.id) : {};
     case 'gplx.restartTimer':
       return gplxEngine ? gplxEngine.restartTimer() : {};
     case 'gplx.toggleMultiplier':

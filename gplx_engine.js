@@ -11,15 +11,20 @@ class GplxEngine {
     this.broadcast = broadcastCallback || (() => {});
     this.questions = this.loadQuestions();
     this.currentQIndex = 0;
+    
+    // Tìm câu sa hình đầu tiên nếu có (thường từ câu 486)
+    const saHinhIdx = this.questions.findIndex(q => q.id >= 486);
+    if (saHinhIdx !== -1) {
+      this.currentQIndex = saHinhIdx;
+    }
+
     this.timerRemaining = 15;
     this.timerMax = 15;
     this.isRevealed = false;
-    this.highlightedKey = 'B';
     this.multiplier = 1;
     this.onlineLearnersCount = 2418;
 
-    this.votes = { A: 234, B: 512, C: 89, D: 12 };
-    this.stats = { accuracyRate: 68, avgSpeed: '1.2 giây' };
+    this.syncQuestionState();
 
     this.leaderboard = [
       { user: '@Minh_B2', points: 820, delta: '+0.4s', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=champion1' },
@@ -36,30 +41,43 @@ class GplxEngine {
     try {
       const qPath = path.join(__dirname, 'data', 'gplx-questions.json');
       if (fs.existsSync(qPath)) {
-        return JSON.parse(fs.readFileSync(qPath, 'utf8'));
+        const raw = JSON.parse(fs.readFileSync(qPath, 'utf8'));
+        if (Array.isArray(raw) && raw.length > 0) {
+          console.log(`[GplxEngine] Đã tải ${raw.length} câu hỏi sát hạch thực tế thành công!`);
+          return raw;
+        }
       }
     } catch (err) {
       console.warn('[GplxEngine] Error loading questions:', err);
     }
     return [
       {
-        id: 12,
+        id: 486,
         category: 'HẠNG B - C1 - C',
-        questionNumber: 12,
-        totalQuestions: 35,
-        isFatal: true,
-        fatalLabel: '⚠️ Điểm liệt! (Câu hỏi quan trọng)',
-        question: 'Xe nào được quyền đi trước trong trường hợp này?',
+        questionNumber: 486,
+        totalQuestions: 600,
+        isFatal: false,
+        fatalLabel: 'Câu hỏi sa hình',
+        question: 'Theo hướng mũi tên, xe nào chấp hành đúng quy tắc giao thông?',
         options: [
-          { key: 'A', text: 'Xe con (Red Sedan)' },
-          { key: 'B', text: 'Xe tải (Blue Truck)' },
-          { key: 'C', text: 'Xe mô tô (Green Motorcycle)' },
-          { key: 'D', text: 'Tất cả các xe dừng lại' }
+          { key: 'A', text: 'Xe khách, xe tải, xe mô tô' },
+          { key: 'B', text: 'Xe tải, xe mô tô' },
+          { key: 'C', text: 'Chỉ xe con' }
         ],
         correctKey: 'B',
-        explanation: 'Theo hiệu lệnh CSGT, xe tải được quyền đi trước.'
+        image: '/assets/sa_hinh_12.svg'
       }
     ];
+  }
+
+  syncQuestionState() {
+    const q = this.getCurrentQuestion();
+    this.highlightedKey = q.correctKey;
+    this.votes = q.mockVotes ? { ...q.mockVotes } : { A: 120, B: 240, C: 45, D: 15 };
+    this.stats = {
+      accuracyRate: q.accuracyRate || 72,
+      avgSpeed: q.avgSpeed || '1.2 giây'
+    };
   }
 
   startTimerTicker() {
@@ -80,6 +98,8 @@ class GplxEngine {
   getState() {
     return {
       question: this.getCurrentQuestion(),
+      questionIndex: this.currentQIndex,
+      totalQuestionsCount: this.questions.length,
       timerRemaining: this.timerRemaining,
       timerMax: this.timerMax,
       isRevealed: this.isRevealed,
@@ -101,9 +121,8 @@ class GplxEngine {
     const validKeys = ['A', 'B', 'C', 'D'];
     if (!validKeys.includes(rawAnswer)) return null;
 
-    // Increase vote count
     this.votes[rawAnswer] = (this.votes[rawAnswer] || 0) + 1;
-    this.onlineLearnersCount += Math.floor(Math.random() * 3);
+    this.onlineLearnersCount += Math.floor(Math.random() * 2);
 
     const q = this.getCurrentQuestion();
     const isCorrect = rawAnswer === q.correctKey;
@@ -114,7 +133,6 @@ class GplxEngine {
       const earned = (100 + Math.max(0, this.timerRemaining * 10)) * this.multiplier;
       this.highlightedKey = rawAnswer;
 
-      // Update or insert into leaderboard
       const existing = this.leaderboard.find(p => p.user === user);
       if (existing) {
         existing.points += earned;
@@ -128,7 +146,6 @@ class GplxEngine {
         });
       }
 
-      // Sort leaderboard descending by points
       this.leaderboard.sort((a, b) => b.points - a.points);
       if (this.leaderboard.length > 5) {
         this.leaderboard = this.leaderboard.slice(0, 5);
@@ -148,8 +165,10 @@ class GplxEngine {
   }
 
   simulateComment(params) {
-    const ans = params.answer || ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)];
-    const mockUsers = ['@Minh_B2', '@Thanh_TaiXe_C', '@Phuong_C1', '@Tuan_LaiMoi', '@Hoa_SaHinh', '@Bao_Ngoc', '@Huy_Tuan'];
+    const q = this.getCurrentQuestion();
+    const validKeys = q.options.map(o => o.key);
+    const ans = params.answer || validKeys[Math.floor(Math.random() * validKeys.length)];
+    const mockUsers = ['@Minh_B2', '@Thanh_TaiXe_C', '@Phuong_C1', '@Tuan_LaiMoi', '@Hoa_SaHinh', '@Bao_Ngoc', '@Huy_Tuan', '@Linh_GPLX'];
     const chosenUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
     return this.submitAnswer({
       user: chosenUser,
@@ -165,7 +184,7 @@ class GplxEngine {
     this.highlightedKey = q.correctKey;
     this.broadcastState();
 
-    // Auto next question after 8s
+    // Tự động chuyển câu tiếp theo sau 8s
     setTimeout(() => {
       this.nextQuestion();
     }, 8000);
@@ -175,17 +194,32 @@ class GplxEngine {
     this.currentQIndex = (this.currentQIndex + 1) % this.questions.length;
     this.timerRemaining = this.timerMax;
     this.isRevealed = false;
-    const q = this.getCurrentQuestion();
-    this.highlightedKey = q.correctKey; // default active preview
-    if (q.mockVotes) {
-      this.votes = { ...q.mockVotes };
-    }
-    if (q.accuracyRate) {
-      this.stats.accuracyRate = q.accuracyRate;
-      this.stats.avgSpeed = q.avgSpeed;
-    }
+    this.syncQuestionState();
     this.broadcastState();
     return this.getState();
+  }
+
+  prevQuestion() {
+    this.currentQIndex = (this.currentQIndex - 1 + this.questions.length) % this.questions.length;
+    this.timerRemaining = this.timerMax;
+    this.isRevealed = false;
+    this.syncQuestionState();
+    this.broadcastState();
+    return this.getState();
+  }
+
+  jumpToQuestion(targetId) {
+    const num = parseInt(targetId, 10);
+    const idx = this.questions.findIndex(q => q.id === num);
+    if (idx !== -1) {
+      this.currentQIndex = idx;
+      this.timerRemaining = this.timerMax;
+      this.isRevealed = false;
+      this.syncQuestionState();
+      this.broadcastState();
+      return this.getState();
+    }
+    return { ok: false, error: 'Không tìm thấy câu hỏi' };
   }
 
   restartTimer() {

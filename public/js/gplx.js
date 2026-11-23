@@ -7,7 +7,6 @@ class GplxClient {
   constructor() {
     this.ws = null;
     this.state = null;
-    this.timerInterval = null;
     this.timerRemaining = 15;
     this.timerMax = 15;
     this.audio = new (window.AudioContext || window.webkitAudioContext)();
@@ -75,29 +74,55 @@ class GplxClient {
 
     // Render Question
     if (state.question) {
+      const q = state.question;
+      const totalQ = state.totalQuestionsCount || q.totalQuestions || 600;
       document.getElementById('questionCounterText').textContent =
-        `CÂU HỎI: ${state.question.questionNumber || 12} / ${state.question.totalQuestions || 35}`;
+        `CÂU HỎI: ${q.questionNumber || q.id} / ${totalQ}`;
       document.getElementById('questionText').textContent =
-        `Câu ${state.question.questionNumber || 12}: ${state.question.question}`;
+        `Câu ${q.questionNumber || q.id}: ${q.question}`;
       
       const fatalBadge = document.getElementById('fatalBadge');
-      if (state.question.isFatal) {
+      if (q.isFatal) {
         fatalBadge.style.display = 'flex';
-        fatalBadge.textContent = state.question.fatalLabel || '⚠️ Điểm liệt! (Câu hỏi quan trọng)';
+        fatalBadge.textContent = q.fatalLabel || '⚠️ Điểm liệt! (Câu hỏi quan trọng)';
       } else {
         fatalBadge.style.display = 'none';
       }
 
-      // Update options
-      if (Array.isArray(state.question.options)) {
-        state.question.options.forEach((opt) => {
-          const btn = document.getElementById(`optBtn_${opt.key.toLowerCase()}`);
-          if (btn) {
-            const label = btn.querySelector('.opt-main-label');
-            if (label) label.textContent = opt.text;
-          }
+      // Render Real Exam Image or Sa-hình
+      const diagramWrapper = document.querySelector('.question-diagram-wrapper');
+      const saHinhImg = document.getElementById('saHinhImage');
+      if (q.image) {
+        diagramWrapper.style.display = 'flex';
+        saHinhImg.src = q.image;
+        saHinhImg.style.objectFit = 'contain';
+        saHinhImg.style.display = 'block';
+      } else {
+        diagramWrapper.style.display = 'none';
+      }
+
+      // Render Dynamic Answer Options (A, B, C, D)
+      const allKeys = ['a', 'b', 'c', 'd'];
+      const optMap = {};
+      if (Array.isArray(q.options)) {
+        q.options.forEach(opt => {
+          optMap[opt.key.toLowerCase()] = opt;
         });
       }
+
+      allKeys.forEach(k => {
+        const btn = document.getElementById(`optBtn_${k}`);
+        if (!btn) return;
+        if (optMap[k]) {
+          btn.style.display = 'flex';
+          const mainLbl = btn.querySelector('.opt-main-label');
+          const subDesc = btn.querySelector('.opt-sub-desc');
+          if (mainLbl) mainLbl.textContent = optMap[k].text;
+          if (subDesc) subDesc.textContent = ''; // clear mock labels
+        } else {
+          btn.style.display = 'none';
+        }
+      });
     }
 
     // Update Highlighted Answer Option
@@ -110,8 +135,13 @@ class GplxClient {
 
     // Update Votes
     if (state.votes) {
-      document.getElementById('voteDistribution').textContent =
-        `A (${state.votes.A || 0} người) • B (${state.votes.B || 0} người) • C (${state.votes.C || 0} người) • D (${state.votes.D || 0} người)`;
+      const v = state.votes;
+      const parts = [];
+      if (v.A !== undefined) parts.push(`A (${v.A} người)`);
+      if (v.B !== undefined) parts.push(`B (${v.B} người)`);
+      if (v.C !== undefined) parts.push(`C (${v.C} người)`);
+      if (v.D !== undefined) parts.push(`D (${v.D} người)`);
+      document.getElementById('voteDistribution').textContent = parts.join(' • ');
     }
 
     // Update Online Count
@@ -188,13 +218,11 @@ class GplxClient {
     secEl.textContent = `${mm}:${ss}`;
     msEl.textContent = `${ss}`;
 
-    // Circular progress: perimeter of r=50 is 2*pi*50 = 314.159
     const circumference = 314.16;
     const progress = Math.max(0, Math.min(1, this.timerRemaining / this.timerMax));
     const offset = circumference * (1 - progress);
     circle.style.strokeDashoffset = offset;
 
-    // Danger color when time is low
     if (this.timerRemaining <= 5) {
       circle.style.stroke = '#ef4444';
       secEl.style.textShadow = '0 0 16px rgba(239, 68, 68, 0.9)';
@@ -242,7 +270,6 @@ class GplxClient {
   }
 
   initEventListeners() {
-    // Clickable answer buttons
     ['a', 'b', 'c', 'd'].forEach((key) => {
       const btn = document.getElementById(`optBtn_${key}`);
       if (btn) {
@@ -258,7 +285,6 @@ class GplxClient {
       }
     });
 
-    // Control Dock Simulator Buttons
     const btnSimA = document.getElementById('btnSimA');
     if (btnSimA) btnSimA.onclick = () => this.sendRpc('gplx.simulateComment', { answer: 'A' });
     const btnSimB = document.getElementById('btnSimB');
@@ -270,12 +296,22 @@ class GplxClient {
 
     const btnNextQ = document.getElementById('btnNextQ');
     if (btnNextQ) btnNextQ.onclick = () => this.sendRpc('gplx.nextQuestion', {});
+    const btnPrevQ = document.getElementById('btnPrevQ');
+    if (btnPrevQ) btnPrevQ.onclick = () => this.sendRpc('gplx.prevQuestion', {});
+    
+    const btnJumpQ = document.getElementById('btnJumpQ');
+    if (btnJumpQ) {
+      btnJumpQ.onclick = () => {
+        const val = document.getElementById('inputJumpQ').value.trim();
+        if (val) this.sendRpc('gplx.jumpToQuestion', { id: val });
+      };
+    }
+
     const btnRestartTimer = document.getElementById('btnRestartTimer');
     if (btnRestartTimer) btnRestartTimer.onclick = () => this.sendRpc('gplx.restartTimer', {});
     const btnTogglex2 = document.getElementById('btnTogglex2');
     if (btnTogglex2) btnTogglex2.onclick = () => this.sendRpc('gplx.toggleMultiplier', {});
 
-    // TikTok Live Connection
     const btnConnect = document.getElementById('btnConnectTikTok');
     if (btnConnect) {
       btnConnect.onclick = () => {

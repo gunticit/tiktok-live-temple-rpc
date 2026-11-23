@@ -285,9 +285,14 @@
 
       <!-- Điều khiển Câu Hỏi & Thời Gian -->
       <div class="dock-section">
-        <div class="dock-section-title">⏱️ Trận Đấu & Câu Hỏi</div>
+        <div class="dock-section-title">⏱️ Trận Đấu & Chọn Câu Hỏi</div>
+        <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+          <input type="number" id="inputJumpQ" class="dock-input" value="486" placeholder="Nhập số câu (vd: 486)..." style="width: 140px;" />
+          <button class="dock-btn gold" id="btnJumpQ" style="flex: 1;">Nhảy Tới Câu</button>
+        </div>
         <div class="dock-grid-2">
-          <button class="dock-btn gold" id="btnNextQ">➡️ Câu Tiếp Theo</button>
+          <button class="dock-btn" id="btnPrevQ">⬅️ Câu Trước</button>
+          <button class="dock-btn gold" id="btnNextQ">➡️ Câu Tiếp</button>
           <button class="dock-btn" id="btnRestartTimer">🔄 Đếm Lại 15s</button>
           <button class="dock-btn" id="btnTogglex2">🎁 Bật / Tắt x2 Điểm</button>
         </div>
