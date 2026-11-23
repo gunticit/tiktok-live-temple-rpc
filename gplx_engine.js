@@ -80,8 +80,10 @@ function normalizeUserKey(uniqueId, user) {
 }
 
 function formatDisplayHandle(user, uniqueId) {
-  const raw = String(user || uniqueId || 'Học viên').trim();
-  return raw.startsWith('@') ? raw : `@${raw}`;
+  const cleanUser = String(user || '').trim();
+  if (cleanUser) return cleanUser;
+  const cleanUid = String(uniqueId || '').trim().replace(/^@+/, '');
+  return cleanUid ? `@${cleanUid}` : 'Học viên';
 }
 
 function parseGplxAnswerFromComment(commentText) {
@@ -131,7 +133,7 @@ class GplxEngine {
     this.phase = 'reading'; // 'reading' | 'countdown' | 'revealed'
     this.isRevealed = false;
     this.multiplier = 1; // Global host x2 toggle (stacks or supplements per-user gift x2)
-    this.onlineLearnersCount = 2418;
+    this.onlineLearnersCount = 0;
     this.questionRoundId = 1;
     this.revealTimeout = null;
     this.readingFallbackTimeout = null;
@@ -150,27 +152,9 @@ class GplxEngine {
     this.recentGifts = [];                  // Recent gift alerts for UI/debug
     this.roundWinner = null;
 
-    // Persistent player registry (so #6+ keep their points and can climb into Top 5)
+    // Bảng xếp hạng hoàn toàn theo dữ liệu học viên thực tế (không tạo dữ liệu giả/mock)
     this.players = new Map();
-    const initialSeeds = [
-      { user: '@Minh_B2', uniqueId: 'minh_b2', points: 820, delta: '+0.4s', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=champion1' },
-      { user: '@Thanh_TaiXe_C', uniqueId: 'thanh_taixe_c', points: 790, delta: '+0.6s', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=driver2' },
-      { user: '@Phuong_C1', uniqueId: 'phuong_c1', points: 750, delta: '+0.8s', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=driver3' },
-      { user: '@Tuan_LaiMoi', uniqueId: 'tuan_laimoi', points: 710, delta: '+1.1s', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=driver4' },
-      { user: '@Hoa_SaHinh', uniqueId: 'hoa_sahinh', points: 680, delta: '+1.3s', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=driver5' }
-    ];
-    for (const seed of initialSeeds) {
-      const key = normalizeUserKey(seed.uniqueId, seed.user);
-      this.players.set(key, {
-        ...seed,
-        userKey: key,
-        correctCount: 3,
-        lastBoosted: false,
-        lastGiftImage: '',
-        lastGiftName: ''
-      });
-    }
-    this.leaderboard = this.computeLeaderboard();
+    this.leaderboard = [];
 
     this.syncQuestionState();
     this.startTimerTicker();
@@ -481,6 +465,7 @@ class GplxEngine {
       votes: this.votes,
       stats: this.stats,
       onlineLearnersCount: this.onlineLearnersCount,
+      totalRankedPlayers: this.players.size,
       leaderboard: this.leaderboard,
       activeBoosters: this.getActiveBoostersList(),
       giftCatalog: this.giftCatalog,
@@ -519,9 +504,8 @@ class GplxEngine {
   handleGift(params = {}) {
     const displayUser = formatDisplayHandle(params.user, params.uniqueId);
     const userKey = normalizeUserKey(params.uniqueId, params.user);
-    const avatar =
-      params.avatar ||
-      `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userKey)}`;
+    const existingPlayer = this.players.get(userKey);
+    const avatar = String(params.avatar || existingPlayer?.avatar || '').trim();
 
     const rawGiftName = params.giftName || params.gift?.name || params.giftId || 'Hoa hồng';
     const matched = this.findGift
@@ -627,8 +611,8 @@ class GplxEngine {
 
     const displayUser = formatDisplayHandle(user, uniqueId);
     const userKey = normalizeUserKey(uniqueId, user);
-    const safeAvatar =
-      avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userKey)}`;
+    const existingPlayer = this.players.get(userKey);
+    const safeAvatar = String(avatar || existingPlayer?.avatar || '').trim();
 
     // Mỗi học viên chỉ tính điểm 1 lần trên mỗi câu hỏi để tránh spam bình luận farm điểm
     if (this.questionAnswers.has(userKey)) {
@@ -644,9 +628,6 @@ class GplxEngine {
     }
 
     this.votes[rawAnswer] = (this.votes[rawAnswer] || 0) + 1;
-    if (!this.tiktokStatus.connected) {
-      this.onlineLearnersCount += Math.floor(Math.random() * 2);
-    }
 
     const isCorrect = rawAnswer === String(q.correctKey || '').toUpperCase();
     const elapsedSec = Math.max(0.2, (this.timerMax - this.timerRemaining) + Math.random() * 0.4);
@@ -688,7 +669,7 @@ class GplxEngine {
       let player = this.players.get(userKey);
       if (player) {
         player.user = displayUser;
-        player.avatar = safeAvatar;
+        if (safeAvatar) player.avatar = safeAvatar;
         player.points += earnedPoints;
         player.delta = speedText;
         player.correctCount = (player.correctCount || 0) + 1;
@@ -877,6 +858,15 @@ class GplxEngine {
 
   restartTimer() {
     return this.beginQuestionRound();
+  }
+
+  resetLeaderboard() {
+    this.players.clear();
+    this.leaderboard = [];
+    this.questionAnswers.clear();
+    this.roundWinner = null;
+    this.broadcastState();
+    return { ok: true, leaderboard: [] };
   }
 
   toggleMultiplier() {

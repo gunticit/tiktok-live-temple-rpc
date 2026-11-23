@@ -813,6 +813,106 @@ body {
   color: #cbd5e1;
 }
 
+/* EMPTY LEADERBOARD STATE & REAL AVATAR FALLBACK */
+.leaderboard-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 24px;
+  min-height: 224px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 35%, rgba(0, 210, 255, 0.14) 0%, rgba(15, 23, 42, 0.6) 80%);
+  border: 1.5px dashed rgba(0, 210, 255, 0.4);
+  gap: 8px;
+}
+
+.leaderboard-empty-state[hidden],
+.podium-top3-row[hidden],
+.podium-runners-row[hidden] {
+  display: none;
+}
+
+.lb-empty-trophy {
+  font-size: 46px;
+  filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.7));
+  animation: pulseFatal 1.8s infinite alternate;
+}
+
+.lb-empty-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: #fef08a;
+  letter-spacing: 0.3px;
+}
+
+.lb-empty-sub {
+  font-size: 18px;
+  font-weight: 700;
+  color: #cbd5e1;
+  max-width: 720px;
+  line-height: 1.35;
+}
+
+.podium-card.is-empty-slot,
+.runner-card.is-empty-slot {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.runner-avatar-wrap {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 10px;
+  flex-shrink: 0;
+  background: #1e293b;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-avatar-wrap .runner-avatar-sm {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  margin-right: 0;
+}
+
+.podium-avatar-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.podium-avatar-img[hidden],
+.runner-avatar-sm[hidden],
+.avatar-fallback-initial[hidden] {
+  display: none;
+}
+
+.avatar-fallback-initial {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-family: var(--gplx-font-title);
+  font-weight: 900;
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.avatar-fallback-initial.is-sm {
+  font-size: 15px;
+}
+
 .online-learner-count-row {
   text-align: center;
   font-size: 16px;

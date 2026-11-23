@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const cors = require('cors');
 const { WebSocketServer } = require('ws');
 const { TikTokLiveConnection, WebcastEvent, ControlEvent } = require('tiktok-live-connector');
+const { normalizeGiftPayload, getGiftComboDelta } = require('./lib/tiktok-gift-payload.cjs');
 
 // Bắt lỗi toàn cục để tránh sập server khi WebSocket hoặc kết nối bên ngoài bị ngắt đột ngột
 process.on('uncaughtException', (err) => {
@@ -1526,26 +1527,7 @@ const FishingEngine = {
 // ============================================================================
 let tiktokConn = null;
 const commentCooldownMap = new Map();
-const liveTikTokGiftsMap = new Map();
-const giftStreakDedupMap = new Map();
-
-function extractLiveGiftImage(data, giftId) {
-  const direct =
-    data?.giftPictureUrl ||
-    data?.giftDetails?.giftImage?.giftPictureUrl ||
-    data?.giftDetails?.giftImage?.url?.[0] ||
-    data?.giftDetails?.giftImage?.urlList?.[0] ||
-    data?.gift?.image?.urlList?.[0] ||
-    data?.gift?.icon?.urlList?.[0] ||
-    data?.extendedGiftInfo?.image?.url_list?.[0] ||
-    data?.extendedGiftInfo?.icon?.url_list?.[0] ||
-    '';
-  if (direct) return direct;
-  if (giftId && liveTikTokGiftsMap.has(Number(giftId))) {
-    return liveTikTokGiftsMap.get(Number(giftId)).image || '';
-  }
-  return '';
-}
+const giftComboTracker = new Map();
 
 function parseViewerComment(commentText, user, uniqueId, avatar) {
   const raw = String(commentText || '').trim();
@@ -1586,25 +1568,55 @@ function parseViewerComment(commentText, user, uniqueId, avatar) {
 }
 
 function extractUserFromEvent(data) {
-  const user = data?.nickname || data?.uniqueId || data?.user?.nickname || data?.user?.uniqueId || 'Cần Thủ';
-  const uniqueId = data?.uniqueId || data?.user?.uniqueId || '';
-  const avatar = data?.profilePictureUrl 
-    || data?.user?.profilePictureUrls?.[0] 
-    || data?.user?.avatarThumb?.urlList?.[0]
-    || data?.userDetails?.profilePictureUrls?.[0]
-    || data?.profilePictureUrls?.[0]
-    || (uniqueId ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(uniqueId)}` : '');
+  const u = data?.user || data || {};
+  const uniqueId = u.uniqueId || u.displayId || data?.uniqueId || '';
+  const user = u.nickname || uniqueId || data?.nickname || 'Học Viên';
+  const avatar =
+    u.profilePictureUrl ||
+    u.profilePicture?.url?.[0] ||
+    u.profilePicture?.urls?.[0] ||
+    u.profilePicture?.urlList?.[0] ||
+    u.profilePictureLarge?.url?.[0] ||
+    u.profilePictureLarge?.urlList?.[0] ||
+    u.profilePictureMedium?.url?.[0] ||
+    u.profilePictureMedium?.urlList?.[0] ||
+    u.avatarLarge?.urlList?.[0] ||
+    u.avatarLarge?.url?.[0] ||
+    u.avatarThumb?.urlList?.[0] ||
+    u.avatarThumb?.url?.[0] ||
+    u.avatarMedium?.urlList?.[0] ||
+    u.avatarMedium?.url?.[0] ||
+    u.profilePictureUrls?.[0] ||
+    data?.profilePictureUrl ||
+    data?.userDetails?.profilePictureUrls?.[0] ||
+    data?.profilePictureUrls?.[0] ||
+    '';
   return { user, uniqueId, avatar };
 }
 
-async function resolveTikTokUsername(input) {
-  if (!input) return null;
-  let str = String(input).trim();
-  const atMatch = str.match(/@([a-zA-Z0-9_.-]+)/);
-  if (atMatch) return atMatch[1];
-  const urlMatch = str.match(/tiktok\.com\/@([a-zA-Z0-9_.-]+)/);
-  if (urlMatch) return urlMatch[1];
-  return str.replace(/[^a-zA-Z0-9_.-]/g, '');
+async function resolveTikTokUsername(rawInput) {
+  let input = String(rawInput || '').trim();
+  if (!input) {
+    throw new Error('Vui lòng nhập @username hoặc link TikTok Live cần kết nối');
+  }
+  if (input.startsWith('http://') || input.startsWith('https://') || input.includes('tiktok.com/')) {
+    const urlToFetch = input.startsWith('http') ? input : `https://${input}`;
+    const directMatch = urlToFetch.match(/tiktok\.com\/@([^/?#]+)/i);
+    if (directMatch && directMatch[1]) {
+      return directMatch[1];
+    }
+    try {
+      const resp = await fetch(urlToFetch, { redirect: 'follow' });
+      const finalUrl = resp.url || '';
+      const resolvedMatch = finalUrl.match(/tiktok\.com\/@([^/?#]+)/i);
+      if (resolvedMatch && resolvedMatch[1]) {
+        return resolvedMatch[1];
+      }
+    } catch (e) {
+      console.warn('[TikTok URL Resolve Warning]', e.message);
+    }
+  }
+  return input.replace(/^@/, '').split(/[/?#]/)[0].trim();
 }
 
 async function connectTikTokLive(usernameOrUrl) {
@@ -1619,6 +1631,8 @@ async function connectTikTokLive(usernameOrUrl) {
     } catch (_) {}
     tiktokConn = null;
   }
+  // Phiên kết nối mới: xóa bộ đếm combo quà tặng cũ để không bị lệch lượt
+  giftComboTracker.clear();
 
   state.tiktok = {
     connected: false,
@@ -1629,29 +1643,19 @@ async function connectTikTokLive(usernameOrUrl) {
     lastError: null
   };
   broadcastNotification('fishing.state', getPublicState());
+  if (gplxEngine) gplxEngine.updateTikTokStatus(state.tiktok);
 
-  tiktokConn = new TikTokLiveConnection(cleanUser, {
+  const connection = new TikTokLiveConnection(cleanUser, {
     processInitialData: true,
     fetchRoomInfoOnConnect: false,
     enableExtendedGiftInfo: false
   });
+  tiktokConn = connection;
 
-  // Bảo vệ wsClient khỏi emit error không có listener sau khi đóng kết nối
-  tiktokConn.on(ControlEvent.WEBSOCKET_CONNECTED, (wsClient) => {
-    if (wsClient && typeof wsClient.on === 'function') {
-      wsClient.on('error', (err) => {
-        console.warn('[TikTok Live WS Error]', err?.message || err);
-      });
-      const origRemoveAll = wsClient.removeAllListeners.bind(wsClient);
-      wsClient.removeAllListeners = function (event) {
-        origRemoveAll(event);
-        this.on('error', () => {});
-        return this;
-      };
-    }
-  });
+  const isCurrentConnection = () => tiktokConn === connection;
 
-  tiktokConn.on(ControlEvent.CONNECTED, (roomState) => {
+  connection.on(ControlEvent.CONNECTED, (roomState) => {
+    if (!isCurrentConnection()) return;
     state.tiktok.connected = true;
     state.tiktok.connecting = false;
     state.tiktok.roomId = roomState?.roomId || tiktokConn?.roomId || null;
@@ -1659,30 +1663,11 @@ async function connectTikTokLive(usernameOrUrl) {
     console.log(`[TikTok Live] Đã kết nối phòng @${cleanUser} (roomId: ${state.tiktok.roomId})`);
     broadcastNotification('fishing.state', getPublicState());
     if (gplxEngine) gplxEngine.updateTikTokStatus(state.tiktok);
-
-    // Tải danh sách hình ảnh quà tặng trực tiếp từ phòng TikTok (an toàn, không chặn kết nối nếu lỗi)
-    if (tiktokConn && typeof tiktokConn.fetchAvailableGifts === 'function') {
-      tiktokConn.fetchAvailableGifts().then((giftList) => {
-        const items = Array.isArray(giftList) ? giftList : (giftList?.gifts || giftList?.data?.gifts || []);
-        for (const item of items) {
-          const gid = Number(item?.id || item?.gift_id);
-          const img = item?.image?.url_list?.[0] || item?.icon?.url_list?.[0] || item?.giftPictureUrl || '';
-          if (gid) {
-            liveTikTokGiftsMap.set(gid, {
-              name: item?.name || '',
-              diamondCount: Number(item?.diamond_count || item?.diamondCount || 1),
-              image: img
-            });
-          }
-        }
-        if (items.length > 0) {
-          console.log(`[TikTok Live] Đã đồng bộ ${items.length} hình ảnh quà tặng TikTok thật từ phòng Live!`);
-        }
-      }).catch(() => {});
-    }
   });
 
-  tiktokConn.on(ControlEvent.DISCONNECTED, () => {
+  connection.on(ControlEvent.DISCONNECTED, () => {
+    if (!isCurrentConnection()) return;
+    giftComboTracker.clear();
     state.tiktok.connected = false;
     state.tiktok.connecting = false;
     console.log(`[TikTok Live] Đã ngắt kết nối @${cleanUser}`);
@@ -1690,15 +1675,16 @@ async function connectTikTokLive(usernameOrUrl) {
     if (gplxEngine) gplxEngine.updateTikTokStatus(state.tiktok);
   });
 
-  tiktokConn.on(ControlEvent.ERROR, (err) => {
-    const errMsg = err?.exception?.message || err?.info || err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
-    state.tiktok.lastError = errMsg;
-    console.warn('[TikTok Live Warning]', errMsg);
+  connection.on(ControlEvent.ERROR, (err) => {
+    if (!isCurrentConnection()) return;
+    state.tiktok.lastError = err?.exception?.message || err?.info || err?.message || String(err);
+    console.warn('[TikTok Live Warning]', state.tiktok.lastError);
     broadcastNotification('fishing.state', getPublicState());
     if (gplxEngine) gplxEngine.updateTikTokStatus(state.tiktok);
   });
 
-  tiktokConn.on(WebcastEvent.ROOM_USER, (data) => {
+  connection.on(WebcastEvent.ROOM_USER, (data) => {
+    if (!isCurrentConnection()) return;
     const viewerCount = Number(data?.total ?? data?.viewerCount ?? 0);
     if (viewerCount > 0) {
       state.tiktok.viewerCount = viewerCount;
@@ -1707,25 +1693,28 @@ async function connectTikTokLive(usernameOrUrl) {
     }
   });
 
-  tiktokConn.on(WebcastEvent.MEMBER, (data) => {
+  connection.on(WebcastEvent.MEMBER, (data) => {
+    if (!isCurrentConnection()) return;
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    recordAngler(user, uniqueId, avatar, 1, 0, 0, 'Đã vào hồ câu cá');
+    recordAngler(user, uniqueId, avatar, 1, 0, 0, 'Đã vào phòng Live');
     broadcastNotification('fishing.state', getPublicState());
   });
 
-  tiktokConn.on(WebcastEvent.CHAT, (data) => {
+  connection.on(WebcastEvent.CHAT, (data) => {
+    if (!isCurrentConnection()) return;
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     const commentText = data?.content || data?.comment || '';
     console.log(`[TikTok Chat] ${user}: ${commentText}`);
 
-    // Gửi sự kiện chat ra giao diện stream ngay lập tức để hiển thị comment pill với avatar
-    broadcastNotification('fishing.chat', {
+    const chatPayload = {
       user,
       uniqueId,
       avatar,
       comment: commentText,
       timestamp: Date.now()
-    });
+    };
+    broadcastNotification('fishing.chat', chatPayload);
+    broadcastNotification('gplx.chat', chatPayload);
 
     const parsedGplxVote = GplxEngine.parseGplxAnswerFromComment(commentText);
     if (parsedGplxVote && gplxEngine) {
@@ -1735,116 +1724,118 @@ async function connectTikTokLive(usernameOrUrl) {
     parseViewerComment(commentText, user, uniqueId, avatar);
   });
 
-  tiktokConn.on(WebcastEvent.LIKE, (data) => {
+  connection.on(WebcastEvent.LIKE, (data) => {
+    if (!isCurrentConnection()) return;
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     const likeCount = Math.min(15, Math.max(1, Number(data?.count ?? data?.likeCount ?? 1)));
     FishingEngine.castBait({ user, uniqueId, avatar, count: likeCount });
   });
 
   const handleSocialEvent = (data) => {
+    if (!isCurrentConnection()) return;
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     FishingEngine.soundHorn({
       user,
       uniqueId,
       avatar,
-      wish: 'Hữu duyên tương ngộ nơi hồ câu, chúc buông cần thắng lợi!',
+      wish: 'Hữu duyên tương ngộ nơi phòng Live!',
       readTts: false
     });
   };
 
-  tiktokConn.on(WebcastEvent.FOLLOW, handleSocialEvent);
-  tiktokConn.on(WebcastEvent.SHARE, handleSocialEvent);
-  tiktokConn.on(WebcastEvent.SOCIAL, (data) => {
-    const text = String(data?.label || '').toLowerCase();
-    if (text.includes('follow') || text.includes('share')) {
+  connection.on(WebcastEvent.FOLLOW, handleSocialEvent);
+  connection.on(WebcastEvent.SHARE, handleSocialEvent);
+  connection.on(WebcastEvent.SOCIAL, (data) => {
+    if (!isCurrentConnection()) return;
+    const action = String(data?.action || '');
+    const disp = String(data?.common?.displayText?.displayType || data?.displayType || data?.label || '').toLowerCase();
+    if (action === '1' || action === '3' || disp.includes('follow') || disp.includes('share')) {
       handleSocialEvent(data);
     }
   });
 
-  tiktokConn.on(WebcastEvent.GIFT, (data) => {
+  connection.on(WebcastEvent.GIFT, (data) => {
+    if (!isCurrentConnection()) return;
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
-    const giftIdNum = Number(data?.giftId || data?.gift?.gift_id || 0);
-    const cachedLiveGift = giftIdNum ? liveTikTokGiftsMap.get(giftIdNum) : null;
-    const rawGiftName =
-      data?.giftName ||
-      data?.giftDetails?.giftName ||
-      data?.extendedGiftInfo?.name ||
-      cachedLiveGift?.name ||
-      data?.name ||
-      'Quà Tặng TikTok';
-    const diamondCount = Number(
-      data?.diamondCount ||
-      data?.giftDetails?.diamondCount ||
-      data?.extendedGiftInfo?.diamond_count ||
-      cachedLiveGift?.diamondCount ||
-      1
-    );
-    const repeatCount = Math.max(1, Number(data?.repeatCount || 1));
-    const totalCoins = Math.max(1, diamondCount * repeatCount);
-    const giftType = Number(data?.giftType ?? data?.giftDetails?.giftType ?? 0);
-    const repeatEnd = Boolean(data?.repeatEnd);
-    const liveGiftImage = extractLiveGiftImage(data, giftIdNum);
+    const giftPayload = normalizeGiftPayload(data, uniqueId);
+    const {
+      giftId,
+      giftName: rawGiftName,
+      giftImage: liveGiftImage,
+      diamondCount,
+      repeatCount,
+      repeatEnd,
+      groupId
+    } = giftPayload;
 
-    const matchedGift = findMatchingGift(rawGiftName, diamondCount);
+    const deltaCount = getGiftComboDelta(giftComboTracker, giftPayload);
+    if (deltaCount <= 0) {
+      return;
+    }
+
+    const totalCoins = diamondCount * deltaCount;
+    const matchedGift = findMatchingGift(rawGiftName || giftId, diamondCount);
+    const finalGiftName = rawGiftName || matchedGift.name || 'Quà TikTok';
     const finalGiftImage = liveGiftImage || matchedGift.image || '/assets/gifts/qua_mac_dinh.svg';
 
-    // Tránh spam liên tục giữa chuỗi combo quà tặng (giftType === 1):
-    // Kích hoạt ngay ở lần đầu để người dùng nhận x2 tức thì, bỏ qua các tick giữa combo
-    const streakKey = `${uniqueId || user}:${giftIdNum || matchedGift.id}:${data?.groupId || ''}`;
-    const lastStreakTs = giftStreakDedupMap.get(streakKey) || 0;
-    const nowTs = Date.now();
-    const isMidStreakDuplicate = giftType === 1 && !repeatEnd && (nowTs - lastStreakTs < 4000);
-    if (!isMidStreakDuplicate) {
-      giftStreakDedupMap.set(streakKey, nowTs);
-      if (giftStreakDedupMap.size > 400) {
-        const oldest = giftStreakDedupMap.keys().next().value;
-        giftStreakDedupMap.delete(oldest);
-      }
+    console.log(`[TikTok Gift] ${user} gửi ${deltaCount > 1 ? `${deltaCount}x ` : ''}${finalGiftName} (${totalCoins} xu)`);
+    console.log('[TikTok Gift Payload]', {
+      giftId: giftId || null,
+      giftName: rawGiftName || null,
+      diamondCount,
+      repeatCount,
+      repeatEnd,
+      comboDelta: deltaCount,
+      groupId
+    });
 
-      console.log(`[TikTok Gift] ${user} tặng ${rawGiftName} (${totalCoins} xu) x${repeatCount}`);
-
-      // Kết nối thẳng quà tặng TikTok vào Đấu Trường GPLX để kích hoạt x2 điểm cho người dùng đó
-      if (gplxEngine) {
-        gplxEngine.handleGift({
-          user,
-          uniqueId,
-          avatar,
-          giftId: matchedGift.id,
-          giftName: rawGiftName || matchedGift.name,
-          giftImage: finalGiftImage,
-          fallbackImage: matchedGift.image || '/assets/gifts/qua_mac_dinh.svg',
-          coins: totalCoins,
-          repeatCount
-        });
-      }
-
-      FishingEngine.sendGift({
+    // Kết nối thẳng quà tặng TikTok vào Đấu Trường GPLX -> kích hoạt x2 điểm cho câu trả lời của người dùng
+    if (gplxEngine) {
+      gplxEngine.handleGift({
         user,
         uniqueId,
         avatar,
-        gift: matchedGift,
+        giftId: matchedGift.id || giftId,
+        giftName: finalGiftName,
+        giftImage: finalGiftImage,
+        fallbackImage: matchedGift.image || '/assets/gifts/qua_mac_dinh.svg',
         coins: totalCoins,
-        repeatCount,
-        readTts: true
+        repeatCount: deltaCount
       });
     }
+
+    FishingEngine.sendGift({
+      user,
+      uniqueId,
+      avatar,
+      gift: matchedGift,
+      coins: totalCoins,
+      repeatCount: deltaCount,
+      readTts: true
+    });
   });
 
   try {
-    const roomState = await tiktokConn.connect();
+    const roomState = await connection.connect();
+    if (!isCurrentConnection()) return state.tiktok;
     state.tiktok.connected = true;
     state.tiktok.connecting = false;
     state.tiktok.roomId = roomState?.roomId || tiktokConn?.roomId || null;
+    state.tiktok.lastError = null;
     broadcastNotification('fishing.state', getPublicState());
     if (gplxEngine) gplxEngine.updateTikTokStatus(state.tiktok);
     return state.tiktok;
   } catch (err) {
-    state.tiktok.connected = false;
-    state.tiktok.connecting = false;
-    state.tiktok.lastError = err?.message || 'Không thể kết nối phòng Live (kiểm tra tài khoản đang phát Live chưa)';
-    broadcastNotification('fishing.state', getPublicState());
-    if (gplxEngine) gplxEngine.updateTikTokStatus(state.tiktok);
-    throw new Error(state.tiktok.lastError);
+    const message = err?.message || 'Không thể kết nối phòng Live (kiểm tra tài khoản đang phát Live chưa)';
+    if (isCurrentConnection()) {
+      giftComboTracker.clear();
+      state.tiktok.connected = false;
+      state.tiktok.connecting = false;
+      state.tiktok.lastError = message;
+      broadcastNotification('fishing.state', getPublicState());
+      if (gplxEngine) gplxEngine.updateTikTokStatus(state.tiktok);
+    }
+    throw new Error(message);
   }
 }
 
@@ -1855,9 +1846,11 @@ function disconnectTikTokLive() {
     } catch (_) {}
     tiktokConn = null;
   }
+  giftComboTracker.clear();
   state.tiktok.connected = false;
   state.tiktok.connecting = false;
   state.tiktok.viewerCount = 0;
+  state.tiktok.lastError = null;
   broadcastNotification('fishing.state', getPublicState());
   if (gplxEngine) gplxEngine.updateTikTokStatus(state.tiktok);
   return state.tiktok;
@@ -1951,11 +1944,15 @@ async function handleRpcCall(method, params = {}) {
       return gplxEngine ? gplxEngine.revealAnswer() : {};
     case 'gplx.toggleMultiplier':
       return gplxEngine ? gplxEngine.toggleMultiplier() : {};
+    case 'gplx.resetLeaderboard':
+      return gplxEngine ? gplxEngine.resetLeaderboard() : {};
     case 'gplx.simulateComment':
       return gplxEngine ? gplxEngine.simulateComment(params) : null;
+    case 'live.connect':
     case 'tiktok.connect':
     case 'gplx.connectTikTok':
       return await connectTikTokLive(params.username);
+    case 'live.disconnect':
     case 'tiktok.disconnect':
     case 'gplx.disconnectTikTok':
       return disconnectTikTokLive();
@@ -2189,10 +2186,12 @@ server.listen(PORT, () => {
   console.log(`🔌 JSON-RPC 2.0 Endpoint   : http://localhost:${PORT}/rpc (ws://localhost:${PORT}/ws)`);
   console.log(`============================================================`);
 
-  const defaultChannel = process.env.TIKTOK_USER || state.tiktok?.username || 'zenfacts_vn';
-  if (defaultChannel) {
-    connectTikTokLive(defaultChannel).catch((err) => {
-      console.warn(`[Auto-Connect @${defaultChannel}] Chưa kết nối được ngay:`, err.message);
-    });
+  if (process.env.DISABLE_TIKTOK_AUTOCONNECT !== '1') {
+    const defaultChannel = process.env.TIKTOK_USER || state.tiktok?.username || 'zenfacts_vn';
+    if (defaultChannel) {
+      connectTikTokLive(defaultChannel).catch((err) => {
+        console.warn(`[Auto-Connect @${defaultChannel}] Chưa kết nối được ngay:`, err.message);
+      });
+    }
   }
 });

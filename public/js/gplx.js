@@ -554,15 +554,23 @@
             this.onAnswerReceived(msg.params);
           } else if (msg.method === 'gplx.giftAlert') {
             this.onGiftAlert(msg.params);
+          } else if (msg.method === 'gplx.chat') {
+            if (msg.params?.comment) {
+              this.logDockEvent(`💭 [TikTok] ${msg.params.user || 'Khán giả'}: ${msg.params.comment}`);
+            }
           } else if (msg.method === 'gplx.tiktokStatus') {
             this.renderTikTokStatus(msg.params);
           } else if (msg.method === 'tts.status') {
             this.renderTtsStatus(msg.params);
+          } else if (msg.error) {
+            this.logDockEvent(`⚠️ Lỗi RPC: ${msg.error.message || 'Không xác định'}`);
           } else if (msg.result) {
             if (msg.result.question) {
               this.onStateUpdate(msg.result);
             } else if (msg.result.model && msg.result.status !== undefined) {
               this.renderTtsStatus(msg.result);
+            } else if (msg.result.connected !== undefined && msg.result.username !== undefined) {
+              this.renderTikTokStatus(msg.result);
             }
           }
         } catch (err) {
@@ -577,14 +585,31 @@
       };
     }
 
-    sendRpc(method, params = {}) {
+    async sendRpc(method, params = {}) {
+      const payload = {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method,
+        params
+      };
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({
-          jsonrpc: '2.0',
-          id: Date.now(),
-          method,
-          params
-        }));
+        this.ws.send(JSON.stringify(payload));
+        return null;
+      }
+      try {
+        const res = await fetch('/rpc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data?.error) {
+          this.logDockEvent(`⚠️ Lỗi RPC: ${data.error.message || 'Không xác định'}`);
+        }
+        return data;
+      } catch (err) {
+        this.logDockEvent(`⚠️ Không gọi được server: ${err.message}`);
+        return null;
       }
     }
 
@@ -639,16 +664,22 @@
       if (!tt) return;
       const statusEl = document.getElementById('dockTikTokStatus');
       const liveBadgeLabel = document.getElementById('liveBadgeLabel');
+      const btnConnect = document.getElementById('btnConnectTikTok');
+
+      if (btnConnect) {
+        btnConnect.disabled = !!tt.connecting;
+        btnConnect.textContent = tt.connecting ? 'Đang kết nối...' : 'Kết Nối';
+      }
 
       if (statusEl) {
         if (tt.connected) {
-          statusEl.textContent = `🟢 Đã kết nối @${tt.username} • ${tt.viewerCount || 0} người xem`;
+          statusEl.textContent = `🟢 LIVE @${tt.username} • ${tt.viewerCount || 0} mắt xem`;
           statusEl.style.color = '#86efac';
         } else if (tt.connecting) {
           statusEl.textContent = `🟡 Đang kết nối @${tt.username}...`;
           statusEl.style.color = '#fde047';
         } else if (tt.lastError) {
-          statusEl.textContent = `🔴 Chưa kết nối: ${tt.lastError}`;
+          statusEl.textContent = `🔴 Chưa kết nối (@${tt.username || ''}): ${tt.lastError}`;
           statusEl.style.color = '#fca5a5';
         } else {
           statusEl.textContent = '⚪ Chưa kết nối phòng TikTok Live';
@@ -658,7 +689,9 @@
 
       if (liveBadgeLabel) {
         liveBadgeLabel.textContent = tt.connected
-          ? `LIVE • @${tt.username}`
+          ? `LIVE @${tt.username} • ${tt.viewerCount || 0} MẮT`
+          : tt.connecting
+          ? `ĐANG KẾT NỐI @${tt.username}...`
           : 'LIVE STREAM • ĐANG THI ĐẤU';
       }
     }
@@ -837,12 +870,21 @@
         if (voteEl) voteEl.textContent = parts.join(' • ');
       }
 
-      // Update Online Count
-      if (state.onlineLearnersCount !== undefined) {
-        const count = Number(state.onlineLearnersCount || 0);
-        const formatted = count >= 1000 ? `${(count / 1000).toFixed(1)}K` : String(count);
-        const onlineEl = document.getElementById('onlineCountText');
-        if (onlineEl) onlineEl.textContent = `👤 Đang online: ${formatted} người tham gia`;
+      // Update Online Count (chỉ hiển thị số thật từ TikTok Live hoặc số học viên đã ghi điểm)
+      const onlineEl = document.getElementById('onlineCountText');
+      if (onlineEl) {
+        const viewers = Number(state.tiktok?.viewerCount || state.onlineLearnersCount || 0);
+        const rankedCount = Number(state.totalRankedPlayers ?? (Array.isArray(state.leaderboard) ? state.leaderboard.length : 0));
+        if (state.tiktok?.connected && viewers > 0) {
+          const formatted = viewers >= 1000 ? `${(viewers / 1000).toFixed(1)}K` : String(viewers);
+          onlineEl.textContent = rankedCount > 0
+            ? `👤 Đang xem trực tiếp: ${formatted} người • Đã ghi điểm: ${rankedCount} học viên`
+            : `👤 Đang xem trực tiếp: ${formatted} người • Bình luận để lên bảng vàng!`;
+        } else if (rankedCount > 0) {
+          onlineEl.textContent = `👤 Đã có ${rankedCount} học viên ghi điểm trên bảng xếp hạng`;
+        } else {
+          onlineEl.textContent = '👤 Đang chờ học viên tham gia bình luận A, B, C, D...';
+        }
       }
 
       // Update Stats
@@ -990,55 +1032,110 @@
       el.appendChild(txt);
     }
 
-    renderLeaderboard(ranks) {
-      if (!ranks || ranks.length < 5) return;
+    getInitialChar(name) {
+      const clean = String(name || '').replace(/^@+/, '').trim();
+      return clean ? clean.charAt(0).toUpperCase() : '?';
+    }
 
-      const setAvatar = (id, url, seed) => {
-        const img = document.getElementById(id);
-        if (!img) return;
-        const target = url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
-        if (img.getAttribute('src') !== target) {
-          img.src = target;
-        }
+    setRealAvatar(imgId, initialId, avatarUrl, displayName, isEmptySlot = false) {
+      const img = document.getElementById(imgId);
+      const initEl = document.getElementById(initialId);
+      if (!img || !initEl) return;
+
+      const fallbackLetter = isEmptySlot ? '?' : this.getInitialChar(displayName);
+      initEl.textContent = fallbackLetter;
+
+      const cleanUrl = !isEmptySlot && avatarUrl && typeof avatarUrl === 'string' && avatarUrl.startsWith('http')
+        ? avatarUrl
+        : '';
+
+      if (!cleanUrl) {
+        img.hidden = true;
+        img.removeAttribute('src');
+        initEl.hidden = false;
+        return;
+      }
+
+      img.onerror = () => {
+        img.onerror = null;
+        img.hidden = true;
+        initEl.hidden = false;
       };
+      img.onload = () => {
+        img.hidden = false;
+        initEl.hidden = true;
+      };
+      if (img.getAttribute('src') !== cleanUrl) {
+        img.src = cleanUrl;
+      } else if (img.complete && img.naturalWidth > 0) {
+        img.hidden = false;
+        initEl.hidden = true;
+      }
+    }
 
-      // #1 Center
-      const r1 = ranks[0];
-      document.getElementById('podiumUser1').textContent = r1.user;
-      document.getElementById('podiumScore1').textContent = `${r1.points}đ`;
-      document.getElementById('podiumDelta1').textContent = r1.delta;
-      setAvatar('podiumAvatar1', r1.avatar, r1.user);
-      this.setX2Badge('podiumX2_1', r1);
+    renderLeaderboard(ranks) {
+      const list = Array.isArray(ranks) ? ranks : [];
+      const emptyEl = document.getElementById('leaderboardEmptyState');
+      const podiumRow = document.getElementById('leaderboardPodiumRow');
+      const runnersRow = document.getElementById('leaderboardRunnersRow');
 
-      // #2 Left
-      const r2 = ranks[1];
-      document.getElementById('podiumUser2').textContent = r2.user;
-      document.getElementById('podiumScore2').textContent = `${r2.points}đ`;
-      document.getElementById('podiumDelta2').textContent = r2.delta;
-      setAvatar('podiumAvatar2', r2.avatar, r2.user);
-      this.setX2Badge('podiumX2_2', r2);
+      if (list.length === 0) {
+        if (emptyEl) emptyEl.hidden = false;
+        if (podiumRow) podiumRow.hidden = true;
+        if (runnersRow) runnersRow.hidden = true;
+        return;
+      }
 
-      // #3 Right
-      const r3 = ranks[2];
-      document.getElementById('podiumUser3').textContent = r3.user;
-      document.getElementById('podiumScore3').textContent = `${r3.points}đ`;
-      document.getElementById('podiumDelta3').textContent = r3.delta;
-      setAvatar('podiumAvatar3', r3.avatar, r3.user);
-      this.setX2Badge('podiumX2_3', r3);
+      if (emptyEl) emptyEl.hidden = true;
+      if (podiumRow) podiumRow.hidden = false;
+      if (runnersRow) runnersRow.hidden = false;
 
-      // #4
-      const r4 = ranks[3];
-      document.getElementById('runnerUser4').textContent = r4.user;
-      document.getElementById('runnerScore4').textContent = `${r4.points}đ • ${r4.delta}`;
-      setAvatar('runnerAvatar4', r4.avatar, r4.user);
-      this.setX2Badge('podiumX2_4', r4);
+      // Top 3 Podium (#1, #2, #3)
+      for (let rankNum = 1; rankNum <= 3; rankNum++) {
+        const entry = list[rankNum - 1];
+        const card = document.getElementById(`podiumCard${rankNum}`);
+        const nameEl = document.getElementById(`podiumUser${rankNum}`);
+        const scoreEl = document.getElementById(`podiumScore${rankNum}`);
+        const deltaEl = document.getElementById(`podiumDelta${rankNum}`);
 
-      // #5
-      const r5 = ranks[4];
-      document.getElementById('runnerUser5').textContent = r5.user;
-      document.getElementById('runnerScore5').textContent = `${r5.points}đ • ${r5.delta}`;
-      setAvatar('runnerAvatar5', r5.avatar, r5.user);
-      this.setX2Badge('podiumX2_5', r5);
+        if (entry) {
+          if (card) card.classList.remove('is-empty-slot');
+          if (nameEl) nameEl.textContent = entry.user;
+          if (scoreEl) scoreEl.textContent = `${entry.points}đ`;
+          if (deltaEl) deltaEl.textContent = entry.delta || '';
+          this.setRealAvatar(`podiumAvatar${rankNum}`, `podiumInitial${rankNum}`, entry.avatar, entry.user, false);
+          this.setX2Badge(`podiumX2_${rankNum}`, entry);
+        } else {
+          if (card) card.classList.add('is-empty-slot');
+          if (nameEl) nameEl.textContent = `Đang chờ #${rankNum}...`;
+          if (scoreEl) scoreEl.textContent = '—';
+          if (deltaEl) deltaEl.textContent = '';
+          this.setRealAvatar(`podiumAvatar${rankNum}`, `podiumInitial${rankNum}`, '', '', true);
+          this.setX2Badge(`podiumX2_${rankNum}`, null);
+        }
+      }
+
+      // Runners #4 & #5
+      for (let rankNum = 4; rankNum <= 5; rankNum++) {
+        const entry = list[rankNum - 1];
+        const card = document.getElementById(`runnerCard${rankNum}`);
+        const nameEl = document.getElementById(`runnerUser${rankNum}`);
+        const scoreEl = document.getElementById(`runnerScore${rankNum}`);
+
+        if (entry) {
+          if (card) card.classList.remove('is-empty-slot');
+          if (nameEl) nameEl.textContent = entry.user;
+          if (scoreEl) scoreEl.textContent = `${entry.points}đ • ${entry.delta || ''}`;
+          this.setRealAvatar(`runnerAvatar${rankNum}`, `runnerInitial${rankNum}`, entry.avatar, entry.user, false);
+          this.setX2Badge(`podiumX2_${rankNum}`, entry);
+        } else {
+          if (card) card.classList.add('is-empty-slot');
+          if (nameEl) nameEl.textContent = `Đang chờ Top ${rankNum}...`;
+          if (scoreEl) scoreEl.textContent = '—';
+          this.setRealAvatar(`runnerAvatar${rankNum}`, `runnerInitial${rankNum}`, '', '', true);
+          this.setX2Badge(`podiumX2_${rankNum}`, null);
+        }
+      }
     }
 
     renderTimer() {
@@ -1402,22 +1499,42 @@
       const btnTogglex2 = document.getElementById('btnTogglex2');
       if (btnTogglex2) btnTogglex2.onclick = () => this.sendRpc('gplx.toggleMultiplier', {});
 
-      // Kết nối / Ngắt kết nối TikTok Live
-      const btnConnect = document.getElementById('btnConnectTikTok');
-      if (btnConnect) {
-        btnConnect.onclick = () => {
-          const username = document.getElementById('inputTikTokUser')?.value.trim();
-          if (username) {
-            this.sendRpc('tiktok.connect', { username });
-            this.logDockEvent(`📡 Đang kết nối tới TikTok Live của ${username}...`);
-          }
+      const btnResetLeaderboard = document.getElementById('btnResetLeaderboard');
+      if (btnResetLeaderboard) {
+        btnResetLeaderboard.onclick = () => {
+          this.sendRpc('gplx.resetLeaderboard', {});
+          this.logDockEvent('🗑️ Đã đặt lại bảng xếp hạng về trống.');
         };
+      }
+
+      // Kết nối / Ngắt kết nối TikTok Live (đồng bộ chuẩn live.connect / live.disconnect như test2)
+      const triggerConnectTikTok = () => {
+        const username = document.getElementById('inputTikTokUser')?.value.trim();
+        if (!username) {
+          this.logDockEvent('⚠️ Vui lòng nhập @username hoặc link TikTok Live!');
+          return;
+        }
+        this.sendRpc('live.connect', { username });
+        this.logDockEvent(`📡 Đang kết nối tới phòng TikTok Live: ${username}...`);
+      };
+
+      const btnConnect = document.getElementById('btnConnectTikTok');
+      if (btnConnect) btnConnect.onclick = triggerConnectTikTok;
+
+      const inputTikTokUser = document.getElementById('inputTikTokUser');
+      if (inputTikTokUser) {
+        inputTikTokUser.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            triggerConnectTikTok();
+          }
+        });
       }
 
       const btnDisconnect = document.getElementById('btnDisconnectTikTok');
       if (btnDisconnect) {
         btnDisconnect.onclick = () => {
-          this.sendRpc('tiktok.disconnect', {});
+          this.sendRpc('live.disconnect', {});
           this.logDockEvent('🔌 Đã ngắt kết nối TikTok Live.');
         };
       }
