@@ -10,6 +10,18 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_GIFT_IMAGE = '/assets/gifts/qua_mac_dinh.svg';
+const GPLX_SETTINGS_FILE = path.join(__dirname, 'data', 'gplx-settings.json');
+
+const DEFAULT_GPLX_SETTINGS = {
+  timerSeconds: 15,
+  mcAutoRead: true,
+  waitMcBeforeTimer: true,
+  autoNextQuestion: true,
+  mcVoice: 'quangminh',
+  mcVolume: 0.95,
+  sfxEnabled: true,
+  sfxVolume: 0.8
+};
 
 /**
  * Split Vietnamese text into natural TTS chunks (<= maxLen chars)
@@ -119,6 +131,8 @@ class GplxEngine {
     this.getClientCount = typeof options.getClientCount === 'function' ? options.getClientCount : (() => 0);
 
     this.questions = this.loadQuestions();
+    this.settings = this.loadSettings();
+    this.saveSettingsTimer = null;
     this.currentQIndex = 0;
 
     // Tìm câu sa hình đầu tiên nếu có (thường từ câu 486)
@@ -127,10 +141,10 @@ class GplxEngine {
       this.currentQIndex = saHinhIdx;
     }
 
-    // Thời gian trả lời mỗi câu: 15 giây (chỉ đếm ngược sau khi MC đọc xong câu hỏi & đáp án)
-    this.timerMax = 15;
+    // Thời gian trả lời mỗi câu (đọc từ settings, mặc định 15 giây)
+    this.timerMax = this.settings.timerSeconds;
     this.timerRemaining = this.timerMax;
-    this.phase = 'reading'; // 'reading' | 'countdown' | 'revealed'
+    this.phase = this.shouldWaitForMc() ? 'reading' : 'countdown'; // 'reading' | 'countdown' | 'revealed'
     this.isRevealed = false;
     this.multiplier = 1; // Global host x2 toggle (stacks or supplements per-user gift x2)
     this.onlineLearnersCount = 0;
@@ -158,6 +172,123 @@ class GplxEngine {
 
     this.syncQuestionState();
     this.startTimerTicker();
+  }
+
+  loadSettings() {
+    try {
+      if (fs.existsSync(GPLX_SETTINGS_FILE)) {
+        const saved = JSON.parse(fs.readFileSync(GPLX_SETTINGS_FILE, 'utf8'));
+        return this.sanitizeSettings({ ...DEFAULT_GPLX_SETTINGS, ...(saved || {}) });
+      }
+    } catch (err) {
+      console.warn('[GplxEngine] Không đọc được gplx-settings.json, dùng mặc định:', err.message);
+    }
+    return { ...DEFAULT_GPLX_SETTINGS };
+  }
+
+  sanitizeSettings(raw = {}) {
+    const validVoices = ['quangminh', 'tiendat', 'maichi', 'baotrang', 'giahuy', 'huuduc', 'kimoanh', 'hamy'];
+    const cur = this.settings || DEFAULT_GPLX_SETTINGS;
+    const timerRaw = Number(raw.timerSeconds ?? cur.timerSeconds ?? 15);
+    const timerSeconds = Number.isFinite(timerRaw) ? Math.max(5, Math.min(120, Math.round(timerRaw))) : 15;
+
+    const voiceRaw = String(raw.mcVoice ?? cur.mcVoice ?? 'quangminh').toLowerCase().trim();
+    const mcVoice = validVoices.includes(voiceRaw) ? voiceRaw : 'quangminh';
+
+    const mcVolRaw = Number(raw.mcVolume ?? cur.mcVolume ?? 0.95);
+    const mcVolume = Number.isFinite(mcVolRaw) ? Math.max(0, Math.min(1, +mcVolRaw.toFixed(2))) : 0.95;
+
+    const sfxVolRaw = Number(raw.sfxVolume ?? cur.sfxVolume ?? 0.8);
+    const sfxVolume = Number.isFinite(sfxVolRaw) ? Math.max(0, Math.min(1, +sfxVolRaw.toFixed(2))) : 0.8;
+
+    return {
+      timerSeconds,
+      mcAutoRead: raw.mcAutoRead !== undefined ? Boolean(raw.mcAutoRead) : Boolean(cur.mcAutoRead),
+      waitMcBeforeTimer: raw.waitMcBeforeTimer !== undefined ? Boolean(raw.waitMcBeforeTimer) : Boolean(cur.waitMcBeforeTimer),
+      autoNextQuestion: raw.autoNextQuestion !== undefined ? Boolean(raw.autoNextQuestion) : Boolean(cur.autoNextQuestion),
+      mcVoice,
+      mcVolume,
+      sfxEnabled: raw.sfxEnabled !== undefined ? Boolean(raw.sfxEnabled) : Boolean(cur.sfxEnabled),
+      sfxVolume
+    };
+  }
+
+  saveSettings() {
+    clearTimeout(this.saveSettingsTimer);
+    this.saveSettingsTimer = setTimeout(() => {
+      fs.promises
+        .writeFile(GPLX_SETTINGS_FILE, JSON.stringify(this.settings, null, 2), 'utf8')
+        .catch((err) => console.warn('[GplxEngine] Lỗi lưu gplx-settings.json:', err.message));
+    }, 300);
+  }
+
+  shouldWaitForMc() {
+    return Boolean(this.settings.mcAutoRead && this.settings.waitMcBeforeTimer);
+  }
+
+  getSettings() {
+    return { ...this.settings };
+  }
+
+  updateSettings(patch = {}) {
+    const prev = { ...this.settings };
+    this.settings = this.sanitizeSettings({ ...this.settings, ...(patch || {}) });
+    this.saveSettings();
+
+    // Cập nhật ngay thời gian đồng hồ nếu đổi timerSeconds
+    if (this.settings.timerSeconds !== prev.timerSeconds) {
+      this.timerMax = this.settings.timerSeconds;
+      if (this.phase === 'reading' || this.timerRemaining > this.timerMax) {
+        this.timerRemaining = this.timerMax;
+      }
+    }
+
+    // Nếu tắt MC tự đọc hoặc tắt "chờ MC đọc xong" trong khi đang đứng ở pha reading -> đếm ngược ngay!
+    if (!this.shouldWaitForMc() && this.phase === 'reading') {
+      this.startCountdown('settings_updated');
+    }
+
+    // Nếu tắt autoNextQuestion trong khi đang chờ chuyển câu -> hủy hẹn giờ tự chuyển
+    if (!this.settings.autoNextQuestion && this.phase === 'revealed') {
+      this.clearRevealTimeout();
+    } else if (this.settings.autoNextQuestion && !prev.autoNextQuestion && this.phase === 'revealed' && !this.revealTimeout) {
+      const targetRound = this.questionRoundId;
+      this.revealTimeout = setTimeout(() => {
+        this.revealTimeout = null;
+        if (this.phase === 'revealed' && this.questionRoundId === targetRound && this.settings.autoNextQuestion) {
+          this.nextQuestion();
+        }
+      }, 3000);
+    }
+
+    this.broadcast('gplx.settingsUpdated', this.getSettings());
+    this.broadcastState();
+    return { ok: true, settings: this.getSettings() };
+  }
+
+  sendMcCommand(action = 'readQuestion') {
+    const valid = ['readQuestion', 'readAnswer', 'stop', 'testVoice'];
+    const cleanAction = valid.includes(action) ? action : 'readQuestion';
+
+    if (cleanAction === 'stop' && this.phase === 'reading') {
+      this.startCountdown('stopped');
+    }
+
+    const q = this.getCurrentQuestion();
+    const payload = {
+      action: cleanAction,
+      roundId: this.questionRoundId,
+      questionNumber: q?.questionNumber || q?.id,
+      voice: this.settings.mcVoice,
+      segments:
+        cleanAction === 'readAnswer'
+          ? this.buildAnswerSpeechSegments(q, this.roundWinner)
+          : cleanAction === 'testVoice'
+          ? [`Xin chào quý học viên! Tôi là MC Đấu Trường Giấy Phép Lái Xe, giọng đọc đã sẵn sàng!`]
+          : this.buildQuestionSpeechSegments(q)
+    };
+    this.broadcast('gplx.mcCommand', payload);
+    return { ok: true, ...payload };
   }
 
   loadQuestions() {
@@ -382,12 +513,15 @@ class GplxEngine {
     }
 
     if (kind === 'answer' && this.phase === 'revealed') {
-      // Sau khi MC đọc xong đáp án, dừng ngắn 2.5 giây rồi chuyển câu mới mượt mà
+      // Sau khi MC đọc xong đáp án, dừng ngắn 2.5 giây rồi chuyển câu mới mượt mà (nếu đang bật tự chuyển câu)
       this.clearRevealTimeout();
+      if (!this.settings.autoNextQuestion) {
+        return { ok: true, advancingSoon: false, roundId: this.questionRoundId };
+      }
       const targetRound = this.questionRoundId;
       this.revealTimeout = setTimeout(() => {
         this.revealTimeout = null;
-        if (this.phase === 'revealed' && this.questionRoundId === targetRound) {
+        if (this.phase === 'revealed' && this.questionRoundId === targetRound && this.settings.autoNextQuestion) {
           this.nextQuestion();
         }
       }, 2500);
@@ -470,6 +604,7 @@ class GplxEngine {
       activeBoosters: this.getActiveBoostersList(),
       giftCatalog: this.giftCatalog,
       tiktok: this.tiktokStatus,
+      settings: this.getSettings(),
       roundWinner: this.roundWinner,
       speechScripts: {
         question: this.buildQuestionSpeechSegments(q),
@@ -809,15 +944,17 @@ class GplxEngine {
     });
     this.broadcastState();
 
-    // Thời gian dự phòng tự chuyển câu (nếu MC báo đọc xong sớm hơn sẽ tự chuyển sau 2.5s)
-    const revealFallbackMs = Math.min(22000, Math.max(10000, 7000 + correctText.length * 60));
-    const targetRound = this.questionRoundId;
-    this.revealTimeout = setTimeout(() => {
-      this.revealTimeout = null;
-      if (this.phase === 'revealed' && this.questionRoundId === targetRound) {
-        this.nextQuestion();
-      }
-    }, revealFallbackMs);
+    // Thời gian dự phòng tự chuyển câu (nếu bật autoNextQuestion và MC báo đọc xong sớm hơn sẽ tự chuyển sau 2.5s)
+    if (this.settings.autoNextQuestion) {
+      const revealFallbackMs = Math.min(22000, Math.max(10000, 7000 + correctText.length * 60));
+      const targetRound = this.questionRoundId;
+      this.revealTimeout = setTimeout(() => {
+        this.revealTimeout = null;
+        if (this.phase === 'revealed' && this.questionRoundId === targetRound && this.settings.autoNextQuestion) {
+          this.nextQuestion();
+        }
+      }, revealFallbackMs);
+    }
 
     return this.getState();
   }
@@ -826,13 +963,22 @@ class GplxEngine {
     this.clearRevealTimeout();
     this.clearReadingFallbackTimeout();
     this.questionRoundId++;
-    this.phase = 'reading';
+    this.timerMax = this.settings.timerSeconds;
     this.timerRemaining = this.timerMax;
     this.isRevealed = false;
+    this.phase = this.shouldWaitForMc() ? 'reading' : 'countdown';
     this.syncQuestionState();
     this.broadcastState();
     this.emitQuestionStarted();
-    this.armReadingFallback();
+    if (this.phase === 'reading') {
+      this.armReadingFallback();
+    } else {
+      this.broadcast('gplx.countdownStarted', {
+        roundId: this.questionRoundId,
+        timerMax: this.timerMax,
+        reason: 'instant_start'
+      });
+    }
     return this.getState();
   }
 
@@ -848,12 +994,20 @@ class GplxEngine {
 
   jumpToQuestion(targetId) {
     const num = parseInt(targetId, 10);
+    if (!Number.isFinite(num)) {
+      return { ok: false, error: 'Số câu hỏi không hợp lệ' };
+    }
     const idx = this.questions.findIndex(q => q.id === num || q.questionNumber === num);
     if (idx !== -1) {
       this.currentQIndex = idx;
       return this.beginQuestionRound();
     }
-    return { ok: false, error: 'Không tìm thấy câu hỏi' };
+    const firstId = this.questions[0]?.id ?? 1;
+    const lastId = this.questions[this.questions.length - 1]?.id ?? 600;
+    return {
+      ok: false,
+      error: `Không tìm thấy câu ${num} trong bộ ${this.questions.length} câu (từ câu ${firstId} đến ${lastId})`
+    };
   }
 
   restartTimer() {

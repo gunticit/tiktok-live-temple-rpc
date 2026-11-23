@@ -529,13 +529,13 @@
     <aside class="control-dock" id="controlDock">
       <div class="dock-header">
         <h2 class="dock-title">🚦 ĐIỀU KHIỂN GPLX LIVE</h2>
-        <span style="font-size: 13px; color: #94a3b8;">JSON-RPC 2.0</span>
+        <a href="/admin" target="_blank" class="dock-link-btn">⚙️ Admin ↗</a>
       </div>
 
       <!-- Kết nối TikTok Live -->
       <div class="dock-section">
         <div class="dock-section-title">📡 Kết Nối Phòng TikTok Live</div>
-        <div style="display: flex; gap: 8px;">
+        <div class="dock-row">
           <input type="text" id="inputTikTokUser" class="dock-input" value="@zenfacts_vn" placeholder="Nhập @username hoặc link TikTok Live..." />
           <button class="dock-btn gold" id="btnConnectTikTok" type="button">Kết Nối</button>
           <button class="dock-btn" id="btnDisconnectTikTok" type="button" title="Ngắt kết nối">Ngắt</button>
@@ -549,21 +549,26 @@
           <div class="dock-section-title">🎙️ MC Đọc Câu Hỏi &amp; Đáp Án</div>
           <span class="dock-tts-badge" id="dockTtsStatus">🟡 Kiểm tra ZeroTTS...</span>
         </div>
-        <select id="selectMcVoice" class="dock-input dock-select" aria-label="Chọn giọng đọc MC">
-          <option value="quangminh" selected>Quang Minh (Nam - Rõ ràng, dứt khoát)</option>
-          <option value="tiendat">Tiến Đạt (Nam - Sôi nổi, bình luận)</option>
-          <option value="maichi">Mai Chi (Nữ - Thân thiện, nhẹ nhàng)</option>
-          <option value="baotrang">Bảo Trang (Nữ - Tin tức, chuẩn xác)</option>
-          <option value="giahuy">Gia Huy (Nam - Trầm ấm)</option>
-          <option value="huuduc">Hữu Đức (Nam - Điềm đạm)</option>
-          <option value="kimoanh">Kim Oanh (Nữ - Truyền cảm)</option>
-          <option value="hamy">Hà My (Nữ - Trẻ trung, biểu cảm)</option>
-        </select>
+        <div class="dock-row">
+          <select id="selectMcVoice" class="dock-input dock-select" aria-label="Chọn giọng đọc MC">
+            <option value="quangminh" selected>Quang Minh (Nam - Rõ ràng, dứt khoát)</option>
+            <option value="tiendat">Tiến Đạt (Nam - Sôi nổi, bình luận)</option>
+            <option value="maichi">Mai Chi (Nữ - Thân thiện, nhẹ nhàng)</option>
+            <option value="baotrang">Bảo Trang (Nữ - Tin tức, chuẩn xác)</option>
+            <option value="giahuy">Gia Huy (Nam - Trầm ấm)</option>
+            <option value="huuduc">Hữu Đức (Nam - Điềm đạm)</option>
+            <option value="kimoanh">Kim Oanh (Nữ - Truyền cảm)</option>
+            <option value="hamy">Hà My (Nữ - Trẻ trung, biểu cảm)</option>
+          </select>
+          <button class="dock-btn" id="btnMcTestVoice" type="button" title="Nghe thử giọng MC đang chọn">📢 Thử</button>
+        </div>
         <div class="dock-grid-2">
           <button class="dock-btn gold" id="btnToggleMcAuto" type="button">🎙️ MC Tự Đọc: BẬT</button>
           <button class="dock-btn" id="btnMcStop" type="button">⏹️ Dừng Đọc</button>
           <button class="dock-btn" id="btnMcReadQuestion" type="button">🔊 Đọc Câu Hỏi</button>
           <button class="dock-btn" id="btnMcReadAnswer" type="button">📣 Đọc Đáp Án</button>
+          <button class="dock-btn is-active" id="btnToggleSfx" type="button">🔔 Âm Hiệu Ứng: BẬT</button>
+          <button class="dock-btn" id="btnToggleLocalMute" type="button" title="Tắt tiếng riêng tab điều khiển này khi đang phát tiếng qua OBS">🔊 Loa Tab Này: BẬT</button>
         </div>
         <div class="dock-volume-row">
           <label for="mcVolumeRange">🔊 Âm lượng MC:</label>
@@ -572,12 +577,21 @@
         </div>
       </div>
 
-      <!-- Điều khiển Câu Hỏi & Thời Gian 15s -->
+      <!-- Điều khiển Câu Hỏi & Cài Đặt Trận Đấu -->
       <div class="dock-section">
-        <div class="dock-section-title">⏱️ Trận Đấu &amp; Chọn Câu Hỏi (15s)</div>
-        <div style="display: flex; gap: 8px; margin-bottom: 6px;">
-          <input type="number" id="inputJumpQ" class="dock-input" value="486" placeholder="Nhập số câu (vd: 486)..." style="width: 140px;" />
-          <button class="dock-btn gold" id="btnJumpQ" type="button" style="flex: 1;">Nhảy Tới Câu</button>
+        <div class="dock-section-title" id="matchSectionTitle">⏱️ Trận Đấu &amp; Cài Đặt (15s)</div>
+        <div class="dock-row">
+          <label for="inputTimerSeconds" style="font-size: 13px; color: #cbd5e1; font-weight: 700; white-space: nowrap;">⏱️ Thời gian (giây):</label>
+          <input type="number" id="inputTimerSeconds" class="dock-input" value="15" min="5" max="120" style="max-width: 84px;" />
+          <button class="dock-btn gold" id="btnSaveTimerSec" type="button">Lưu Thời Gian</button>
+        </div>
+        <div class="dock-grid-2">
+          <button class="dock-btn is-active" id="btnToggleWaitMc" type="button">🎙️ Chờ MC Xong: BẬT</button>
+          <button class="dock-btn is-active" id="btnToggleAutoNext" type="button">⏭️ Tự Chuyển Câu: BẬT</button>
+        </div>
+        <div class="dock-row">
+          <input type="number" id="inputJumpQ" class="dock-input" value="486" placeholder="Nhập số câu (vd: 486)..." />
+          <button class="dock-btn gold" id="btnJumpQ" type="button">Nhảy Tới Câu</button>
         </div>
         <div class="dock-grid-2">
           <button class="dock-btn" id="btnPrevQ" type="button">⬅️ Câu Trước</button>
@@ -585,8 +599,8 @@
           <button class="dock-btn" id="btnRestartTimer" type="button">🔄 Đọc &amp; Đếm Lại 15s</button>
           <button class="dock-btn" id="btnStartCountdownNow" type="button">▶️ Đếm Giờ Ngay</button>
           <button class="dock-btn" id="btnRevealNow" type="button">✅ Mở Đáp Án</button>
-          <button class="dock-btn" id="btnTogglex2" type="button">⚡ Bật / Tắt x2 Phòng</button>
-          <button class="dock-btn" id="btnResetLeaderboard" type="button" style="grid-column: span 2;">🗑️ Đặt Lại Bảng Xếp Hạng</button>
+          <button class="dock-btn" id="btnTogglex2" type="button">⚡ x2 Toàn Phòng: TẮT</button>
+          <button class="dock-btn danger" id="btnResetLeaderboard" type="button" style="grid-column: span 2;">🗑️ Đặt Lại Bảng Xếp Hạng</button>
         </div>
       </div>
 

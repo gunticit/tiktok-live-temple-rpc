@@ -3,92 +3,108 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bảng Điều Khiển JSON-RPC 2.0 — Hồ Câu Cá Giải Trí TikTok Live</title>
+  <title>Admin &amp; Cài Đặt — Đấu Trường GPLX TikTok Live</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #031018;
-      --card: #061c28;
-      --border: rgba(41, 182, 246, 0.35);
-      --gold: #fbc02d;
-      --gold-light: #ffe082;
-      --blue: #29b6f6;
-      --text: #f5fbff;
-      --muted: #90a4ae;
+      --bg: #030c16;
+      --card: #071929;
+      --border: rgba(0, 210, 255, 0.32);
+      --gold: #f59e0b;
+      --gold-light: #fef08a;
+      --cyan: #38bdf8;
+      --green: #4ade80;
+      --red: #f87171;
+      --text: #f8fafc;
+      --muted: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: radial-gradient(circle at 50% 0%, #0c2d40 0%, #030e15 80%);
+      background: radial-gradient(circle at 50% 0%, #0d2b45 0%, #030c16 75%);
       color: var(--text);
       font-family: 'Be Vietnam Pro', sans-serif;
       min-height: 100vh;
-      padding: 28px;
+      padding: 24px;
     }
     .container {
-      max-width: 1280px;
+      max-width: 1240px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 22px;
+      gap: 20px;
     }
     .top-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
       background: var(--card);
       border: 1.5px solid var(--border);
-      border-radius: 18px;
+      border-radius: 16px;
       padding: 18px 24px;
     }
     .top-title {
-      font-family: 'Noto Serif', serif;
-      font-size: 26px;
+      font-family: 'Montserrat', 'Be Vietnam Pro', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
       color: var(--gold-light);
     }
     .top-sub {
-      font-size: 14px;
+      font-size: 13.5px;
       color: var(--muted);
       margin-top: 4px;
     }
-    .top-links {
-      display: flex;
-      gap: 12px;
-    }
+    .top-links { display: flex; gap: 10px; }
     .btn {
       cursor: pointer;
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, #0d425c 0%, #082837 100%);
-      color: #fff;
-      padding: 10px 16px;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      background: #1e293b;
+      color: #ffffff;
+      padding: 10px 14px;
       border-radius: 10px;
+      font-family: inherit;
       font-weight: 700;
       font-size: 14px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
+      gap: 6px;
+      transition: all 0.18s ease;
+      white-space: nowrap;
     }
-    .btn:hover {
-      border-color: var(--blue);
-      background: linear-gradient(180deg, #105273 0%, #0c364c 100%);
-    }
+    .btn:hover { background: #334155; border-color: var(--cyan); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn.gold {
-      background: linear-gradient(180deg, #fbc02d 0%, #f57f17 100%);
-      color: #031018;
-      border-color: #fff9c4;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border-color: #fde047;
+      color: #090d16;
+      font-weight: 800;
     }
-    .btn.gold:hover {
-      background: linear-gradient(180deg, #fdd835 0%, #f9a825 100%);
+    .btn.active {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border-color: #38bdf8;
     }
     .btn.danger {
-      background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%);
-      border-color: #ef9a9a;
-      color: #fff;
+      background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+      border-color: #f87171;
     }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .stat-box {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .stat-label { font-size: 12.5px; color: var(--muted); font-weight: 700; }
+    .stat-val { font-size: 24px; font-weight: 900; color: var(--gold-light); margin-top: 6px; }
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -97,535 +113,495 @@
     .card {
       background: var(--card);
       border: 1.5px solid var(--border);
-      border-radius: 18px;
+      border-radius: 16px;
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
     .card h2 {
-      font-size: 18px;
-      color: var(--gold-light);
-      border-bottom: 1px solid rgba(41, 182, 246, 0.2);
+      font-size: 17px;
+      color: var(--cyan);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
       padding-bottom: 10px;
-    }
-    .row {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 10px;
     }
+    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .input {
       flex: 1;
-      background: #020b10;
-      border: 1px solid var(--border);
+      min-width: 120px;
+      background: #03101d;
+      border: 1.5px solid rgba(56, 189, 248, 0.35);
       border-radius: 10px;
-      padding: 10px 14px;
-      color: #fff;
+      padding: 10px 12px;
+      color: #ffffff;
+      font-family: inherit;
       font-size: 14px;
       outline: none;
     }
-    .input:focus {
-      border-color: var(--blue);
-    }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-    }
-    .stat-box {
-      background: rgba(2, 11, 16, 0.6);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      text-align: center;
-    }
-    .stat-label {
+    .input:focus { border-color: var(--cyan); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
       font-size: 12px;
-      color: var(--muted);
-      font-weight: 600;
-    }
-    .stat-val {
-      font-size: 26px;
       font-weight: 800;
-      color: var(--gold-light);
-      margin-top: 4px;
+      background: rgba(250, 204, 21, 0.15);
+      color: #fde047;
+      border: 1px solid rgba(250, 204, 21, 0.45);
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .badge.ready {
+      background: rgba(34, 197, 94, 0.18);
+      color: #86efac;
+      border-color: rgba(74, 222, 128, 0.55);
+    }
+    .gift-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1.5px solid rgba(56, 189, 248, 0.3);
+      color: #ffffff;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 700;
       font-size: 13px;
     }
-    th, td {
-      padding: 10px 12px;
-      text-align: left;
-      border-bottom: 1px solid rgba(41, 182, 246, 0.15);
-    }
-    th {
-      color: var(--muted);
-      font-size: 12px;
-      text-transform: uppercase;
-    }
+    .gift-btn:hover { border-color: #facc15; background: #1e293b; }
+    .gift-btn img { width: 28px; height: 28px; object-fit: contain; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
     .log-box {
-      background: #020b10;
-      border: 1px solid var(--border);
+      background: #020a12;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 10px;
-      padding: 14px;
-      max-height: 220px;
+      padding: 12px;
+      height: 220px;
       overflow-y: auto;
-      font-family: monospace;
-      font-size: 12px;
+      font-size: 12.5px;
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .log-line {
-      color: var(--text);
-    }
-    .log-line strong {
-      color: var(--gold-light);
+    .vol-row { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; }
+    .vol-row input[type="range"] { flex: 1; accent-color: #f59e0b; cursor: pointer; }
+    @media (max-width: 900px) {
+      .stats-grid, .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="top-bar">
+    <header class="top-bar">
       <div>
-        <h1 class="top-title">🎣 Hồ Câu Cá Giải Trí — Admin JSON-RPC 2.0</h1>
-        <div class="top-sub">Điều khiển thời gian thực và kích hoạt tương tác Cần Thủ TikTok Live</div>
+        <h1 class="top-title">🚦 ĐẤU TRƯỜNG GPLX — ADMIN &amp; CÀI ĐẶT LIVE</h1>
+        <div class="top-sub">Mọi thay đổi được lưu tự động và đồng bộ trực tiếp tới Màn hình Live &amp; OBS (?obs=1)</div>
       </div>
       <div class="top-links">
         <a href="/" target="_blank" class="btn">📺 Mở Màn Hình Live 9:16</a>
-        <a href="/?obs=1" target="_blank" class="btn gold">🎥 Chế Độ OBS Sạch</a>
+        <a href="/?obs=1" target="_blank" class="btn gold">🎥 Mở OBS Sạch (?obs=1)</a>
       </div>
-    </div>
+    </header>
 
-    <!-- THỐNG KÊ HỒ CÂU -->
     <div class="stats-grid">
       <div class="stat-box">
-        <div class="stat-label">🐟 Tổng Số Cá Bắt Được</div>
-        <div class="stat-val" id="statCatches">0</div>
+        <div class="stat-label">📋 Câu Hỏi Hiện Tại</div>
+        <div class="stat-val" id="statQuestion">—</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">⚖️ Tổng Cân Nặng (kg)</div>
-        <div class="stat-val" id="statWeight">0.0</div>
+        <div class="stat-label">⏱️ Trạng Thái / Đồng Hồ</div>
+        <div class="stat-val" id="statTimer">—</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">🪱 Mồi Thính Đã Thả</div>
-        <div class="stat-val" id="statBait">0</div>
+        <div class="stat-label">📡 TikTok Live</div>
+        <div class="stat-val" id="statTikTok" style="font-size: 18px;">Chưa kết nối</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">📯 Lần Thổi Còi Báo Cá</div>
-        <div class="stat-val" id="statHorns">0</div>
+        <div class="stat-label">🏆 Học Viên Ghi Điểm</div>
+        <div class="stat-val" id="statPlayers">0</div>
       </div>
     </div>
 
     <div class="grid">
-      <!-- CỘT TRÁI: KÍCH HOẠT HÀNH ĐỘNG CÂU CÁ -->
-      <div class="card">
-        <h2>🎣 Kích Hoạt Hành Động Câu Cá (RPC)</h2>
+      <!-- 1. CÀI ĐẶT TRẬN ĐẤU & THỜI GIAN -->
+      <section class="card">
+        <h2>⚙️ 1. Cài Đặt Trận Đấu &amp; Câu Hỏi</h2>
         <div class="row">
-          <input type="text" id="inputUser" class="input" value="Hải_Đăng_Cần_Thủ" placeholder="Tên cần thủ..." />
+          <label for="admTimerSec" style="font-weight: 700; font-size: 13.5px;">⏱️ Thời gian trả lời (5–120 giây):</label>
+          <input type="number" id="admTimerSec" class="input" value="15" min="5" max="120" style="max-width: 96px;" />
+          <button class="btn gold" id="admBtnSaveTimer" type="button">💾 Lưu Thời Gian</button>
+        </div>
+        <div class="grid-2">
+          <button class="btn active" id="admBtnWaitMc" type="button">🎙️ Chờ MC Đọc Xong: BẬT</button>
+          <button class="btn active" id="admBtnAutoNext" type="button">⏭️ Tự Chuyển Câu: BẬT</button>
+          <button class="btn" id="admBtnPrevQ" type="button">⬅️ Câu Trước</button>
+          <button class="btn gold" id="admBtnNextQ" type="button">➡️ Câu Tiếp</button>
+          <button class="btn" id="admBtnRestart" type="button">🔄 Đọc &amp; Đếm Lại</button>
+          <button class="btn" id="admBtnStartNow" type="button">▶️ Đếm Giờ Ngay</button>
+          <button class="btn" id="admBtnReveal" type="button">✅ Mở Đáp Án Ngay</button>
+          <button class="btn" id="admBtnToggleX2" type="button">⚡ x2 Toàn Phòng: TẮT</button>
         </div>
         <div class="row">
-          <input type="text" id="inputAvatar" class="input" value="https://api.dicebear.com/7.x/bottts/svg?seed=haidang" placeholder="URL Avatar (để trống sẽ tự sinh avatar bot)..." />
+          <input type="number" id="admJumpQ" class="input" value="486" placeholder="Nhập số câu hỏi (vd: 486)..." />
+          <button class="btn gold" id="admBtnJumpQ" type="button">Nhảy Tới Câu</button>
         </div>
-        <div class="row">
-          <input type="text" id="inputWish" class="input" value="Săn chú cá chép vàng 5 ký đại cát đại lợi!" placeholder="Lời chúc / mong ước..." />
-        </div>
-        <div class="row" style="flex-wrap: wrap;">
-          <button class="btn gold" id="btnCast">🎣 Quăng Cần (Đợi 1 Phút)</button>
-          <button class="btn" id="btnHook">⚡ Giật Cần Ngay (Force)</button>
-          <button class="btn" id="btnBait">🪱 Thả Thính (+5)</button>
-          <button class="btn" id="btnHorn">📯 Thổi Còi Báo Cá</button>
-        </div>
+      </section>
 
-        <h3 style="font-size: 15px; color: var(--gold-light); margin-top: 14px; margin-bottom: 8px;">🎁 Thử Nghiệm 9 Quà Tặng TikTok Live Chuẩn (Donate Bắt Cá Random Ngay Lập Tức):</h3>
-        <div class="row" style="flex-wrap: wrap; gap: 8px;">
-          <button class="btn" data-admin-gift="hoa_hong">🌹 Hoa hồng (1 xu)</button>
-          <button class="btn" data-admin-gift="dinh">🐱 Đỉnh (1 xu)</button>
-          <button class="btn" data-admin-gift="gg">🎮 GG (1 xu)</button>
-          <button class="btn gold" data-admin-gift="tay_cam">🕹️ Tay cầm chơi game (100 xu)</button>
-          <button class="btn" data-admin-gift="yeu_ban">🥰 Yêu bạn (1 xu)</button>
-          <button class="btn" data-admin-gift="chu_heo">🐷 Chú heo may mắn (10 xu)</button>
-          <button class="btn" data-admin-gift="tiktok">🎵 TikTok (1 xu)</button>
-          <button class="btn" data-admin-gift="ban_tim">🫰 Bắn tim (5 xu)</button>
-          <button class="btn" data-admin-gift="hieu_y">😉 Hiểu ý tôi chứ (1 xu)</button>
-        </div>
-      </div>
-
-      <!-- CỘT PHẢI: KẾT NỐI TIKTOK LIVE & GIẢ LẬP -->
-      <div class="card">
-        <h2>📡 Kết Nối TikTok Live & Tự Động Hóa</h2>
+      <!-- 2. CÀI ĐẶT MC AI & ÂM THANH (ZEROTTS) -->
+      <section class="card">
+        <h2>
+          <span>🎙️ 2. Cài Đặt MC AI &amp; Âm Thanh</span>
+          <span class="badge" id="admTtsBadge">🟡 Kiểm tra ZeroTTS...</span>
+        </h2>
         <div class="row">
-          <input type="text" id="inputTikTok" class="input" value="@zenfacts_vn" placeholder="Nhập @username TikTok Live..." />
-          <button class="btn gold" id="btnConnect">Kết Nối Live</button>
-          <button class="btn" id="btnDisconnect">Ngắt</button>
+          <select id="admVoice" class="input" style="cursor: pointer;">
+            <option value="quangminh">Quang Minh (Nam - Rõ ràng, dứt khoát)</option>
+            <option value="tiendat">Tiến Đạt (Nam - Sôi nổi, bình luận)</option>
+            <option value="maichi">Mai Chi (Nữ - Thân thiện, nhẹ nhàng)</option>
+            <option value="baotrang">Bảo Trang (Nữ - Tin tức, chuẩn xác)</option>
+            <option value="giahuy">Gia Huy (Nam - Trầm ấm)</option>
+            <option value="huuduc">Hữu Đức (Nam - Điềm đạm)</option>
+            <option value="kimoanh">Kim Oanh (Nữ - Truyền cảm)</option>
+            <option value="hamy">Hà My (Nữ - Trẻ trung, biểu cảm)</option>
+          </select>
+          <button class="btn gold" id="admBtnTestVoice" type="button">📢 Nghe Thử</button>
         </div>
+        <div class="grid-2">
+          <button class="btn active" id="admBtnMcAuto" type="button">🎙️ MC Tự Đọc: BẬT</button>
+          <button class="btn active" id="admBtnSfx" type="button">🔔 Âm Hiệu Ứng: BẬT</button>
+          <button class="btn" id="admBtnReadQ" type="button">🔊 Đọc Câu Hỏi (OBS)</button>
+          <button class="btn" id="admBtnReadA" type="button">📣 Đọc Đáp Án (OBS)</button>
+        </div>
+        <button class="btn danger" id="admBtnStopMc" type="button">⏹️ Dừng Giọng Đọc MC Ngay</button>
+        <div class="vol-row">
+          <label for="admMcVol">🔊 Âm lượng MC:</label>
+          <input type="range" id="admMcVol" min="0" max="100" value="95" />
+          <span id="admMcVolVal">95%</span>
+        </div>
+        <audio id="admAudioPreview" style="display: none;"></audio>
+      </section>
+
+      <!-- 3. KẾT NỐI TIKTOK LIVE & GIẢ LẬP QUÀ TẶNG x2 -->
+      <section class="card">
+        <h2>📡 3. Kết Nối TikTok Live &amp; Thử Quà x2</h2>
         <div class="row">
-          <button class="btn" id="btnToggleSim" style="flex: 1;">🤖 Bật Tự Động Giả Lập Cần Thủ</button>
-          <button class="btn danger" id="btnReset">🔄 Đặt Lại Số Liệu</button>
+          <input type="text" id="admTikTokUser" class="input" value="@zenfacts_vn" placeholder="Nhập @username hoặc link TikTok Live..." />
+          <button class="btn gold" id="admBtnConnect" type="button">Kết Nối Live</button>
+          <button class="btn" id="admBtnDisconnect" type="button">Ngắt</button>
         </div>
-        <div class="row" style="align-items: center; margin-top: 6px;">
-          <label style="font-size: 13px; color: var(--gold-light); font-weight: 700; white-space: nowrap;">⏱️ Thời gian câu miễn phí:</label>
-          <input type="number" id="inputFreeDuration" class="input" value="60" min="5" max="300" style="max-width: 90px;" />
-          <button class="btn" id="btnSaveDuration">Lưu Cài Đặt</button>
-        </div>
-        <div id="tiktokStatus" style="font-size: 13px; color: var(--muted); margin-top: 4px;">
-          Trạng thái TikTok: Chưa kết nối
-        </div>
-      </div>
+        <div id="admTikTokStatus" style="font-size: 13px; color: var(--muted);">⚪ Chưa kết nối phòng TikTok Live</div>
 
-      <!-- CỘT 3: THIẾT LẬP ÂM THANH & GIỌNG ĐỌC ZEROTTS -->
-      <div class="card" style="grid-column: span 2;">
-        <h2>🔊 Thiết Lập Âm Thanh & Giọng Đọc (ZeroTTS AI)</h2>
-        <div class="row" style="align-items: center; justify-content: space-between;">
-          <span style="font-size: 14px; color: #b0bec5;">Trạng thái ZeroTTS:</span>
-          <span id="ttsStatusBadge" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(76,175,80,0.2); color: #81c784; border: 1px solid #4caf50;">🟢 Đang kiểm tra...</span>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 14px;">
-          <div class="row" style="flex-direction: column; gap: 6px;">
-            <label style="font-size: 13px; color: var(--blue); font-weight: 700;">🗣️ Chọn Giọng Đọc Mặc Định:</label>
-            <select id="adminSelectVoice" class="input" style="cursor: pointer; padding: 10px;">
-              <option value="maichi" selected>Mai Chi (Nữ miền Bắc - Dịu dàng, chuẩn)</option>
-              <option value="kimoanh">Kim Oanh (Nữ miền Trung - Truyền cảm)</option>
-              <option value="hamy">Hà My (Nữ miền Nam - Ngọt ngào)</option>
-              <option value="baotrang">Bảo Trang (Nữ miền Bắc - Trong sáng)</option>
-              <option value="giahuy">Gia Huy (Nam miền Bắc - Hào sảng, trầm ấm)</option>
-              <option value="huuduc">Hữu Đức (Nam miền Nam - Rõ ràng, dứt khoát)</option>
-              <option value="quangminh">Quang Minh (Nam miền Bắc - Dứt khoát)</option>
-              <option value="tiendat">Tiến Đạt (Nam miền Bắc - Trẻ trung)</option>
-            </select>
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 13.5px; font-weight: 800; color: var(--gold-light);">🎁 Thử Gửi Quà TikTok (Kích Hoạt x2 Điểm):</div>
+          <div class="row">
+            <input type="text" id="admGiftUser" class="input" value="Nguyễn Minh Anh" placeholder="Tên người dùng thử nghiệm..." />
+            <button class="btn" id="admBtnVoteCorrect" type="button">✅ Vote Đáp Án Đúng</button>
           </div>
-
-          <div class="row" style="flex-direction: column; gap: 6px;">
-            <label style="font-size: 13px; color: var(--blue); font-weight: 700;">💬 Câu Đọc Thử Nghiệm:</label>
-            <input type="text" id="adminInputTtsText" class="input" value="Chúc mừng cần thủ vừa giật được cá chép vàng 5 ký tại hồ câu giải trí!" />
+          <div class="grid-3">
+            <button class="gift-btn" data-adm-gift="hoa_hong" type="button"><img src="/assets/gifts/hoa_hong.svg" alt="" /> Hoa hồng (1🪙)</button>
+            <button class="gift-btn" data-adm-gift="ban_tim" type="button"><img src="/assets/gifts/ban_tim.svg" alt="" /> Bắn tim (5🪙)</button>
+            <button class="gift-btn" data-adm-gift="chu_heo" type="button"><img src="/assets/gifts/chu_heo.svg" alt="" /> Chú heo (10🪙)</button>
+            <button class="gift-btn" data-adm-gift="banh_donut" type="button"><img src="/assets/gifts/banh_donut.svg" alt="" /> Donut (30🪙)</button>
+            <button class="gift-btn" data-adm-gift="tay_cam" type="button"><img src="/assets/gifts/tay_cam.svg" alt="" /> Tay cầm (100🪙)</button>
+            <button class="gift-btn" data-adm-gift="tiktok" type="button"><img src="/assets/gifts/tiktok.svg" alt="" /> TikTok (1🪙)</button>
           </div>
         </div>
+      </section>
 
-        <div class="row" style="flex-wrap: wrap; gap: 10px;">
-          <button class="btn gold" id="adminBtnTestTts">📢 Phát Thử Giọng Đọc Ngay</button>
-          <button class="btn" id="adminBtnToggleTts">🎙️ Giọng Đọc: BẬT</button>
-          <button class="btn" id="adminBtnToggleMusic">🎵 Âm Hồ Nước: BẬT</button>
-        </div>
-        <audio id="adminAudioPlayer" style="display: none;"></audio>
-      </div>
-    </div>
-
-    <!-- BẢNG VÀNG CẦN THỦ & NHẬT KÝ -->
-    <div class="grid">
-      <div class="card">
-        <h2>👑 Bảng Vàng Cần Thủ (Top 6 Vua Sát Cá)</h2>
+      <!-- 4. BẢNG XẾP HẠNG THỰC TẾ & NHẬT KÝ -->
+      <section class="card">
+        <h2>
+          <span>🏆 4. Bảng Xếp Hạng Thực Tế</span>
+          <button class="btn danger" id="admBtnResetLb" type="button" style="padding: 6px 10px; font-size: 12.5px;">🗑️ Đặt Lại BXH</button>
+        </h2>
         <table>
           <thead>
             <tr>
               <th>Hạng</th>
-              <th>Cần Thủ</th>
-              <th>Số Cá</th>
-              <th>Tổng Kg</th>
-              <th>Danh Hiệu</th>
+              <th>Học Viên</th>
+              <th>Điểm</th>
+              <th>Tốc Độ</th>
+              <th>Quà x2</th>
             </tr>
           </thead>
-          <tbody id="leaderboardTbody">
-            <tr><td colspan="5" style="text-align:center; color:var(--muted);">Đang tải dữ liệu...</td></tr>
+          <tbody id="admLbBody">
+            <tr><td colspan="5" style="text-align:center; color:var(--muted);">Chưa có học viên nào ghi điểm</td></tr>
           </tbody>
         </table>
-      </div>
-
-      <div class="card">
-        <h2>📜 Nhật Ký Sự Kiện Gần Nhất</h2>
-        <div class="log-box" id="logBox">
-          <div class="log-line">Hệ thống hồ câu cá RPC đã sẵn sàng.</div>
-        </div>
-      </div>
+        <div class="log-box" id="admLogBox"></div>
+      </section>
     </div>
   </div>
 
   <script>
-    async function rpc(method, params = {}) {
-      try {
-        const res = await fetch('/rpc', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: Date.now(),
-            method,
-            params
-          })
-        });
-        return await res.json();
-      } catch (e) {
-        console.error(e);
-        return null;
+    (function () {
+      let currentState = null;
+      let ws = null;
+
+      function log(text) {
+        const box = document.getElementById('admLogBox');
+        if (!box) return;
+        const div = document.createElement('div');
+        const t = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+        div.textContent = `[${t}] ${text}`;
+        box.prepend(div);
+        while (box.children.length > 50) box.removeChild(box.lastChild);
       }
-    }
 
-    async function refreshState() {
-      const data = await rpc('fishing.getState');
-      if (data && data.result) {
-        const st = data.result;
-        document.getElementById('statCatches').textContent = st.totalCatches || 0;
-        document.getElementById('statWeight').textContent = st.totalWeightKg || '0.0';
-        document.getElementById('statBait').textContent = st.totalBait || 0;
-        document.getElementById('statHorns').textContent = st.hornsBlown || 0;
-
-        const tt = document.getElementById('tiktokStatus');
-        if (st.tiktok) {
-          tt.textContent = st.tiktok.connected
-            ? `🟢 Đã kết nối phòng @${st.tiktok.username} (${st.tiktok.viewerCount || 0} người xem)`
-            : st.tiktok.connecting
-            ? `🟡 Đang kết nối @${st.tiktok.username}...`
-            : `⚪ Chưa kết nối (${st.tiktok.lastError || 'Sẵn sàng'})`;
-        }
-
-        if (st.settings?.freeFishingDurationSec) {
-          const inputDur = document.getElementById('inputFreeDuration');
-          if (inputDur && document.activeElement !== inputDur) {
-            inputDur.value = st.settings.freeFishingDurationSec;
+      async function rpc(method, params = {}) {
+        try {
+          const res = await fetch('/rpc', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params })
+          });
+          const data = await res.json();
+          if (data?.error) {
+            log(`⚠️ Lỗi RPC (${method}): ${data.error.message}`);
+          } else if (data?.result && data.result.ok === false && data.result.error) {
+            log(`⚠️ ${data.result.error}`);
           }
+          return data;
+        } catch (err) {
+          log(`❌ Không kết nối được server: ${err.message}`);
+          return null;
+        }
+      }
+
+      function renderState(st) {
+        if (!st) return;
+        currentState = st;
+
+        const q = st.question || {};
+        document.getElementById('statQuestion').textContent = `Câu ${q.questionNumber || q.id || '—'} / ${st.totalQuestionsCount || 580}`;
+        const phaseLabel = st.phase === 'reading' ? 'MC ĐỌC' : st.phase === 'revealed' ? 'ĐÁP ÁN' : `${st.timerRemaining}s`;
+        document.getElementById('statTimer').textContent = `${phaseLabel} (${st.timerMax || 15}s)`;
+        document.getElementById('statPlayers').textContent = String(st.totalRankedPlayers ?? (st.leaderboard?.length || 0));
+
+        const tt = st.tiktok || {};
+        const statTT = document.getElementById('statTikTok');
+        const ttLine = document.getElementById('admTikTokStatus');
+        if (tt.connected) {
+          statTT.textContent = `🟢 @${tt.username} (${tt.viewerCount || 0})`;
+          ttLine.textContent = `🟢 Đang kết nối LIVE @${tt.username} • ${tt.viewerCount || 0} mắt xem`;
+          ttLine.style.color = '#86efac';
+        } else if (tt.connecting) {
+          statTT.textContent = `🟡 @${tt.username}...`;
+          ttLine.textContent = `🟡 Đang kết nối tới @${tt.username}...`;
+          ttLine.style.color = '#fde047';
+        } else if (tt.lastError) {
+          statTT.textContent = '🔴 Chưa kết nối';
+          ttLine.textContent = `🔴 Chưa kết nối (@${tt.username || ''}): ${tt.lastError}`;
+          ttLine.style.color = '#fca5a5';
+        } else {
+          statTT.textContent = '⚪ Chưa kết nối';
+          ttLine.textContent = '⚪ Chưa kết nối phòng TikTok Live';
+          ttLine.style.color = '#94a3b8';
         }
 
-        const tbody = document.getElementById('leaderboardTbody');
-        if (Array.isArray(st.leaderboard) && st.leaderboard.length) {
-          tbody.innerHTML = '';
-          st.leaderboard.forEach(item => {
+        const s = st.settings || {};
+        const timerInput = document.getElementById('admTimerSec');
+        if (timerInput && document.activeElement !== timerInput && s.timerSeconds) {
+          timerInput.value = String(s.timerSeconds);
+        }
+        const voiceSel = document.getElementById('admVoice');
+        if (voiceSel && document.activeElement !== voiceSel && s.mcVoice) {
+          voiceSel.value = s.mcVoice;
+        }
+        const volRange = document.getElementById('admMcVol');
+        if (volRange && document.activeElement !== volRange && s.mcVolume !== undefined) {
+          const pct = Math.round(Number(s.mcVolume) * 100);
+          volRange.value = String(pct);
+          document.getElementById('admMcVolVal').textContent = `${pct}%`;
+        }
+
+        const btnMcAuto = document.getElementById('admBtnMcAuto');
+        btnMcAuto.textContent = s.mcAutoRead !== false ? '🎙️ MC Tự Đọc: BẬT' : '🔇 MC Tự Đọc: TẮT';
+        btnMcAuto.classList.toggle('active', s.mcAutoRead !== false);
+
+        const btnWaitMc = document.getElementById('admBtnWaitMc');
+        btnWaitMc.textContent = s.waitMcBeforeTimer !== false ? '🎙️ Chờ MC Đọc Xong: BẬT' : '⚡ Đếm Ngay Không Chờ MC';
+        btnWaitMc.classList.toggle('active', s.waitMcBeforeTimer !== false);
+
+        const btnAutoNext = document.getElementById('admBtnAutoNext');
+        btnAutoNext.textContent = s.autoNextQuestion !== false ? '⏭️ Tự Chuyển Câu: BẬT' : '⏸️ Tự Chuyển Câu: TẮT';
+        btnAutoNext.classList.toggle('active', s.autoNextQuestion !== false);
+
+        const btnSfx = document.getElementById('admBtnSfx');
+        btnSfx.textContent = s.sfxEnabled !== false ? '🔔 Âm Hiệu Ứng: BẬT' : '🔕 Âm Hiệu Ứng: TẮT';
+        btnSfx.classList.toggle('active', s.sfxEnabled !== false);
+
+        const btnX2 = document.getElementById('admBtnToggleX2');
+        const isX2 = (st.multiplier || 1) >= 2;
+        btnX2.textContent = isX2 ? '⚡ x2 Toàn Phòng: ĐANG BẬT' : '⚡ x2 Toàn Phòng: TẮT';
+        btnX2.classList.toggle('gold', isX2);
+
+        const tbody = document.getElementById('admLbBody');
+        tbody.replaceChildren();
+        const lb = Array.isArray(st.leaderboard) ? st.leaderboard : [];
+        if (lb.length === 0) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = 5;
+          td.style.textAlign = 'center';
+          td.style.color = '#94a3b8';
+          td.textContent = 'Chưa có học viên nào ghi điểm';
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+        } else {
+          lb.forEach((p, idx) => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td><strong>#${item.rank}</strong></td>
-              <td>${item.name}</td>
-              <td>${item.catchesCount} cá</td>
-              <td><strong>${item.totalWeightKg} kg</strong></td>
-              <td>${item.title || 'Cần Thủ'}</td>
-            `;
+            const cells = [`#${idx + 1}`, p.user, `${p.points}đ`, p.delta || '', p.lastBoosted ? `⚡ x2 (${p.lastGiftName || 'Quà'})` : '—'];
+            cells.forEach((val) => {
+              const td = document.createElement('td');
+              td.textContent = val;
+              tr.appendChild(td);
+            });
             tbody.appendChild(tr);
           });
         }
       }
-    }
 
-    function log(msg) {
-      const box = document.getElementById('logBox');
-      const time = new Date().toLocaleTimeString('vi-VN');
-      const div = document.createElement('div');
-      div.className = 'log-line';
-      div.innerHTML = `<strong>[${time}]</strong> ${msg}`;
-      box.prepend(div);
-    }
-
-    function getUserInputs() {
-      return {
-        user: document.getElementById('inputUser').value.trim() || 'Hải Đăng',
-        avatar: document.getElementById('inputAvatar').value.trim() || '',
-        wish: document.getElementById('inputWish').value.trim() || 'Săn cá chép vàng!'
-      };
-    }
-
-    document.querySelectorAll('[data-admin-gift]').forEach(btn => {
-      btn.onclick = async () => {
-        const giftId = btn.getAttribute('data-admin-gift');
-        const { user, avatar } = getUserInputs();
-        const res = await rpc('fishing.sendGift', { user, avatar, giftId });
-        if (res?.result?.event) {
-          const ev = res.result.event;
-          log(`🎁 <strong>${ev.user}</strong> tặng <strong>${ev.giftName}</strong> ${ev.giftIcon} (${ev.coins} xu), giật được <strong>${ev.fish?.name}</strong> (${ev.weightKg}kg)!`);
-        }
-        refreshState();
-      };
-    });
-
-    document.getElementById('btnHook').onclick = async () => {
-      const { user, avatar, wish } = getUserInputs();
-      const res = await rpc('fishing.hookFish', { user, avatar, wish, force: true });
-      if (res?.result?.event) {
-        const ev = res.result.event;
-        log(`⚡ <strong>${ev.user}</strong> giật cần thành công (Force Hook), bắt được <strong>${ev.fish?.name}</strong> (${ev.weightKg}kg)!`);
-      }
-      refreshState();
-    };
-
-    document.getElementById('btnCast').onclick = async () => {
-      const { user, avatar, wish } = getUserInputs();
-      const res = await rpc('fishing.castRod', { user, avatar, wish });
-      if (res?.result?.waiting) {
-        log(`⏳ <strong>${user}</strong> đang câu cá, còn <strong>${res.result.remainingSec}s</strong> nữa cá mới cắn!`);
-      } else {
-        log(`🎣 <strong>${user}</strong> buông cần thả phao giữa hồ! Bắt đầu đếm 1 phút (60s) cá cắn câu...`);
-      }
-      refreshState();
-    };
-
-    document.getElementById('btnSaveDuration').onclick = async () => {
-      const sec = Number(document.getElementById('inputFreeDuration').value) || 60;
-      await rpc('fishing.updateSettings', { freeFishingDurationSec: sec });
-      log(`⚙️ Đã lưu thời gian câu cá miễn phí mặc định: <strong>${sec} giây</strong> (người xem không donate phải chờ ${sec}s mới cắn câu).`);
-      refreshState();
-    };
-
-    document.getElementById('btnBait').onclick = async () => {
-      const { user, avatar } = getUserInputs();
-      await rpc('fishing.castBait', { user, avatar, count: 5 });
-      log(`🪱 <strong>${user}</strong> thả 5 mồi thính thơm.`);
-      refreshState();
-    };
-
-    document.getElementById('btnHorn').onclick = async () => {
-      const { user, avatar, wish } = getUserInputs();
-      await rpc('fishing.soundHorn', { user, avatar, wish });
-      log(`📯 <strong>${user}</strong> thổi còi báo cá vang rền bến hồ!`);
-      refreshState();
-    };
-
-    document.getElementById('btnBigFish').onclick = async () => {
-      const { user } = getUserInputs();
-      const res = await rpc('fishing.catchBigFish', { user, coins: 35 });
-      if (res?.result?.event) {
-        const ev = res.result.event;
-        log(`🦐 <strong>${ev.user}</strong> dùng Mồi Thượng Hạng bắt được <strong>${ev.fish?.name}</strong> (${ev.weightKg}kg)!`);
-      }
-      refreshState();
-    };
-
-    document.getElementById('btnLeviathan').onclick = async () => {
-      const { user } = getUserInputs();
-      const res = await rpc('fishing.catchLeviathan', { user, coins: 199 });
-      if (res?.result?.event) {
-        const ev = res.result.event;
-        log(`🐉 <strong>ĐẠI CHIẾN THỦY QUÁI!</strong> <strong>${ev.user}</strong> bắt được <strong>${ev.fish?.name}</strong> (${ev.weightKg}kg)!`);
-      }
-      refreshState();
-    };
-
-    document.getElementById('btnConnect').onclick = async () => {
-      const username = document.getElementById('inputTikTok').value.trim();
-      log(`Đang kết nối TikTok Live: ${username}...`);
-      await rpc('fishing.connectTikTok', { username });
-      refreshState();
-    };
-
-    document.getElementById('btnDisconnect').onclick = async () => {
-      await rpc('fishing.disconnectTikTok');
-      log(`Đã ngắt kết nối TikTok.`);
-      refreshState();
-    };
-
-    let simActive = false;
-    document.getElementById('btnToggleSim').onclick = async () => {
-      simActive = !simActive;
-      if (simActive) {
-        await rpc('fishing.startAutoSim');
-        document.getElementById('btnToggleSim').textContent = '🤖 Tắt Giả Lập Cần Thủ';
-        document.getElementById('btnToggleSim').classList.add('gold');
-        log('Đã BẬT giả lập cần thủ tự động tương tác.');
-      } else {
-        await rpc('fishing.stopAutoSim');
-        document.getElementById('btnToggleSim').textContent = '🤖 Bật Tự Động Giả Lập Cần Thủ';
-        document.getElementById('btnToggleSim').classList.remove('gold');
-        log('Đã TẮT giả lập cần thủ.');
-      }
-      refreshState();
-    };
-
-    document.getElementById('btnReset').onclick = async () => {
-      if (confirm('Bạn có chắc muốn đặt lại toàn bộ số liệu hồ câu?')) {
-        await rpc('fishing.resetState');
-        log('Đã đặt lại dữ liệu hồ câu về 0.');
-        refreshState();
-      }
-    };
-
-    // ------------------------------------------------------------------------
-    // THIẾT LẬP ÂM THANH & GIỌNG ĐỌC ZEROTTS (ADMIN)
-    // ------------------------------------------------------------------------
-    const ttsStatusBadge = document.getElementById('ttsStatusBadge');
-    const adminSelectVoice = document.getElementById('adminSelectVoice');
-    const adminInputTtsText = document.getElementById('adminInputTtsText');
-    const adminBtnTestTts = document.getElementById('adminBtnTestTts');
-    const adminBtnToggleTts = document.getElementById('adminBtnToggleTts');
-    const adminBtnToggleMusic = document.getElementById('adminBtnToggleMusic');
-    const adminAudioPlayer = document.getElementById('adminAudioPlayer');
-
-    async function checkTtsStatus() {
-      try {
+      async function checkTts() {
         const res = await rpc('tts.status');
-        if (res?.result) {
-          const s = res.result;
-          if (s.ready || s.status === 'ready') {
-            ttsStatusBadge.textContent = '🟢 Sẵn Sàng (Ready - ZeroTTS)';
-            ttsStatusBadge.style.color = '#81c784';
-            ttsStatusBadge.style.borderColor = '#4caf50';
-            ttsStatusBadge.style.background = 'rgba(76,175,80,0.2)';
+        const badge = document.getElementById('admTtsBadge');
+        if (!badge || !res?.result) return;
+        const ready = Boolean(res.result.ready || res.result.status === 'ready');
+        badge.classList.toggle('ready', ready);
+        badge.textContent = ready ? '🟢 ZeroTTS Sẵn Sàng' : `🟡 ${res.result.status || 'Đang nạp...'}`;
+      }
+
+      function connectWs() {
+        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${proto}//${location.host}/ws`);
+        ws.onmessage = (ev) => {
+          try {
+            const msg = JSON.parse(ev.data);
+            if (msg.method === 'gplx.state') renderState(msg.params);
+            else if (msg.method === 'tts.status') checkTts();
+            else if (msg.method === 'gplx.giftAlert') log(`🎁 ${msg.params.user} tặng ${msg.params.giftName} — ${msg.params.message}`);
+            else if (msg.method === 'gplx.answerResult') log(`💬 ${msg.params.user} chọn [${msg.params.answer}] (${msg.params.isCorrect ? `+${msg.params.earnedPoints}đ` : 'Sai'})`);
+          } catch (_) {}
+        };
+        ws.onclose = () => setTimeout(connectWs, 2500);
+      }
+
+      document.getElementById('admBtnSaveTimer').onclick = async () => {
+        const sec = Number(document.getElementById('admTimerSec').value) || 15;
+        const res = await rpc('gplx.updateSettings', { timerSeconds: sec });
+        if (res?.result?.ok) log(`⏱️ Đã lưu thời gian đếm ngược: ${res.result.settings.timerSeconds} giây.`);
+      };
+      document.getElementById('admBtnWaitMc').onclick = async () => {
+        const cur = currentState?.settings?.waitMcBeforeTimer !== false;
+        const res = await rpc('gplx.updateSettings', { waitMcBeforeTimer: !cur });
+        if (res?.result?.ok) log(`🎙️ Chờ MC đọc xong: ${res.result.settings.waitMcBeforeTimer ? 'BẬT' : 'TẮT'}.`);
+      };
+      document.getElementById('admBtnAutoNext').onclick = async () => {
+        const cur = currentState?.settings?.autoNextQuestion !== false;
+        const res = await rpc('gplx.updateSettings', { autoNextQuestion: !cur });
+        if (res?.result?.ok) log(`⏭️ Tự chuyển câu sau công bố: ${res.result.settings.autoNextQuestion ? 'BẬT' : 'TẮT'}.`);
+      };
+      document.getElementById('admBtnMcAuto').onclick = async () => {
+        const cur = currentState?.settings?.mcAutoRead !== false;
+        const res = await rpc('gplx.updateSettings', { mcAutoRead: !cur });
+        if (res?.result?.ok) log(`🎙️ MC tự đọc: ${res.result.settings.mcAutoRead ? 'BẬT' : 'TẮT'}.`);
+      };
+      document.getElementById('admBtnSfx').onclick = async () => {
+        const cur = currentState?.settings?.sfxEnabled !== false;
+        const res = await rpc('gplx.updateSettings', { sfxEnabled: !cur });
+        if (res?.result?.ok) log(`🔔 Âm hiệu ứng: ${res.result.settings.sfxEnabled ? 'BẬT' : 'TẮT'}.`);
+      };
+      document.getElementById('admVoice').onchange = async () => {
+        const voice = document.getElementById('admVoice').value;
+        const res = await rpc('gplx.updateSettings', { mcVoice: voice });
+        if (res?.result?.ok) log(`🗣️ Đã đổi giọng MC sang: ${voice}.`);
+      };
+      document.getElementById('admMcVol').oninput = () => {
+        document.getElementById('admMcVolVal').textContent = `${document.getElementById('admMcVol').value}%`;
+      };
+      document.getElementById('admMcVol').onchange = async () => {
+        const vol = Number(document.getElementById('admMcVol').value) / 100;
+        const res = await rpc('gplx.updateSettings', { mcVolume: vol });
+        if (res?.result?.ok) log(`🔊 Đã lưu âm lượng MC: ${Math.round(vol * 100)}%.`);
+      };
+      document.getElementById('admBtnTestVoice').onclick = async () => {
+        const voice = document.getElementById('admVoice').value || 'quangminh';
+        const btn = document.getElementById('admBtnTestVoice');
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang tạo...';
+        try {
+          const res = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: 'Xin chào quý học viên! Tôi là MC Đấu Trường Giấy Phép Lái Xe!', voice })
+          });
+          const data = await res.json();
+          if (data?.ok && data.url) {
+            const player = document.getElementById('admAudioPreview');
+            player.volume = Number(document.getElementById('admMcVol').value) / 100;
+            player.src = data.url;
+            player.play().catch((e) => log(`⚠️ Không phát được audio: ${e.message}`));
+            log(`🔊 Đang phát thử giọng [${voice}] (${data.cached ? 'cache' : `${data.synthSec || 1}s`}).`);
           } else {
-            ttsStatusBadge.textContent = `🟡 ${s.status || 'Đang nạp model...'}`;
-            ttsStatusBadge.style.color = '#ffd54f';
-            ttsStatusBadge.style.borderColor = '#ffb300';
-            ttsStatusBadge.style.background = 'rgba(255,179,0,0.15)';
+            log(`⚠️ Chưa tạo được giọng ZeroTTS: ${data?.error || 'Không khả dụng'}`);
           }
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '📢 Nghe Thử';
         }
-      } catch (_) {
-        ttsStatusBadge.textContent = '⚪ Chờ kết nối';
-      }
-    }
-    checkTtsStatus();
-    setInterval(checkTtsStatus, 5000);
+      };
 
-    adminSelectVoice.onchange = async () => {
-      const voice = adminSelectVoice.value;
-      await rpc('fishing.updateSettings', { ttsVoice: voice });
-      log(`Đã đổi giọng đọc mặc định sang: <strong>${adminSelectVoice.selectedOptions[0]?.text || voice}</strong>`);
-      refreshState();
-    };
+      document.getElementById('admBtnReadQ').onclick = () => rpc('gplx.mcCommand', { action: 'readQuestion' });
+      document.getElementById('admBtnReadA').onclick = () => rpc('gplx.mcCommand', { action: 'readAnswer' });
+      document.getElementById('admBtnStopMc').onclick = () => rpc('gplx.mcCommand', { action: 'stop' });
 
-    adminBtnTestTts.onclick = async () => {
-      const text = adminInputTtsText.value.trim() || 'Xin chào cần thủ!';
-      const voice = adminSelectVoice.value || 'maichi';
-      adminBtnTestTts.textContent = '⏳ Đang tổng hợp giọng...';
-      adminBtnTestTts.disabled = true;
-      try {
-        const res = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, voice })
-        });
-        const data = await res.json();
-        if (data && data.ok && data.url) {
-          adminAudioPlayer.src = data.url;
-          adminAudioPlayer.play().catch(e => log(`Lỗi phát audio: ${e.message}`));
-          log(`🔊 Đang phát giọng đọc mẫu [${voice}]: "${text}" (${data.synthSec || 1}s)`);
-        } else {
-          log(`❌ Lỗi tạo giọng đọc: ${data?.error || 'Không khả dụng'}`);
-        }
-      } catch (err) {
-        log(`❌ Lỗi kết nối TTS: ${err.message}`);
-      } finally {
-        adminBtnTestTts.textContent = '📢 Phát Thử Giọng Đọc Ngay';
-        adminBtnTestTts.disabled = false;
-      }
-    };
+      document.getElementById('admBtnPrevQ').onclick = () => rpc('gplx.prevQuestion');
+      document.getElementById('admBtnNextQ').onclick = () => rpc('gplx.nextQuestion');
+      document.getElementById('admBtnRestart').onclick = () => rpc('gplx.restartTimer');
+      document.getElementById('admBtnStartNow').onclick = () => rpc('gplx.startCountdownNow');
+      document.getElementById('admBtnReveal').onclick = () => rpc('gplx.revealNow');
+      document.getElementById('admBtnToggleX2').onclick = () => rpc('gplx.toggleMultiplier');
+      document.getElementById('admBtnJumpQ').onclick = () => rpc('gplx.jumpToQuestion', { id: document.getElementById('admJumpQ').value.trim() });
+      document.getElementById('admBtnResetLb').onclick = () => {
+        rpc('gplx.resetLeaderboard');
+        log('🗑️ Đã đặt lại bảng xếp hạng.');
+      };
 
-    let adminTtsOn = true;
-    adminBtnToggleTts.onclick = async () => {
-      adminTtsOn = !adminTtsOn;
-      adminBtnToggleTts.textContent = adminTtsOn ? '🎙️ Giọng Đọc: BẬT' : '🎙️ Giọng Đọc: TẮT';
-      adminBtnToggleTts.classList.toggle('gold', adminTtsOn);
-      await rpc('fishing.updateSettings', { ttsEnabled: adminTtsOn });
-      log(`Đã ${adminTtsOn ? 'BẬT' : 'TẮT'} giọng đọc ZeroTTS.`);
-      refreshState();
-    };
+      document.getElementById('admBtnConnect').onclick = () => {
+        const username = document.getElementById('admTikTokUser').value.trim();
+        if (!username) return;
+        log(`📡 Đang kết nối TikTok Live: ${username}...`);
+        rpc('live.connect', { username });
+      };
+      document.getElementById('admBtnDisconnect').onclick = () => {
+        rpc('live.disconnect');
+        log('🔌 Đã ngắt kết nối TikTok Live.');
+      };
 
-    let adminMusicOn = true;
-    adminBtnToggleMusic.onclick = async () => {
-      adminMusicOn = !adminMusicOn;
-      adminBtnToggleMusic.textContent = adminMusicOn ? '🎵 Âm Hồ Nước: BẬT' : '🎵 Âm Hồ Nước: TẮT';
-      adminBtnToggleMusic.classList.toggle('gold', adminMusicOn);
-      await rpc('fishing.updateSettings', { bgMusicEnabled: adminMusicOn });
-      log(`Đã ${adminMusicOn ? 'BẬT' : 'TẮT'} nhạc nền hồ nước.`);
-      refreshState();
-    };
+      document.querySelectorAll('[data-adm-gift]').forEach((btn) => {
+        btn.onclick = () => {
+          const user = document.getElementById('admGiftUser').value.trim() || 'Học viên';
+          rpc('gplx.sendGift', { user, uniqueId: user.toLowerCase().replace(/\s+/g, '_'), giftId: btn.getAttribute('data-adm-gift') });
+        };
+      });
+      document.getElementById('admBtnVoteCorrect').onclick = () => {
+        const user = document.getElementById('admGiftUser').value.trim() || 'Học viên';
+        const correctKey = currentState?.question?.correctKey || 'A';
+        rpc('gplx.submitAnswer', { user, uniqueId: user.toLowerCase().replace(/\s+/g, '_'), answer: correctKey });
+      };
 
-    // Tự động làm mới mỗi 3 giây
-    refreshState();
-    setInterval(refreshState, 3000);
+      connectWs();
+      rpc('gplx.getState').then((r) => r?.result && renderState(r.result));
+      checkTts();
+      setInterval(checkTts, 5000);
+    })();
   </script>
 </body>
 </html>

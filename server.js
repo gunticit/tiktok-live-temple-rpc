@@ -1946,6 +1946,19 @@ async function handleRpcCall(method, params = {}) {
       return gplxEngine ? gplxEngine.toggleMultiplier() : {};
     case 'gplx.resetLeaderboard':
       return gplxEngine ? gplxEngine.resetLeaderboard() : {};
+    case 'gplx.getSettings':
+      return gplxEngine ? gplxEngine.getSettings() : {};
+    case 'gplx.updateSettings':
+    case 'gplx.setSettings': {
+      const res = gplxEngine ? gplxEngine.updateSettings(params) : { ok: false };
+      if (res?.settings?.mcVoice) {
+        state.settings.ttsVoice = res.settings.mcVoice;
+        saveState();
+      }
+      return res;
+    }
+    case 'gplx.mcCommand':
+      return gplxEngine ? gplxEngine.sendMcCommand(params.action) : { ok: false };
     case 'gplx.simulateComment':
       return gplxEngine ? gplxEngine.simulateComment(params) : null;
     case 'live.connect':
@@ -1998,7 +2011,9 @@ async function handleRpcCall(method, params = {}) {
       return FishingEngine.resetState();
 
     case 'fishing.setSettings':
+    case 'fishing.updateSettings':
     case 'temple.setSettings':
+    case 'temple.updateSettings':
       return FishingEngine.updateSettings(params);
 
     case 'fishing.connectTikTok':
@@ -2040,6 +2055,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/data/tts-cache', express.static(TTS_CACHE_DIR));
 
+app.get('/admin', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // JSON-RPC 2.0 HTTP Endpoint
 app.post('/rpc', async (req, res) => {
   const body = req.body;
@@ -2059,7 +2078,7 @@ app.post('/rpc', async (req, res) => {
       result
     });
   } catch (err) {
-    return res.status(500).json({
+    return res.status(200).json({
       jsonrpc: '2.0',
       id: body.id ?? null,
       error: { code: -32000, message: err.message || 'Internal RPC Error' }

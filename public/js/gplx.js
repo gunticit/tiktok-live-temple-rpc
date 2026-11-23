@@ -158,6 +158,7 @@
       this.onAnalyserReady = callbacks.onAnalyserReady || (() => {});
       this.onAutoplayBlocked = callbacks.onAutoplayBlocked || (() => {});
       this.onLog = callbacks.onLog || (() => {});
+      this.isObsMode = Boolean(callbacks.isObsMode);
 
       const savedEnabled = localStorage.getItem('gplx_mc_enabled');
       const savedVoice = localStorage.getItem('gplx_mc_voice');
@@ -166,6 +167,8 @@
       this.enabled = savedEnabled === null ? true : savedEnabled === 'true';
       this.voice = savedVoice || 'quangminh';
       this.volume = Number.isFinite(savedVol) ? Math.max(0, Math.min(1, savedVol)) : 0.95;
+      // Chế độ OBS (?obs=1) không bao giờ tự tắt tiếng cục bộ
+      this.localMuted = this.isObsMode ? false : localStorage.getItem('gplx_local_muted') === 'true';
 
       this.zeroTtsReady = false;
       this.sessionId = 0;
@@ -173,10 +176,33 @@
       this.audioEl = null;
       this.audioCtx = null;
       this.mediaSource = null;
+      this.gainNode = null;
       this.analyser = null;
       this.pendingSegments = null;
       this.pendingOptions = null;
       this.autoplayBlocked = false;
+    }
+
+    getEffectiveVolume() {
+      return this.localMuted ? 0 : this.volume;
+    }
+
+    applyVolumeToNodes() {
+      const effectiveVol = this.getEffectiveVolume();
+      if (this.gainNode && this.audioCtx) {
+        try {
+          this.gainNode.gain.setValueAtTime(effectiveVol, this.audioCtx.currentTime);
+        } catch (_) {
+          this.gainNode.gain.value = effectiveVol;
+        }
+        // Khi đã nối qua GainNode, giữ audioEl.volume = 1 để AnalyserNode vẫn nhận đủ tín hiệu nhép miệng
+        // và tránh bị nhân đôi suy hao âm lượng (Chrome) hoặc bỏ qua audioEl.volume (Safari/WebKit)
+        if (this.audioEl) {
+          this.audioEl.volume = 1;
+        }
+      } else if (this.audioEl) {
+        this.audioEl.volume = effectiveVol;
+      }
     }
 
     resumeAudioContext() {
@@ -196,27 +222,33 @@
         this.audioEl = new Audio();
         this.audioEl.preload = 'auto';
         this.audioEl.crossOrigin = 'anonymous';
-        this.audioEl.volume = this.volume;
+        this.audioEl.volume = this.getEffectiveVolume();
       }
 
       this.resumeAudioContext();
 
       // Chỉ gắn MediaElementAudioSourceNode khi AudioContext đã mở ('running')
-      // để tránh trường hợp trình duyệt chặn autoplay làm AudioContext ở trạng thái suspended gây mất tiếng
+      // Nối chuỗi: mediaSource -> analyser (nhép miệng) -> gainNode (chỉnh âm lượng chuẩn Safari & Chrome) -> destination
       if (!this.mediaSource && this.audioCtx && this.audioCtx.state === 'running') {
         try {
           this.mediaSource = this.audioCtx.createMediaElementSource(this.audioEl);
           this.analyser = this.audioCtx.createAnalyser();
           this.analyser.fftSize = 256;
           this.analyser.smoothingTimeConstant = 0.45;
+          this.gainNode = this.audioCtx.createGain();
+          this.gainNode.gain.value = this.getEffectiveVolume();
+
           this.mediaSource.connect(this.analyser);
-          this.analyser.connect(this.audioCtx.destination);
+          this.analyser.connect(this.gainNode);
+          this.gainNode.connect(this.audioCtx.destination);
+          this.audioEl.volume = 1;
           this.onAnalyserReady(this.analyser);
         } catch (err) {
           console.warn('[MC LipSync Analyser Fallback]', err?.message || err);
         }
       }
 
+      this.applyVolumeToNodes();
       return this.audioEl;
     }
 
@@ -235,11 +267,14 @@
     }
 
     setVoice(voice) {
-      if (!voice) return;
-      this.voice = String(voice).toLowerCase().trim();
+      if (!voice) return false;
+      const nextVoice = String(voice).toLowerCase().trim();
+      const changed = nextVoice !== this.voice;
+      this.voice = nextVoice;
       try {
         localStorage.setItem('gplx_mc_voice', this.voice);
       } catch (_) {}
+      return changed;
     }
 
     setVolume(vol) {
@@ -249,9 +284,17 @@
       try {
         localStorage.setItem('gplx_mc_volume', String(v));
       } catch (_) {}
-      if (this.audioEl) {
-        this.audioEl.volume = v;
+      this.applyVolumeToNodes();
+    }
+
+    setLocalMuted(muted) {
+      this.localMuted = this.isObsMode ? false : Boolean(muted);
+      if (!this.isObsMode) {
+        try {
+          localStorage.setItem('gplx_local_muted', String(this.localMuted));
+        } catch (_) {}
       }
+      this.applyVolumeToNodes();
     }
 
     stop() {
@@ -293,12 +336,12 @@
       }
     }
 
-    async fetchTts(text) {
+    async fetchTts(text, voiceOverride) {
       try {
         const res = await fetch('/api/tts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, voice: this.voice })
+          body: JSON.stringify({ text, voice: voiceOverride || this.voice })
         });
         const data = await res.json();
         if (data && data.ok && data.url) {
@@ -317,7 +360,7 @@
           return;
         }
         const audio = this.ensureAudioPipeline();
-        audio.volume = this.volume;
+        this.applyVolumeToNodes();
         audio.onended = null;
         audio.onerror = null;
 
@@ -369,7 +412,7 @@
           const u = new SpeechSynthesisUtterance(text);
           u.lang = 'vi-VN';
           u.rate = 1.06;
-          u.volume = this.volume;
+          u.volume = this.getEffectiveVolume();
 
           const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
           const viVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('vi'));
@@ -404,6 +447,7 @@
     async speakSegments(segments, options = {}) {
       const onStart = typeof options.onStart === 'function' ? options.onStart : null;
       const onDone = typeof options.onDone === 'function' ? options.onDone : null;
+      const activeVoice = options.voice || this.voice;
 
       const cleanSegs = (Array.isArray(segments) ? segments : [segments])
         .map(s => String(s || '').trim())
@@ -427,7 +471,7 @@
       const prefetches = new Map();
       const schedulePrefetch = (idx) => {
         if (idx >= cleanSegs.length || prefetches.has(idx)) return;
-        prefetches.set(idx, this.fetchTts(cleanSegs[idx]));
+        prefetches.set(idx, this.fetchTts(cleanSegs[idx], activeVoice));
       };
 
       schedulePrefetch(0);
@@ -493,6 +537,17 @@
       this.lastTickSec = null;
       this.giftToastTimer = null;
 
+      this.settings = {
+        timerSeconds: 15,
+        mcAutoRead: true,
+        waitMcBeforeTimer: true,
+        autoNextQuestion: true,
+        mcVoice: 'quangminh',
+        mcVolume: 0.95,
+        sfxEnabled: true,
+        sfxVolume: 0.8
+      };
+
       // Hỗ trợ chế độ OBS Browser Source sạch (?obs=1)
       const urlParams = new URLSearchParams(window.location.search);
       this.isObsMode = urlParams.get('obs') === '1' || urlParams.get('obs') === 'true';
@@ -503,6 +558,7 @@
       this.audio = null;
       this.lipSync = new TeacherLipSyncAnimator(document.getElementById('teacherAvatarSvg'));
       this.mc = new GplxMcSpeaker({
+        isObsMode: this.isObsMode,
         onSpeakingChange: (speaking, caption) => this.updateMcVisual(speaking, caption),
         onLipSyncMode: (mode) => this.lipSync.setMode(mode),
         onAnalyserReady: (analyser) => this.lipSync.attachAnalyser(analyser),
@@ -512,7 +568,7 @@
 
       this.initEventListeners();
       this.initResizeScaling();
-      this.syncMcDockControls();
+      this.syncAllDockControls();
       this.initWebSocket();
     }
 
@@ -544,6 +600,10 @@
           const msg = JSON.parse(event.data);
           if (msg.method === 'gplx.state') {
             this.onStateUpdate(msg.params);
+          } else if (msg.method === 'gplx.settingsUpdated') {
+            this.applySyncedSettings(msg.params);
+          } else if (msg.method === 'gplx.mcCommand') {
+            this.handleMcCommand(msg.params);
           } else if (msg.method === 'gplx.questionStarted') {
             this.onQuestionStarted(msg.params);
           } else if (msg.method === 'gplx.countdownStarted') {
@@ -565,13 +625,7 @@
           } else if (msg.error) {
             this.logDockEvent(`⚠️ Lỗi RPC: ${msg.error.message || 'Không xác định'}`);
           } else if (msg.result) {
-            if (msg.result.question) {
-              this.onStateUpdate(msg.result);
-            } else if (msg.result.model && msg.result.status !== undefined) {
-              this.renderTtsStatus(msg.result);
-            } else if (msg.result.connected !== undefined && msg.result.username !== undefined) {
-              this.renderTikTokStatus(msg.result);
-            }
+            this.handleRpcResult(msg.result);
           }
         } catch (err) {
           console.error('[GPLX WS Message Error]', err);
@@ -583,6 +637,34 @@
         this.updateConnectionStatus(false);
         setTimeout(() => this.initWebSocket(), 3000);
       };
+    }
+
+    handleRpcResult(res, { fromHttpFallback = false } = {}) {
+      if (!res || typeof res !== 'object') return;
+      if (res.ok === false && res.error) {
+        this.logDockEvent(`⚠️ ${res.error}`);
+        return;
+      }
+      if (res.closed) {
+        this.logDockEvent('⏳ Câu hỏi đã hết giờ, hãy bấm "Câu Tiếp" hoặc "Đọc & Đếm Lại" để bình chọn!');
+        return;
+      }
+      if (res.duplicate) {
+        this.logDockEvent(`ℹ️ ${res.user || 'Học viên'} đã trả lời câu này rồi!`);
+        return;
+      }
+      if (res.settings) {
+        this.applySyncedSettings(res.settings);
+      }
+      if (res.question) {
+        this.onStateUpdate(res);
+      } else if (res.model && res.status !== undefined) {
+        this.renderTtsStatus(res);
+      } else if (res.connected !== undefined && res.username !== undefined) {
+        this.renderTikTokStatus(res);
+      } else if (fromHttpFallback && res.action && res.segments) {
+        this.handleMcCommand(res);
+      }
     }
 
     async sendRpc(method, params = {}) {
@@ -605,11 +687,107 @@
         const data = await res.json();
         if (data?.error) {
           this.logDockEvent(`⚠️ Lỗi RPC: ${data.error.message || 'Không xác định'}`);
+        } else if (data?.result) {
+          this.handleRpcResult(data.result, { fromHttpFallback: true });
         }
         return data;
       } catch (err) {
         this.logDockEvent(`⚠️ Không gọi được server: ${err.message}`);
         return null;
+      }
+    }
+
+    applySyncedSettings(rawSettings) {
+      if (!rawSettings || typeof rawSettings !== 'object') return;
+      const prevVoice = this.settings.mcVoice;
+      const wasSpeaking = this.mc.isSpeaking;
+      this.settings = { ...this.settings, ...rawSettings };
+      this.timerMax = Number(this.settings.timerSeconds) || 15;
+
+      this.mc.setVoice(this.settings.mcVoice);
+      this.mc.setVolume(this.settings.mcVolume);
+      this.mc.setEnabled(this.settings.mcAutoRead);
+
+      this.syncAllDockControls();
+
+      // Nếu người dùng đổi giọng MC ngay lúc MC đang đọc dở -> chuyển sang giọng mới ngay lập tức
+      if (prevVoice && prevVoice !== this.settings.mcVoice && wasSpeaking && this.state?.speechScripts) {
+        const isRev = Boolean(this.state.isRevealed);
+        const segs = isRev ? this.state.speechScripts.answer : this.state.speechScripts.question;
+        if (Array.isArray(segs) && segs.length) {
+          const roundId = this.state.roundId;
+          const isWaiting = !isRev && this.state.phase === 'reading';
+          this.mc.speakSegments(segs, {
+            force: true,
+            voice: this.settings.mcVoice,
+            onDone: (status) => {
+              if (isWaiting && status === 'completed') {
+                this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'question', reason: 'completed' });
+              }
+            }
+          });
+        }
+      }
+
+      if (!this.mc.isSpeaking) {
+        this.updateMcVisual(false, '');
+      }
+    }
+
+    handleMcCommand(cmd) {
+      if (!cmd || !cmd.action) return;
+      if (cmd.voice) {
+        this.mc.setVoice(cmd.voice);
+      }
+      const voice = cmd.voice || this.settings.mcVoice;
+
+      if (cmd.action === 'stop') {
+        this.mc.stop();
+        this.logDockEvent('⏹️ Đã dừng giọng đọc MC.');
+        return;
+      }
+
+      if (cmd.action === 'testVoice') {
+        const segs = Array.isArray(cmd.segments) && cmd.segments.length
+          ? cmd.segments
+          : ['Xin chào quý học viên! Tôi là MC Đấu Trường Giấy Phép Lái Xe, giọng đọc đã sẵn sàng!'];
+        this.logDockEvent(`📢 Đang phát thử giọng MC (${voice})...`);
+        this.mc.speakSegments(segs, { force: true, voice });
+        return;
+      }
+
+      if (cmd.action === 'readAnswer') {
+        const segs = Array.isArray(cmd.segments) && cmd.segments.length
+          ? cmd.segments
+          : this.state?.speechScripts?.answer;
+        if (Array.isArray(segs) && segs.length) {
+          this.logDockEvent(`📣 MC đang đọc đáp án Câu ${cmd.questionNumber || this.state?.question?.questionNumber || ''}...`);
+          this.mc.speakSegments(segs, { force: true, voice });
+        }
+        return;
+      }
+
+      if (cmd.action === 'readQuestion') {
+        const segs = Array.isArray(cmd.segments) && cmd.segments.length
+          ? cmd.segments
+          : this.state?.speechScripts?.question;
+        if (Array.isArray(segs) && segs.length) {
+          this.logDockEvent(`🔊 MC đang đọc lại Câu ${cmd.questionNumber || this.state?.question?.questionNumber || ''}...`);
+          const roundId = cmd.roundId || this.state?.roundId;
+          const isWaiting = this.state?.phase === 'reading';
+          this.mc.speakSegments(segs, {
+            force: true,
+            voice,
+            onStart: () => {
+              if (isWaiting) this.sendRpc('gplx.mcReadingStarted', { roundId });
+            },
+            onDone: (status) => {
+              if (isWaiting && status === 'completed') {
+                this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'question', reason: 'completed' });
+              }
+            }
+          });
+        }
       }
     }
 
@@ -666,9 +844,10 @@
       const liveBadgeLabel = document.getElementById('liveBadgeLabel');
       const btnConnect = document.getElementById('btnConnectTikTok');
 
+      // Không khóa nút Kết Nối khi server đang tự thử lại kênh cũ — cho phép người dùng đổi kênh ngay lập tức
       if (btnConnect) {
-        btnConnect.disabled = !!tt.connecting;
-        btnConnect.textContent = tt.connecting ? 'Đang kết nối...' : 'Kết Nối';
+        btnConnect.disabled = false;
+        btnConnect.textContent = tt.connecting ? 'Đổi Kênh' : 'Kết Nối';
       }
 
       if (statusEl) {
@@ -697,24 +876,39 @@
     }
 
     startQuestionSpeech(roundId, questionNumber, segments) {
+      const isWaitingPhase = this.state?.phase === 'reading';
       if (!Array.isArray(segments) || !segments.length) {
-        this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'question', reason: 'empty' });
+        if (isWaitingPhase) {
+          this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'question', reason: 'empty' });
+        }
         return;
       }
 
       if (!this.mc.enabled) {
-        // Nếu host đang tắt MC tự đọc -> bắt đầu đếm ngược 15 giây ngay lập tức
-        this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'question', reason: 'mc_disabled' });
+        // Nếu host đang tắt MC tự đọc -> bắt đầu đếm ngược ngay lập tức
+        if (isWaitingPhase) {
+          this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'question', reason: 'mc_disabled' });
+        }
         return;
       }
 
-      this.logDockEvent(`🎙️ MC đang đọc Câu ${questionNumber} (hết câu mới đếm 15s)...`);
+      const sec = this.settings.timerSeconds || this.timerMax || 15;
+      const waitNote = this.settings.waitMcBeforeTimer
+        ? `hết câu mới đếm ${sec}s`
+        : `đếm song song ${sec}s`;
+      this.logDockEvent(`🎙️ MC đang đọc Câu ${questionNumber} (${waitNote})...`);
       this.mc.speakSegments(segments, {
+        voice: this.settings.mcVoice,
         onStart: () => {
-          this.sendRpc('gplx.mcReadingStarted', { roundId });
+          if (this.state?.phase === 'reading') {
+            this.sendRpc('gplx.mcReadingStarted', { roundId });
+          }
         },
         onDone: (status) => {
-          if (status === 'completed' || status === 'disabled' || status === 'empty') {
+          if (
+            this.state?.phase === 'reading' &&
+            (status === 'completed' || status === 'disabled' || status === 'empty')
+          ) {
             this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'question', reason: status });
           }
         }
@@ -725,6 +919,7 @@
       if (!this.mc.enabled || !Array.isArray(segments) || !segments.length) return;
       this.logDockEvent(`📣 MC công bố đáp án đúng Câu ${questionNumber}: [${correctKey}]`);
       this.mc.speakSegments(segments, {
+        voice: this.settings.mcVoice,
         onDone: (status) => {
           if (status === 'completed') {
             this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'answer', reason: 'completed' });
@@ -745,7 +940,8 @@
       if (!data) return;
       this.lastTickSec = null;
       this.playCountdownStartChime();
-      this.logDockEvent(`⏱️ MC đã đọc xong! Bắt đầu đếm ngược ${data.timerMax || 15} giây!`);
+      const sec = data.timerMax || this.settings.timerSeconds || 15;
+      this.logDockEvent(`⏱️ Bắt đầu đếm ngược ${sec} giây!`);
     }
 
     onAnswerRevealed(data) {
@@ -762,6 +958,11 @@
       const prevRoundId = this.state?.roundId;
       const prevRevealed = this.state?.isRevealed;
       this.state = state;
+
+      // Đồng bộ cài đặt từ server TRƯỚC khi bắt đầu đọc câu hỏi đầu tiên
+      if (state.settings) {
+        this.applySyncedSettings(state.settings);
+      }
 
       // Render Question
       if (state.question) {
@@ -843,6 +1044,18 @@
           }
         });
 
+        // Đồng bộ trạng thái nút giả lập Vote A/B/C/D theo số đáp án thực tế của câu hiện tại
+        allKeys.forEach((k) => {
+          const simBtn = document.getElementById(`btnSim${k.toUpperCase()}`);
+          if (simBtn) {
+            const exists = Boolean(optMap[k]);
+            simBtn.disabled = !exists;
+            simBtn.title = exists
+              ? `Giả lập học viên bình luận ${k.toUpperCase()}`
+              : `Câu hỏi này không có đáp án ${k.toUpperCase()}`;
+          }
+        });
+
         // Cập nhật banner kêu gọi bình luận theo trạng thái MC đọc / Đếm ngược / Công bố
         const banner = document.getElementById('commentActionBanner');
         if (banner && Array.isArray(q.options)) {
@@ -857,10 +1070,24 @@
         }
       }
 
-      // Global x2 badge
+      // Global x2 badge & trạng thái nút điều khiển
+      const isGlobalX2 = (state.multiplier || 1) >= 2;
       const globalX2Badge = document.getElementById('globalX2Badge');
       if (globalX2Badge) {
-        globalX2Badge.hidden = (state.multiplier || 1) < 2;
+        globalX2Badge.hidden = !isGlobalX2;
+      }
+      const btnTogglex2 = document.getElementById('btnTogglex2');
+      if (btnTogglex2) {
+        btnTogglex2.textContent = isGlobalX2 ? '⚡ x2 Toàn Phòng: ĐANG BẬT' : '⚡ x2 Toàn Phòng: TẮT';
+        btnTogglex2.classList.toggle('gold', isGlobalX2);
+      }
+      const btnStartCountdownNow = document.getElementById('btnStartCountdownNow');
+      if (btnStartCountdownNow) {
+        btnStartCountdownNow.disabled = state.phase !== 'reading';
+      }
+      const btnRevealNow = document.getElementById('btnRevealNow');
+      if (btnRevealNow) {
+        btnRevealNow.disabled = Boolean(state.isRevealed);
       }
 
       // Update Votes text
@@ -1191,14 +1418,16 @@
     }
 
     playBeep(freq = 600, duration = 0.1) {
+      if (!this.settings.sfxEnabled || this.mc.localMuted) return;
       try {
         const ctx = this.ensureAudioCtx();
         if (!ctx) return;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
+        const sfxVol = Math.max(0.05, Math.min(1, Number(this.settings.sfxVolume ?? 0.8)));
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.setValueAtTime(0.14 * sfxVol, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -1299,19 +1528,59 @@
       if (feed.children.length > 60) feed.removeChild(feed.lastChild);
     }
 
-    syncMcDockControls() {
+    syncAllDockControls() {
+      const s = this.settings;
       const voiceSel = document.getElementById('selectMcVoice');
-      const toggleBtn = document.getElementById('btnToggleMcAuto');
+      const toggleMcBtn = document.getElementById('btnToggleMcAuto');
+      const toggleSfxBtn = document.getElementById('btnToggleSfx');
+      const toggleLocalMuteBtn = document.getElementById('btnToggleLocalMute');
       const volRange = document.getElementById('mcVolumeRange');
       const volVal = document.getElementById('mcVolumeValue');
+      const timerInput = document.getElementById('inputTimerSeconds');
+      const matchTitle = document.getElementById('matchSectionTitle');
+      const btnRestartTimer = document.getElementById('btnRestartTimer');
+      const btnToggleWaitMc = document.getElementById('btnToggleWaitMc');
+      const btnToggleAutoNext = document.getElementById('btnToggleAutoNext');
 
-      if (voiceSel) voiceSel.value = this.mc.voice;
-      if (toggleBtn) {
-        toggleBtn.textContent = this.mc.enabled ? '🎙️ MC Tự Đọc: BẬT' : '🔇 MC Tự Đọc: TẮT';
-        toggleBtn.classList.toggle('gold', this.mc.enabled);
+      if (voiceSel && document.activeElement !== voiceSel) {
+        voiceSel.value = s.mcVoice || this.mc.voice;
       }
-      if (volRange) volRange.value = String(Math.round(this.mc.volume * 100));
-      if (volVal) volVal.textContent = `${Math.round(this.mc.volume * 100)}%`;
+      if (toggleMcBtn) {
+        toggleMcBtn.textContent = s.mcAutoRead ? '🎙️ MC Tự Đọc: BẬT' : '🔇 MC Tự Đọc: TẮT';
+        toggleMcBtn.classList.toggle('gold', !!s.mcAutoRead);
+      }
+      if (toggleSfxBtn) {
+        toggleSfxBtn.textContent = s.sfxEnabled ? '🔔 Âm Hiệu Ứng: BẬT' : '🔕 Âm Hiệu Ứng: TẮT';
+        toggleSfxBtn.classList.toggle('is-active', !!s.sfxEnabled);
+      }
+      if (toggleLocalMuteBtn) {
+        toggleLocalMuteBtn.textContent = this.mc.localMuted ? '🔇 Loa Tab Này: TẮT' : '🔊 Loa Tab Này: BẬT';
+        toggleLocalMuteBtn.classList.toggle('danger', !!this.mc.localMuted);
+      }
+      const pct = Math.round((Number.isFinite(Number(s.mcVolume)) ? Number(s.mcVolume) : this.mc.volume) * 100);
+      if (volRange && document.activeElement !== volRange) {
+        volRange.value = String(pct);
+      }
+      if (volVal) {
+        volVal.textContent = `${pct}%`;
+      }
+      if (timerInput && document.activeElement !== timerInput) {
+        timerInput.value = String(s.timerSeconds || 15);
+      }
+      if (matchTitle) {
+        matchTitle.textContent = `⏱️ Trận Đấu & Cài Đặt (${s.timerSeconds || 15}s)`;
+      }
+      if (btnRestartTimer) {
+        btnRestartTimer.textContent = `🔄 Đọc & Đếm Lại ${s.timerSeconds || 15}s`;
+      }
+      if (btnToggleWaitMc) {
+        btnToggleWaitMc.textContent = s.waitMcBeforeTimer ? '🎙️ Chờ MC Xong: BẬT' : '⚡ Chờ MC Xong: TẮT';
+        btnToggleWaitMc.classList.toggle('is-active', !!s.waitMcBeforeTimer);
+      }
+      if (btnToggleAutoNext) {
+        btnToggleAutoNext.textContent = s.autoNextQuestion ? '⏭️ Tự Chuyển Câu: BẬT' : '⏸️ Tự Chuyển Câu: TẮT';
+        btnToggleAutoNext.classList.toggle('is-active', !!s.autoNextQuestion);
+      }
     }
 
     initEventListeners() {
@@ -1333,7 +1602,7 @@
           if (!this.mc.isSpeaking && this.state?.speechScripts?.question?.length) {
             this.mc.speakSegments(
               this.state.isRevealed ? this.state.speechScripts.answer : this.state.speechScripts.question,
-              { force: true }
+              { force: true, voice: this.settings.mcVoice }
             );
           }
         };
@@ -1357,28 +1626,58 @@
         }
       });
 
-      // MC Controls
+      // MC Controls (đồng bộ qua server sang tất cả tab & OBS Browser Source)
       const selectMcVoice = document.getElementById('selectMcVoice');
       if (selectMcVoice) {
         selectMcVoice.onchange = () => {
-          this.mc.setVoice(selectMcVoice.value);
-          this.logDockEvent(`🗣️ Đã đổi giọng MC sang: ${selectMcVoice.selectedOptions[0]?.text || selectMcVoice.value}`);
+          this.ensureAudioCtx();
+          this.mc.resumeAudioContext();
+          const voice = selectMcVoice.value;
+          const label = selectMcVoice.selectedOptions[0]?.text || voice;
+          this.mc.setVoice(voice);
+          this.sendRpc('gplx.updateSettings', { mcVoice: voice });
+          this.logDockEvent(`🗣️ Đã đổi giọng MC sang: ${label} (đã đồng bộ OBS & Admin)`);
+        };
+      }
+
+      const btnMcTestVoice = document.getElementById('btnMcTestVoice');
+      if (btnMcTestVoice) {
+        btnMcTestVoice.onclick = () => {
+          this.ensureAudioCtx();
+          this.mc.resumeAudioContext();
+          this.sendRpc('gplx.mcCommand', { action: 'testVoice' });
         };
       }
 
       const btnToggleMcAuto = document.getElementById('btnToggleMcAuto');
       if (btnToggleMcAuto) {
         btnToggleMcAuto.onclick = () => {
-          this.mc.setEnabled(!this.mc.enabled);
-          this.syncMcDockControls();
-          this.logDockEvent(this.mc.enabled ? '🎙️ Đã BẬT MC đọc tự động câu hỏi & đáp án.' : '🔇 Đã TẮT MC đọc tự động.');
-          if (!this.mc.enabled && this.state?.phase === 'reading') {
-            this.sendRpc('gplx.mcFinishedReading', {
-              roundId: this.state.roundId,
-              kind: 'question',
-              reason: 'mc_disabled'
-            });
-          }
+          const next = !this.settings.mcAutoRead;
+          this.sendRpc('gplx.updateSettings', { mcAutoRead: next });
+          this.logDockEvent(next ? '🎙️ Đã BẬT MC đọc tự động câu hỏi & đáp án.' : '🔇 Đã TẮT MC đọc tự động.');
+        };
+      }
+
+      const btnToggleSfx = document.getElementById('btnToggleSfx');
+      if (btnToggleSfx) {
+        btnToggleSfx.onclick = () => {
+          const next = !this.settings.sfxEnabled;
+          this.sendRpc('gplx.updateSettings', { sfxEnabled: next });
+          this.logDockEvent(next ? '🔔 Đã BẬT âm hiệu ứng đếm giờ & quà tặng.' : '🔕 Đã TẮT âm hiệu ứng.');
+        };
+      }
+
+      const btnToggleLocalMute = document.getElementById('btnToggleLocalMute');
+      if (btnToggleLocalMute) {
+        btnToggleLocalMute.onclick = () => {
+          const nextMuted = !this.mc.localMuted;
+          this.mc.setLocalMuted(nextMuted);
+          this.syncAllDockControls();
+          this.logDockEvent(
+            nextMuted
+              ? '🔇 Đã TẮT tiếng riêng tab điều khiển này (OBS vẫn phát bình thường).'
+              : '🔊 Đã BẬT tiếng lại cho tab điều khiển này.'
+          );
         };
       }
 
@@ -1386,23 +1685,8 @@
       if (btnMcReadQuestion) {
         btnMcReadQuestion.onclick = () => {
           this.ensureAudioCtx();
-          const segs = this.state?.speechScripts?.question;
-          if (segs && segs.length) {
-            this.logDockEvent('🔊 MC đang đọc lại câu hỏi và các đáp án...');
-            const roundId = this.state?.roundId;
-            const isWaiting = this.state?.phase === 'reading';
-            this.mc.speakSegments(segs, {
-              force: true,
-              onStart: () => {
-                if (isWaiting) this.sendRpc('gplx.mcReadingStarted', { roundId });
-              },
-              onDone: (status) => {
-                if (isWaiting && status === 'completed') {
-                  this.sendRpc('gplx.mcFinishedReading', { roundId, kind: 'question', reason: 'completed' });
-                }
-              }
-            });
-          }
+          this.mc.resumeAudioContext();
+          this.sendRpc('gplx.mcCommand', { action: 'readQuestion' });
         };
       }
 
@@ -1410,11 +1694,8 @@
       if (btnMcReadAnswer) {
         btnMcReadAnswer.onclick = () => {
           this.ensureAudioCtx();
-          const segs = this.state?.speechScripts?.answer;
-          if (segs && segs.length) {
-            this.logDockEvent('📣 MC đang đọc đáp án chính xác...');
-            this.mc.speakSegments(segs, { force: true });
-          }
+          this.mc.resumeAudioContext();
+          this.sendRpc('gplx.mcCommand', { action: 'readAnswer' });
         };
       }
 
@@ -1422,14 +1703,7 @@
       if (btnMcStop) {
         btnMcStop.onclick = () => {
           this.mc.stop();
-          this.logDockEvent('⏹️ Đã dừng giọng đọc MC.');
-          if (this.state?.phase === 'reading') {
-            this.sendRpc('gplx.mcFinishedReading', {
-              roundId: this.state.roundId,
-              kind: 'question',
-              reason: 'stopped'
-            });
-          }
+          this.sendRpc('gplx.mcCommand', { action: 'stop' });
         };
       }
 
@@ -1437,9 +1711,67 @@
       if (mcVolumeRange) {
         mcVolumeRange.oninput = () => {
           const pct = Number(mcVolumeRange.value);
+          this.settings.mcVolume = pct / 100;
           this.mc.setVolume(pct / 100);
           const volVal = document.getElementById('mcVolumeValue');
           if (volVal) volVal.textContent = `${pct}%`;
+        };
+        mcVolumeRange.onchange = () => {
+          const pct = Number(mcVolumeRange.value);
+          this.sendRpc('gplx.updateSettings', { mcVolume: pct / 100 });
+          this.logDockEvent(`🔊 Đã đồng bộ âm lượng MC: ${pct}%`);
+        };
+      }
+
+      // Cài đặt Thời gian & Luật trận đấu (lưu file + đồng bộ server/OBS/Admin)
+      const saveTimerSeconds = () => {
+        const inputEl = document.getElementById('inputTimerSeconds');
+        const raw = Number(inputEl?.value);
+        if (!Number.isFinite(raw) || raw < 5 || raw > 120) {
+          this.logDockEvent('⚠️ Thời gian đếm ngược phải từ 5 đến 120 giây!');
+          return;
+        }
+        const sec = Math.round(raw);
+        this.sendRpc('gplx.updateSettings', { timerSeconds: sec });
+        this.logDockEvent(`⏱️ Đã lưu thời gian trả lời mỗi câu: ${sec} giây.`);
+      };
+
+      const btnSaveTimerSec = document.getElementById('btnSaveTimerSec');
+      if (btnSaveTimerSec) btnSaveTimerSec.onclick = saveTimerSeconds;
+
+      const inputTimerSeconds = document.getElementById('inputTimerSeconds');
+      if (inputTimerSeconds) {
+        inputTimerSeconds.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            saveTimerSeconds();
+          }
+        });
+      }
+
+      const btnToggleWaitMc = document.getElementById('btnToggleWaitMc');
+      if (btnToggleWaitMc) {
+        btnToggleWaitMc.onclick = () => {
+          const next = !this.settings.waitMcBeforeTimer;
+          this.sendRpc('gplx.updateSettings', { waitMcBeforeTimer: next });
+          this.logDockEvent(
+            next
+              ? '🎙️ Chế độ: MC đọc xong câu hỏi mới bắt đầu đếm giờ.'
+              : '⚡ Chế độ: Đếm giờ ngay khi mở câu mới (không chờ MC đọc xong).'
+          );
+        };
+      }
+
+      const btnToggleAutoNext = document.getElementById('btnToggleAutoNext');
+      if (btnToggleAutoNext) {
+        btnToggleAutoNext.onclick = () => {
+          const next = !this.settings.autoNextQuestion;
+          this.sendRpc('gplx.updateSettings', { autoNextQuestion: next });
+          this.logDockEvent(
+            next
+              ? '⏭️ Đã BẬT tự động chuyển câu tiếp theo sau khi mở đáp án.'
+              : '⏸️ Đã TẮT tự chuyển câu (host chủ động bấm Câu Tiếp).'
+          );
         };
       }
 
@@ -1468,18 +1800,32 @@
         }
       });
 
-      // Điều khiển câu hỏi & thời gian 15s
+      // Điều khiển câu hỏi & thời gian
       const btnNextQ = document.getElementById('btnNextQ');
       if (btnNextQ) btnNextQ.onclick = () => this.sendRpc('gplx.nextQuestion', {});
       const btnPrevQ = document.getElementById('btnPrevQ');
       if (btnPrevQ) btnPrevQ.onclick = () => this.sendRpc('gplx.prevQuestion', {});
 
+      const triggerJumpQ = () => {
+        const val = document.getElementById('inputJumpQ')?.value.trim();
+        if (!val) {
+          this.logDockEvent('⚠️ Vui lòng nhập số câu hỏi cần nhảy tới (vd: 486)!');
+          return;
+        }
+        this.sendRpc('gplx.jumpToQuestion', { id: val });
+      };
+
       const btnJumpQ = document.getElementById('btnJumpQ');
-      if (btnJumpQ) {
-        btnJumpQ.onclick = () => {
-          const val = document.getElementById('inputJumpQ')?.value.trim();
-          if (val) this.sendRpc('gplx.jumpToQuestion', { id: val });
-        };
+      if (btnJumpQ) btnJumpQ.onclick = triggerJumpQ;
+
+      const inputJumpQ = document.getElementById('inputJumpQ');
+      if (inputJumpQ) {
+        inputJumpQ.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            triggerJumpQ();
+          }
+        });
       }
 
       const btnRestartTimer = document.getElementById('btnRestartTimer');
@@ -1489,7 +1835,7 @@
       if (btnStartCountdownNow) {
         btnStartCountdownNow.onclick = () => {
           this.sendRpc('gplx.startCountdownNow', {});
-          this.logDockEvent('▶️ Đã kích hoạt đếm ngược 15 giây ngay lập tức.');
+          this.logDockEvent(`▶️ Đã kích hoạt đếm ngược ${this.settings.timerSeconds || 15} giây ngay lập tức.`);
         };
       }
 
@@ -1497,7 +1843,11 @@
       if (btnRevealNow) btnRevealNow.onclick = () => this.sendRpc('gplx.revealNow', {});
 
       const btnTogglex2 = document.getElementById('btnTogglex2');
-      if (btnTogglex2) btnTogglex2.onclick = () => this.sendRpc('gplx.toggleMultiplier', {});
+      if (btnTogglex2) {
+        btnTogglex2.onclick = () => {
+          this.sendRpc('gplx.toggleMultiplier', {});
+        };
+      }
 
       const btnResetLeaderboard = document.getElementById('btnResetLeaderboard');
       if (btnResetLeaderboard) {
