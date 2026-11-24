@@ -1,92 +1,59 @@
-# HOA SƠN LUẬN KIẾM 3D — ĐẠI HỘI VÕ LÂM MINH CHỦ (TIKTOK LIVE RPC)
+# VÕ ĐÀI 3D — ĐI TÌM VÕ LÂM MINH CHỦ (TIKTOK LIVE 9:16 RPC)
 
-Trò chơi chiến đấu kiếm hiệp 3D tương tác thời gian thực dành cho **TikTok Live** & **OBS Studio** (chuẩn khung hình 9:16 dọc và 16:9 ngang), xây dựng trên nền tảng **Node.js / Bun.js + Express + Three.js 3D Engine + WebSocket JSON-RPC 2.0**.
+Game chiến đấu kiếm hiệp **3D thời gian thực** chuẩn bố cục dọc **9:16** (TikTok / Douyin Live & OBS Studio), kết hợp Three.js 3D Arena + Express + WebSocket JSON-RPC 2.0 + âm thanh kiếm hiệp Web Audio & bình luận viên TTS.
 
 ---
 
 ## 🌟 TÍNH NĂNG NỔI BẬT
 
-### 1. 6 Đại Môn Phái & Binh Khí Tương Xứng
-Người xem livestream tham gia thi đấu và gia nhập một trong 6 môn phái kinh điển với vũ khí 3D đặc trưng:
-- **Thiếu Lâm Tự**: Binh khí **Hàng Ma Côn / Thiền Trượng** (Vàng Kim `#f59e0b`) • Đại tuyệt kỹ: *Như Lai Thần Chưởng, Kim Cang Bất Hoại Thể*.
-- **Võ Đang Phái**: Binh khí **Thái Cực Kiếm** (Xanh Lam `#06b6d4`) • Đại tuyệt kỹ: *Thái Cực Kiếm Trận, Thuần Dương Vô Cực*.
-- **Cái Bang**: Binh khí **Đả Cẩu Bổng** (Xanh Ngọc Lục Bảo `#10b981`) • Đại tuyệt kỹ: *Giáng Long Thập Bát Chưởng, Đả Cẩu Bổng Pháp*.
-- **Nga Mi Phái**: Binh khí **Ỷ Thiên Kiếm / Song Kiếm** (Hồng Phấn `#ec4899`) • Đại tuyệt kỹ: *Ỷ Thiên Trảm Nguyệt, Cửu Âm Thần Trảo*.
-- **Minh Giáo (Ma Giáo)**: Binh khí **Huyết Long Đao / Thánh Hỏa Lệnh** (Đỏ Rực Lửa `#ef4444`) • Đại tuyệt kỹ: *Càn Khôn Đại Na Di, Thánh Hỏa Liệt Diễm*.
-- **Đường Môn**: Binh khí **Ám Khí / Phi Tiêu** (Tím Dạ Quang `#8b5cf6`) • Đại tuyệt kỹ: *Bão Vũ Lê Hoa Châm, Mạn Thiên Hoa Vũ*.
+### 1. 7 Môn Phái & 7 Binh Khí Kiếm Hiệp
+Người xem gõ lệnh chat để gia nhập võ đài và chọn binh khí tương xứng:
+- **Võ Đang** — `kiếm` (**Thái Cực Kiếm**) • Cận chiến linh hoạt, kiếm quang sắc bén.
+- **Dương Gia / Thiên Vương** — `thương` (**Phá Quân Thương**) • Tầm đánh dài, thương pháp đẩy lùi.
+- **Minh Giáo** — `đao` (**Đồ Long Đao**) • Sát thương bạo kích cực mạnh.
+- **Thiếu Lâm** — `côn` (**Hàng Ma Côn**) • Sinh lực cao, côn pháp quét ngang uy lực.
+- **Tiêu Dao** — `cung` (**Lạc Nhật Cung**) • Xạ thủ tầm xa bắn tên vòng cung có vệt sáng.
+- **Đường Môn** — `tiêu` (**Bão Vũ Phi Tiêu**) • Phóng phi tiêu tầm xa tốc độ cao.
+- **Cái Bang** — `quyền` (**Giáng Long Quyền**) • Tốc độ ra đòn nhanh, chưởng pháp cận chiến.
 
 ---
 
-### 2. Cách Người Xem Tham Gia Qua TikTok Live Chat
-Người xem tương tác trực tiếp bằng cách gõ bình luận vào livestream:
-- **Gõ `"chiến"` hoặc `"pk"`**: Tự động bước lên lôi đài với môn phái ngẫu nhiên (hệ thống tự cân bằng môn phái ít người).
-- **Gõ tên binh khí**:
-  - `"kiếm"` ➔ Gia nhập Võ Đang (hoặc Nga Mi) với Thái Cực Kiếm.
-  - `"đao"` ➔ Gia nhập Minh Giáo với Huyết Long Đao.
-  - `"côn"` hoặc `"trượng"` ➔ Gia nhập Thiếu Lâm với Hàng Ma Côn.
-  - `"bổng"` hoặc `"đả cẩu"` ➔ Gia nhập Cái Bang với Đả Cẩu Bổng.
-  - `"ám khí"` hoặc `"tiêu"` ➔ Gia nhập Đường Môn với Ám Khí Phi Tiêu.
-- **Gõ tên môn phái**: `"thiếu lâm"`, `"võ đang"`, `"cái bang"`, `"nga mi"`, `"minh giáo"`, `"đường môn"`.
-- **Lệnh chiến đấu khi đã ở trên lôi đài**:
-  - Gõ `"đánh"`, `"chém"`, `"chưởng"`, `"tấn công"`, `"bạo kích"` ➔ Kích hoạt đòn đánh liên hoàn, lướt tới đối thủ và bạo kích!
-  - Gõ `"hồi máu"`, `"né"`, `"hộ thể"` ➔ Vận khí điều tức hồi phục sinh lực và khiên bảo hộ.
-- **Thả tim (Like livestream)**: Buff Nội Lực và Khí Công cho đấu sĩ cùng môn phái.
-- **Tặng quà (Gift livestream)**: Triệu hồi Thần Binh Tối Thượng & kích hoạt Đại Tuyệt Kỹ Trấn Phái quét sạch đối thủ trên lôi đài.
+### 2. Chu Kỳ Trận Đấu & Tương Tác Trực Tiếp
+- **Pha 1 — Ghi Danh (`Ghi danh`)**: Các anh hùng xếp vòng tròn quanh đồ hình Bát Quái đỏ-vàng, hiển thị `TRẬN VỪA RỒI` & `BẢNG VÀNG`. Người xem gõ `"chiến"`, `"đánh"`, `"join"` hoặc tên binh khí (`kiếm · thương · đao · côn · cung · tiêu · quyền`) để lên võ đài.
+- **Pha 2 — Đang Giao Đấu (`Đang giao đấu`)**: Các đấu sĩ tự động di chuyển, áp sát, né đòn, bắn tên/phi tiêu và tung chiêu trong 2:30.
+  - Người xem mới gõ `"chiến"` / `"đánh"` sẽ vào hàng chờ trận sau (`đang chờ X`) hoặc gửi **Hoa hồng 🌹** để nhảy thẳng vào trận!
+  - Người đang đấu gõ `"chạy"` để tăng tốc né đòn, hoặc chat bất kỳ để hiển thị **bong bóng thoại 3D** trên đầu nhân vật.
+  - **Mục tiêu Thả Tim (`Ma Đấu`)**: Lượt thích livestream giảm dần bộ đếm `Ma Đấu: còn X tim`. Về 0 sẽ triệu hồi **Ma Đấu Tôn Giả** khổng lồ vào giữa sân (+3 hạ gục cho người kết liễu).
+- **Pha 3 — Vinh Danh (`Vinh danh Võ Lâm Minh Chủ`)**: Người trụ vững cuối cùng hoặc hạ gục nhiều nhất đoạt ngôi **Võ Lâm Minh Chủ**, nhận vương miện vàng 3D và +1 👑 trên **BẢNG VÀNG**.
 
 ---
 
-### 3. Tranh Đoạt Ngôi Vị "VÕ LÂM MINH CHỦ"
-- Đấu sĩ trụ vững trên lôi đài, có số lần hạ gục (Kills) và điểm chiến tích cao nhất sẽ đăng quang **VÕ LÂM MINH CHỦ**.
-- Trên lôi đài 3D, Minh Chủ sẽ được:
-  - Đội **Vương Miện Hoàng Kim** trên đầu.
-  - **Rồng Vàng 3D** lượn vòng quanh thân thể.
-  - Hào quang Chân Khí hoàng kim chói lọi.
-  - Thẻ tên vàng kim trên đỉnh Bảng Phong Thần Võ Lâm.
-  - Phát thanh viên TTS xướng danh ca ngợi thiên hạ quy tâm!
+### 3. 4 Kỹ Năng Tặng Quà (TẶNG QUÀ)
+- 🌹 **Hoa hồng** (1 xu) ➔ **Vào đấu / +20 máu**: Nhảy thẳng lên võ đài giữa trận hoặc cộng +20 máu tối đa.
+- **GG** (1 xu — `/assets/gifts/gg.png`) ➔ **Hồi máu**: Hồi +120 HP kèm cột sáng lục bảo & tăng tốc đánh ngắn.
+- **Hộp quà bóng bay** (100 xu — `/assets/gifts/giftbox.png`) ➔ **Khổng lồ**: Hóa thân khổng lồ 1.65× + Kim Chung Tráo hộ thể + chấn địa AoE.
+- **Thả tim** (100 xu — `/assets/gifts/heart_hands.png`) ➔ **Hồi sinh / Thần Võ**: Hồi sinh lập tức 100% HP + kích hoạt luân quang Thần Võ & tung Đại Tuyệt Kỹ môn phái diện rộng.
 
 ---
 
-### 4. Hệ Thống Đồ Họa 3D Tùy Chỉnh (3D Settings)
-Trong menu Cài Đặt (icon ⚙️ trên màn hình chính và trong trang `/admin`), có thể tùy chỉnh:
-- **Preset Đồ Họa**:
-  - ⚡ **Tiết kiệm (Low)**: Tắt đổ bóng, 30 FPS, tối ưu tuyệt đối cho máy stream yếu.
-  - 🌟 **Tiêu chuẩn (Medium)**: Đổ bóng cơ bản, hiệu năng cân bằng 60 FPS.
-  - 💎 **Tuyệt Đẹp (Ultra 3D)**: Đổ bóng mềm Soft Shadows, Full FPS, Anti-aliasing.
-- **Góc Nhìn Camera 3D**:
-  - 🎥 **Cinematic**: Camera lướt vòng quanh lôi đài kịch tính.
-  - 🎥 **Action**: Tự động zoom theo cặp đấu thủ đang giao tranh khốc liệt nhất.
-  - 🎥 **Minh Chủ**: Khóa camera theo sát Đương Kim Võ Lâm Minh Chủ.
-  - 🎥 **Top-Down**: Góc nhìn từ trên cao bao quát toàn bộ trận hỗn chiến.
-  - 🎥 **Orbit (Tự do)**: Dùng chuột kéo xoay 360 độ và phóng to thu nhỏ tự do.
-- **Hiệu Ứng Thời Tiết Môi Trường**:
-  - 🌸 Cánh hoa đào rơi (Hoa Sơn Phấn Đào).
-  - ❄️ Bão tuyết sơn đỉnh (Hoa Sơn Tuyết Cảnh).
-  - 🔥 Hỏa diễm tro tàn (Quang Minh Đỉnh Hỏa).
-  - 🌫️ Sương mù mây ngàn huyền bí.
-- **Toggles Chi Tiết**:
-  - Đổ bóng thời gian thực (Real-time Shadows).
-  - Hào quang Chân Khí (Ki Aura).
-  - Vệt chém Đao Quang Kiếm Ảnh (Slash Trails).
-  - Số sát thương 3D nảy (Floating Damage Numbers).
-- **Tỉ lệ khung hình**:
-  - 📱 **Dọc 9:16** (1080x1920 cho TikTok Live / OBS Browser Source).
-  - 🖥️ **Ngang 16:9** (Màn hình rộng / Toàn màn hình).
+### 4. Thiết Lập Hình Ảnh 3D (Settings ⚙️)
+Bấm icon **⚙️** trên màn hình Live hoặc chỉnh từ xa tại `/admin`:
+- **Chất lượng đồ họa 3D**: `Tuyệt Đẹp (Ultra)` / `Tiêu Chuẩn (Medium)` / `Tiết Kiệm (Low)`.
+- **6 Góc Camera 3D**: `Chuẩn Võ Đài Live (9:16)`, `Cinematic`, `Hành Động`, `Võ Lâm Minh Chủ`, `Top-Down`, `Tự Do Orbit 360°`.
+- **Hiệu ứng không khí**: Tro tàn hoàng hôn, Hoa đào rơi, Tuyết sơn đỉnh, Sương mù, hoặc Tắt.
+- **Tùy chỉnh chi tiết**: Đổ bóng thực, Khán giả 3D cổ vũ, Đài lửa động, Ki Aura, Vệt kiếm quang, Số sát thương Comic, Khung tỉ lệ `9:16` / `16:9` (dùng `/?obs=1` để ẩn cả nút ⚙️ khi phát OBS).
 
 ---
 
-## 🚀 HƯỚNG DẪN KHỞI CHẠY
+## 🚀 KHỞI CHẠY
 
 ```bash
-# Cài đặt thư viện (nếu chưa có)
-bun install
-# hoặc: npm install
-
-# Khởi chạy server
 bun run server.js
-# hoặc: node server.js
+# hoặc
+node server.js
 ```
 
-Sau khi khởi chạy:
-- 📺 **Màn hình Lôi Đài 3D (dùng add vào OBS)**: `http://localhost:3000`
-- 🎛️ **Bảng Điều Khiển Admin & TikTok**: `http://localhost:3000/admin`
-- 🔌 **JSON-RPC 2.0 Endpoint**: `http://localhost:3000/rpc` & `ws://localhost:3000/ws`
+- 📺 **Màn hình Võ Đài 3D (9:16 Live)**: `http://localhost:3000`
+- 🎥 **Màn hình OBS Studio (ẩn nút ⚙️)**: `http://localhost:3000/?obs=1`
+- 🎛️ **Bảng Điều Khiển Admin & Kết Nối TikTok**: `http://localhost:3000/admin`
+- 📄 **Chi tiết các thay đổi**: Xem [CHANGES.md](./CHANGES.md)

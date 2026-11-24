@@ -2,14 +2,13 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HOA SƠN LUẬN KIẾM 3D — Đại Hội Võ Lâm Minh Chủ (TikTok Live 9:16 / 16:9)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>VÕ ĐÀI 3D — Đi Tìm Võ Lâm Minh Chủ (TikTok Live 9:16)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/live.css" />
 
-  <!-- Import map cho Three.js và Addons -->
   <script type="importmap">
   {
     "imports": {
@@ -21,181 +20,257 @@
 </head>
 <body>
   <div class="app-workspace">
-    <!-- KHUNG LÔI ĐÀI CHÍNH (HỖ TRỢ CẢ 9:16 DỌC CHO TIKTOK OBS LẪN 16:9 NGANG) -->
+    <!-- ====================================================================
+         KHUNG VÕ ĐÀI 3D CHUẨN 9:16 TIKTOK LIVE / OBS BROWSER SOURCE
+         ==================================================================== -->
     <div class="stage-wrapper" id="stageWrapper">
       <div class="stage-container" id="stageContainer">
-        <!-- 1. MÀN HÌNH 3D THREE.JS CONTAINER -->
+
+        <!-- 1. SÂN VÕ ĐÀI 3D THREE.JS (TOÀN KHUNG 9:16) -->
         <div id="stage3D" class="stage-3d-canvas"></div>
 
-        <!-- 2. THANH TRẠNG THÁI TRÊN ĐỈNH (TOP BAR) -->
-        <header class="top-hud-bar">
-          <div class="top-left-badges">
-            <div class="pill-badge gold-glow">
-              <span class="live-dot online" id="liveDot"></span>
-              <span class="badge-title">HOA SƠN LUẬN KIẾM 3D</span>
+        <!-- Nút chuyển góc Camera nhanh & nút Setting 3D ở góc trên phải (tự ẩn trong ?obs=1) -->
+        <button class="camera-quick-btn" id="btnCycleCamera" type="button" title="Đổi góc Camera 3D (Phím C)">
+          <span id="btnCycleCameraText">📺 Góc Live</span>
+        </button>
+        <button class="settings-float-btn" id="btnOpenSettings" type="button" title="Thiết lập hình ảnh 3D & Âm thanh">
+          <span class="ws-dot online" id="liveDot"></span>
+          <span>⚙️</span>
+        </button>
+
+        <!-- ================================================================
+             ZONE 1: CENTRAL GAME STATUS BOARD (VÕ ĐÀI BANNER)
+             ================================================================ -->
+        <section class="central-status-board" id="centralStatusBoard">
+          <div class="vodai-crest" id="vodaiCrest">VÕ ĐÀI</div>
+
+          <div class="vodai-board-frame">
+            <span class="corner-diamond left"></span>
+            <span class="corner-diamond right"></span>
+
+            <div class="board-row-title">
+              <span class="round-num" id="boardRoundText">TRẬN 1</span>
+              <span class="phase-label" id="boardPhaseText">Chờ anh hùng</span>
+              <span class="phase-timer" id="boardTimerText">0:16</span>
             </div>
-            <div class="pill-badge sub-badge" id="tiktokStatusBadge">
-              <span id="tiktokStatusText">TIKTOK: Chờ kết nối...</span>
+
+            <div class="board-row-heroes" id="boardHeroesText">
+              Anh hùng 0 / 24
+            </div>
+
+            <!-- Thanh mục tiêu Tim Ma Đấu -->
+            <div class="madau-goal-track" id="maDauGoalBar" title="Thả tim để triệu hồi Ma Đấu Tôn Giả">
+              <div class="madau-goal-fill" id="maDauGoalFill" style="width: 4%;"></div>
+              <span class="madau-goal-text" id="maDauGoalText">❤️ Ma Đấu: còn 1.000 tim</span>
+            </div>
+
+            <!-- Đương Kim Võ Lâm Minh Chủ -->
+            <div class="board-champion-pill" id="boardChampPill">
+              <span class="champ-crown-mini">👑</span>
+              <span class="champ-mini-av" id="boardChampAv">⚔️</span>
+              <span class="champ-mini-name" id="boardChampName">Chưa có Minh Chủ</span>
             </div>
           </div>
 
-          <div class="top-right-badges">
-            <div class="pill-badge stat-badge">
-              ⚔️ <strong id="statKills">0</strong> Trảm • 🥋 <strong id="statFighters">0</strong> Hiệp Khách
-            </div>
-            <button class="hud-icon-btn" id="btnOpenSettings" title="Thiết lập hình ảnh 3D & Âm thanh">
-              ⚙️
-            </button>
+          <!-- Hướng dẫn gõ lệnh lên võ đài -->
+          <div class="instruction-pill" id="instructionPill" style="display: none;">
+            <span id="instructionText">Gõ đánh để lên võ đài trận sau • Đang chờ 0</span>
           </div>
-        </header>
+        </section>
 
-        <!-- 3. THẺ ĐƯƠNG KIM VÕ LÂM MINH CHỦ (TOP 1) -->
-        <div class="champion-hud-card" id="championCard">
-          <div class="crown-icon">👑</div>
-          <div class="champ-avatar" id="champAvatar">⚔️</div>
-          <div class="champ-info">
-            <div class="champ-title-tag">ĐƯƠNG KIM VÕ LÂM MINH CHỦ</div>
-            <div class="champ-name" id="champName">Đang Tranh Đoạt Ngôi Vị...</div>
-            <div class="champ-sect" id="champSect">Gõ "chiến" hoặc tên binh khí để tham chiến!</div>
-            <div class="champ-stats" id="champStats">🏆 0đ • ⚔️ 0 Trảm</div>
+        <!-- ================================================================
+             ZONE 2: SIDE PANELS ĐỐI XỨNG (LEFT: TOP HẠ GỤC | RIGHT: TẶNG QUÀ)
+             ================================================================ -->
+        <aside class="side-panel left-panel" id="leftStatsPanel">
+          <div class="side-panel-title" id="leftPanelTitle">TOP HẠ GỤC</div>
+          <div class="side-panel-list" id="leftPanelList"></div>
+        </aside>
+
+        <aside class="side-panel right-panel" id="rightStatsPanel">
+          <div class="side-panel-title" id="rightPanelTitle">TẶNG QUÀ</div>
+          <div class="side-panel-list" id="rightPanelList"></div>
+        </aside>
+
+        <!-- ================================================================
+             ZONE 3: CÁC THÔNG BÁO SỰ KIỆN TRÊN SÂN VÕ ĐÀI
+             ================================================================ -->
+        <!-- Banner Ghi Danh giữa sân đấu (chỉ hiện trong pha Ghi danh) -->
+        <div class="registration-center-callout" id="regCallout">
+          <div class="reg-main-banner">Gõ đánh để lên võ đài</div>
+          <div class="reg-sub-weapons">
+            Chọn binh khí: gõ <strong>kiếm · thương · đao · côn · cung · tiêu · quyền</strong>
           </div>
         </div>
 
-        <!-- 4. BẢNG XẾP HẠNG NGŨ TUYỆT (TOP 2 - 6) -->
-        <div class="leaderboard-hud" id="leaderboardHud">
-          <div class="lb-header">⚡ BẢNG VÕ LÂM ANH HÀO</div>
-          <div class="lb-list" id="leaderboardList">
-            <!-- Render từ JS -->
+        <!-- Thẻ thành tích Chiến Tích rực lửa (dưới panel trái, không che Bát Quái) -->
+        <div class="achievement-flame-card" id="achievementCard">
+          <div class="achieve-flame-bg"></div>
+          <div class="achieve-badge-num" id="achieveBadgeNum">x10</div>
+          <div class="achieve-content">
+            <div class="achieve-tag" id="achieveTag">🔥 CHIẾN TÍCH VÕ ĐÀI</div>
+            <div class="achieve-main" id="achieveMain">Lion_King x10 hạ gục</div>
+            <div class="achieve-sub" id="achieveSub">Lion_King ⚔️ Coen Thao</div>
           </div>
         </div>
 
-        <!-- 5. BẢNG TỈ LỆ THẾ LỰC 6 MÔN PHÁI -->
-        <div class="sect-power-hud">
-          <div class="sect-hud-title">THẾ LỰC 6 ĐẠI MÔN PHÁI</div>
-          <div class="sect-power-bar" id="sectPowerBar"></div>
-          <div class="sect-legend">
-            <span><i style="background:#f59e0b"></i>Thiếu Lâm (Côn)</span>
-            <span><i style="background:#06b6d4"></i>Võ Đang (Kiếm)</span>
-            <span><i style="background:#10b981"></i>Cái Bang (Bổng)</span>
-            <span><i style="background:#ec4899"></i>Nga Mi (Kiếm)</span>
-            <span><i style="background:#ef4444"></i>Minh Giáo (Đao)</span>
-            <span><i style="background:#8b5cf6"></i>Đường Môn (Ám Khí)</span>
-          </div>
+        <!-- Thẻ Gift Combo ngắn gọn (góc dưới trái sân đấu) -->
+        <div class="gift-combo-stack" id="giftComboStack"></div>
+
+        <!-- Thanh trạng thái Camera đang Zoom cận cảnh vào nhân vật tặng quà -->
+        <div class="gift-spotlight-badge" id="giftSpotlightBadge" aria-live="polite">
+          <span class="gsb-rec-dot"></span>
+          <span class="gsb-text" id="giftSpotlightText">🎥 ĐANG ZOOM NHÂN VẬT TẶNG QUÀ</span>
         </div>
 
-        <!-- 6. THÔNG BÁO HẠ GỤC THỜI GIAN THỰC (KILL FEED) -->
-        <div class="kill-feed" id="killFeed"></div>
+        <!-- Banner Vinh Danh Tân Võ Lâm Minh Chủ / Ma Đấu Giáng Lâm -->
+        <div class="grand-announcement" id="grandAnnouncement"></div>
 
-        <!-- 7. THÔNG BÁO TOÀN SÀN KHI CÓ TÂN MINH CHỦ ĐĂNG QUANG -->
-        <div class="live-announcement" id="liveAnnouncement"></div>
-
-        <!-- 8. BANNER HƯỚNG DẪN NGƯỜI XEM TIKTOK THAM GIA Ở ĐÁY MÀN HÌNH -->
-        <footer class="bottom-guide-bar">
-          <div class="guide-scroll-track">
-            <span class="guide-item highlight">⚔️ Gõ <strong>"chiến"</strong> để ngẫu nhiên vào lôi đài</span>
-            <span class="guide-item">🗡️ Binh khí: <strong>"kiếm"</strong> | <strong>"đao"</strong> | <strong>"côn"</strong> | <strong>"bổng"</strong> | <strong>"ám khí"</strong></span>
-            <span class="guide-item">🏯 Môn phái: <strong>"thiếu lâm"</strong> | <strong>"võ đang"</strong> | <strong>"cái bang"</strong> | <strong>"nga mi"</strong> | <strong>"minh giáo"</strong> | <strong>"đường môn"</strong></span>
-            <span class="guide-item">🔥 Thả ❤️ Buff Khí Công • Tặng 🎁 Triệu Hồi Thần Binh & Đại Tuyệt Kỹ</span>
-          </div>
-        </footer>
       </div>
     </div>
 
-    <!-- MODAL THIẾT LẬP HÌNH ẢNH 3D & CẤU HÌNH TRẬN ĐẤU -->
-    <div class="settings-modal" id="settingsModal">
+    <!-- ====================================================================
+         NATIVE <dialog> MODAL: THIẾT LẬP HÌNH ẢNH 3D & ÂM THANH
+         ==================================================================== -->
+    <dialog class="settings-dialog" id="settingsModal">
       <div class="modal-card">
         <div class="modal-header">
           <h3>⚙️ THIẾT LẬP HÌNH ẢNH 3D & ÂM THANH</h3>
-          <button class="modal-close" id="btnCloseSettings">✕</button>
+          <button class="modal-close" id="btnCloseSettings" type="button" aria-label="Đóng">✕</button>
         </div>
 
         <div class="modal-body">
-          <!-- Preset chất lượng đồ họa -->
-          <div class="setting-group">
-            <label class="setting-label">Chất lượng đồ họa 3D:</label>
-            <select id="settingQuality" class="setting-select">
-              <option value="high">💎 Tuyệt Đẹp (Ultra 3D, Soft Shadows, Full FPS)</option>
-              <option value="medium">🌟 Tiêu Chuẩn (Cân bằng hiệu năng)</option>
-              <option value="low">⚡ Tiết Kiệm (Tắt bóng, tối ưu máy stream yếu)</option>
-            </select>
+          <!-- KẾT NỐI TIKTOK LIVE DỮ LIỆU THẬT -->
+          <div class="tiktok-connect-box">
+            <div class="tt-box-header">
+              <span class="setting-label">📡 Kết nối TikTok Live (Dữ liệu thật)</span>
+              <span class="tt-status-pill offline" id="modalTikTokBadge">Chưa kết nối</span>
+            </div>
+            <div class="tt-input-row">
+              <input
+                type="text"
+                id="modalTikTokInput"
+                class="setting-input"
+                placeholder="@username hoặc link TikTok Live"
+              />
+              <button class="btn-tt-connect" id="btnModalConnectTT" type="button">Kết nối</button>
+              <button class="btn-tt-disconnect" id="btnModalDisconnectTT" type="button">Ngắt</button>
+            </div>
+            <div class="tt-error-msg" id="modalTikTokError"></div>
           </div>
 
-          <!-- Góc nhìn Camera 3D -->
-          <div class="setting-group">
-            <label class="setting-label">Góc nhìn Camera 3D:</label>
-            <select id="settingCamera" class="setting-select">
-              <option value="cinematic">🎥 Toàn Cảnh Cinematic (Lượn quanh lôi đài)</option>
-              <option value="action">🎥 Hành Động (Bám sát giao tranh nóng)</option>
-              <option value="champion">👑 Theo Sát Võ Lâm Minh Chủ</option>
-              <option value="topdown">📐 Nhìn Từ Trên Xuống (Chiến thuật)</option>
-              <option value="orbit">🖱️ Tự Do (Dùng chuột kéo xoay 360° / Zoom)</option>
-            </select>
+          <div class="setting-selects-grid">
+            <div class="setting-group">
+              <label class="setting-label" for="settingQuality">Chất lượng 3D:</label>
+              <select id="settingQuality" class="setting-select">
+                <option value="high">💎 Tuyệt Đẹp (Ultra)</option>
+                <option value="medium">🌟 Tiêu Chuẩn (60 FPS)</option>
+                <option value="low">⚡ Tiết Kiệm (Low)</option>
+              </select>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label" for="settingCamera">Góc Camera 3D:</label>
+              <select id="settingCamera" class="setting-select">
+                <option value="broadcast">📺 Chuẩn Võ Đài Live</option>
+                <option value="director">🎬 Đạo Diễn Đa Góc (Tự đảo)</option>
+                <option value="low_hero">🔥 Góc Thấp Hoành Tráng</option>
+                <option value="side_left">⬅️ Góc Nghiêng Trái 45°</option>
+                <option value="side_right">➡️ Góc Nghiêng Phải 45°</option>
+                <option value="crowd_pov">👀 Nhìn Từ Khán Đài 3D</option>
+                <option value="cinematic">🎥 Xoay Toàn Cảnh 360°</option>
+                <option value="action">⚔️ Bám Sát Giao Tranh</option>
+                <option value="champion">👑 Võ Lâm Minh Chủ</option>
+                <option value="topdown">📐 Từ Trên Xuống</option>
+                <option value="orbit">🖱️ Tự Do Orbit 360°</option>
+              </select>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label" for="settingEnvironment">Không khí Võ Đài:</label>
+              <select id="settingEnvironment" class="setting-select">
+                <option value="embers">🔥 Tro Tàn Hoàng Hôn</option>
+                <option value="sakura">🌸 Hoa Đào Rơi</option>
+                <option value="snow">❄️ Tuyết Sơn Đỉnh</option>
+                <option value="fog">🌫️ Sương Mù Giang Hồ</option>
+                <option value="none">🚫 Tắt hạt môi trường</option>
+              </select>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label" for="settingAspect">Tỉ lệ khung hình:</label>
+              <select id="settingAspect" class="setting-select">
+                <option value="9:16">📱 Dọc 9:16 (TikTok)</option>
+                <option value="16:9">🖥️ Ngang 16:9 (Rộng)</option>
+              </select>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label" for="settingBossCadence">Tần suất Boss ngẫu nhiên:</label>
+              <select id="settingBossCadence" class="setting-select">
+                <option value="fast">⚡ Nhanh (15–30s)</option>
+                <option value="normal" selected>🔥 Chuẩn (25–50s)</option>
+                <option value="slow">⏳ Chậm (45–80s)</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Hiệu ứng thời tiết môi trường -->
-          <div class="setting-group">
-            <label class="setting-label">Hiệu ứng môi trường Lôi Đài:</label>
-            <select id="settingEnvironment" class="setting-select">
-              <option value="sakura">🌸 Cánh Hoa Đào Rơi (Hoa Sơn Phấn Đào)</option>
-              <option value="snow">❄️ Bão Tuyết Sơn Đỉnh (Hoa Sơn Đỉnh Tuyết)</option>
-              <option value="fire">🔥 Hỏa Diễm Tro Tàn (Quang Minh Đỉnh Hỏa)</option>
-              <option value="fog">🌫️ Sương Mù Huyền Bí (Đỉnh Mây Giang Hồ)</option>
-              <option value="none">🚫 Tắt hiệu ứng môi trường</option>
-            </select>
-          </div>
-
-          <!-- Tỉ lệ khung hình -->
-          <div class="setting-group">
-            <label class="setting-label">Tỉ lệ màn hình:</label>
-            <select id="settingAspect" class="setting-select">
-              <option value="9:16">📱 Dọc 9:16 (Chuẩn TikTok Live / OBS Browser Source)</option>
-              <option value="16:9">🖥️ Ngang 16:9 (Toàn màn hình / Màn hình rộng)</option>
-            </select>
-          </div>
-
-          <!-- Toggles chi tiết -->
           <div class="setting-toggles-grid">
             <label class="toggle-item">
-              <input type="checkbox" id="settingShadows" checked />
-              <span>Đổ bóng thời gian thực</span>
+              <input type="checkbox" id="settingRandomBoss" checked />
+              <span>👹 Boss ngẫu nhiên</span>
             </label>
-
+            <label class="toggle-item">
+              <input type="checkbox" id="settingGiftCamZoom" checked />
+              <span>🎥 Zoom khi tặng quà</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="settingShadows" checked />
+              <span>Đổ bóng thực</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="settingSpectators" checked />
+              <span>Khán giả 3D</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="settingBraziers" checked />
+              <span>Đài lửa động</span>
+            </label>
             <label class="toggle-item">
               <input type="checkbox" id="settingKiAura" checked />
-              <span>Hào quang Chân Khí (Ki Aura)</span>
+              <span>Hào quang Ki</span>
             </label>
-
             <label class="toggle-item">
               <input type="checkbox" id="settingSlashTrails" checked />
-              <span>Vệt chém Đao Quang Kiếm Ảnh</span>
+              <span>Vệt kiếm & tên</span>
             </label>
-
             <label class="toggle-item">
               <input type="checkbox" id="settingDamageNumbers" checked />
-              <span>Số sát thương 3D nảy (Floating Text)</span>
+              <span>Số Comic 3D</span>
             </label>
           </div>
 
-          <!-- Âm thanh -->
           <div class="setting-group">
-            <label class="setting-label">Âm lượng Binh Khí & Hiệu Ứng (SFX):</label>
+            <label class="setting-label" for="sfxVolumeSlider">Âm lượng Binh Khí & Hiệu Ứng (SFX):</label>
             <input type="range" id="sfxVolumeSlider" min="0" max="1" step="0.05" value="0.8" class="setting-slider" />
           </div>
 
           <div class="setting-actions">
-            <button class="btn-unlock-audio" id="btnUnlockAudio">
-              🔊 Bật Âm Thanh Kiếm Hiệp
+            <button class="btn-unlock-audio" id="btnUnlockAudio" type="button">
+              🔊 Bật Âm Thanh Kiếm Hiệp & Bình Luận Viên
             </button>
-            <a href="/admin" target="_blank" class="btn-admin-link">
-              🎛️ Bảng Điều Khiển Admin & TikTok
+            <div class="setting-btn-row">
+              <button class="btn-secondary-act" id="btnTriggerReg" type="button">🔄 Vòng Ghi Danh Mới</button>
+              <button class="btn-secondary-act" id="btnTriggerBoss" type="button">👹 Triệu Hồi Boss Ngay</button>
+            </div>
+            <a href="/admin" target="_blank" rel="noopener" class="btn-admin-link">
+              🎛️ Mở Bảng Quản Trị Admin & Kết Nối TikTok
             </a>
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   </div>
 
-  <!-- Load Audio Engine & Controller -->
   <script src="/js/audio.js"></script>
   <script type="module" src="/js/live.js"></script>
 </body>

@@ -158,6 +158,59 @@ class WuxiaAudioEngine {
     osc.stop(t + 0.35);
   }
 
+  playArrowShot() {
+    if (!this.sfxEnabled) return;
+    const ctx = this.ensureContext();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(620, t);
+    osc.frequency.exponentialRampToValueAtTime(140, t + 0.14);
+    gain.gain.setValueAtTime(0.24 * this.sfxVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.16);
+  }
+
+  playShieldBell() {
+    if (!this.sfxEnabled) return;
+    const ctx = this.ensureContext();
+    const t = ctx.currentTime;
+    [523.25, 783.99, 1046.5].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime((0.22 / (idx + 1)) * this.sfxVolume, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.85);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.88);
+    });
+  }
+
+  playHealChime() {
+    if (!this.sfxEnabled) return;
+    const ctx = this.ensureContext();
+    const t = ctx.currentTime;
+    [587.33, 880, 1174.66].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + idx * 0.06);
+      gain.gain.setValueAtTime(0.16 * this.sfxVolume, t + idx * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.06 + 0.42);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t + idx * 0.06);
+      osc.stop(t + idx * 0.06 + 0.45);
+    });
+  }
+
   playUltimateVfx() {
     if (!this.sfxEnabled) return;
     const ctx = this.ensureContext();
@@ -184,6 +237,50 @@ class WuxiaAudioEngine {
       osc.start(t);
       osc.stop(t + 1.2);
     });
+  }
+
+  playBossSpawnRoar() {
+    if (!this.sfxEnabled) return;
+    const ctx = this.ensureContext();
+    const t = ctx.currentTime;
+
+    // Tiếng kèn trận trầm + trống đồng uy áp khi Boss giáng lâm
+    [73.42, 110.0, 146.83].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = idx === 0 ? 'sawtooth' : 'triangle';
+      osc.frequency.setValueAtTime(freq * 1.15, t);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.72, t + 1.35);
+
+      gain.gain.setValueAtTime(0.01, t);
+      gain.gain.linearRampToValueAtTime((0.32 / (idx + 1)) * this.sfxVolume, t + 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 1.45);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 1.5);
+    });
+  }
+
+  playBossAoESlam() {
+    if (!this.sfxEnabled) return;
+    const ctx = this.ensureContext();
+    const t = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, t);
+    osc.frequency.exponentialRampToValueAtTime(28, t + 0.55);
+
+    gain.gain.setValueAtTime(0.45 * this.sfxVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.62);
   }
 
   playCoronation() {

@@ -3,452 +3,378 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bảng Điều Khiển JSON-RPC 2.0 — Hoa Sơn Luận Kiếm 3D</title>
+  <title>Bảng Điều Khiển Admin — VÕ ĐÀI 3D (Đi Tìm Võ Lâm Minh Chủ)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0c0712;
-      --card: #190e24;
-      --border: rgba(245, 158, 11, 0.35);
-      --gold: #f59e0b;
-      --gold-light: #fef08a;
+      --bg: #0c060e;
+      --card: #1a0d1c;
+      --border: rgba(244, 193, 69, 0.38);
+      --gold: #f4c145;
+      --gold-light: #fff1a8;
       --text: #f8fafc;
       --muted: #cbd5e1;
+      --pink: #fe2c55;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: radial-gradient(circle at 50% 0%, #29123c 0%, #08040d 80%);
+      background: radial-gradient(circle at 50% 0%, #33111c 0%, #09040b 78%);
       color: var(--text);
       font-family: 'Be Vietnam Pro', sans-serif;
       min-height: 100vh;
-      padding: 24px;
+      padding: 22px;
     }
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
+    .container { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
     .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--card);
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      padding: 16px 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px 22px;
     }
-    .top-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--gold-light);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .top-links {
-      display: flex;
-      gap: 10px;
-    }
+    .top-title { font-size: 20px; font-weight: 900; color: var(--gold-light); }
+    .top-links { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn {
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: #2a153d;
-      color: var(--gold-light);
-      padding: 10px 16px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 13px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
+      cursor: pointer; border: 1px solid var(--border); background: #2c1428; color: var(--gold-light);
+      padding: 9px 14px; border-radius: 10px; font-family: inherit; font-weight: 700; font-size: 12.5px;
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: transform 0.12s, background 0.15s;
     }
-    .btn:hover {
-      background: var(--gold);
-      color: #000;
-      border-color: #fff;
-    }
-    .btn.primary {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      color: #000;
-      border: none;
-    }
-    .btn.danger {
-      background: #dc2626;
-      color: #fff;
-      border-color: #ef4444;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr; }
-    }
+    .btn:hover { background: var(--gold); color: #1a0804; border-color: #fff; }
+    .btn:active { transform: scale(0.97); }
+    .btn.primary { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a0804; border: none; }
+    .btn.pink { background: linear-gradient(135deg, #ff3e6c, #fe2c55); color: #fff; border: none; }
+    .btn.danger { background: #b91c1c; color: #fff; border-color: #ef4444; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
     .card {
-      background: var(--card);
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 16px;
+      padding: 18px; display: flex; flex-direction: column; gap: 12px;
     }
     .card h2 {
-      font-size: 16px;
-      color: var(--gold-light);
-      border-bottom: 1px solid rgba(245, 158, 11, 0.2);
-      padding-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 15px; font-weight: 800; color: var(--gold-light);
+      border-bottom: 1px solid rgba(244, 193, 69, 0.22); padding-bottom: 8px;
     }
-    .row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     input[type="text"], select {
-      flex: 1;
-      background: #281639;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      outline: none;
+      flex: 1; min-width: 140px; background: #291327; border: 1px solid var(--border);
+      color: #fff; padding: 9px 12px; border-radius: 8px; font-family: inherit; font-size: 13px; outline: none;
     }
-    .badge-status {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 700;
-    }
+    .badge-status { padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; }
     .badge-status.connected { background: #22c55e; color: #052e16; }
     .badge-status.disconnected { background: #ef4444; color: #fff; }
-    .sect-buttons-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-    }
-    .action-buttons-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+    .weapons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+    .gifts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 8px; }
+    .checks-row { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; }
+    .checks-row label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
     .log-box {
-      background: #0d0714;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 12px;
-      height: 240px;
-      overflow-y: auto;
-      font-family: monospace;
-      font-size: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      background: #0d0611; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;
+      padding: 12px; height: 220px; overflow-y: auto; font-family: ui-monospace, monospace;
+      font-size: 12px; display: flex; flex-direction: column; gap: 5px;
     }
-    .log-entry {
-      color: #94a3b8;
-      border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
-      padding-bottom: 4px;
-    }
-    .log-entry.crit { color: #fde047; font-weight: bold; }
-    .log-entry.champ { color: #f59e0b; font-weight: bold; }
+    .log-entry { color: #cbd5e1; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px; }
+    .log-entry.gold { color: #fde047; font-weight: 700; }
+    .log-entry.pink { color: #f472b6; font-weight: 700; }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- TOP BAR -->
     <div class="top-bar">
-      <div class="top-title">
-        ⚔️ QUẢN TRỊ LÔI ĐÀI HOA SƠN LUẬN KIẾM 3D
-      </div>
+      <div class="top-title">⚔️ QUẢN TRỊ VÕ ĐÀI 3D — ĐI TÌM VÕ LÂM MINH CHỦ</div>
       <div class="top-links">
-        <a href="/" target="_blank" class="btn primary">📺 Mở Màn Hình 3D (OBS 9:16 / 16:9)</a>
+        <a href="/" target="_blank" rel="noopener" class="btn primary">📺 Màn Hình Võ Đài 3D (9:16)</a>
+        <a href="/?obs=1" target="_blank" rel="noopener" class="btn pink">🎥 Màn Hình OBS (?obs=1 ẩn nút ⚙️)</a>
       </div>
     </div>
 
-    <!-- MAIN GRID -->
     <div class="grid">
-      <!-- 1. KẾT NỐI TIKTOK LIVE -->
+      <!-- 1. KẾT NỐI TIKTOK LIVE (DỮ LIỆU THẬT) -->
       <div class="card">
-        <h2>📡 KẾT NỐI TIKTOK LIVE CHAT & GIFT</h2>
+        <h2>📡 KẾT NỐI TIKTOK LIVE (DỮ LIỆU THẬT)</h2>
         <div class="row">
-          <input type="text" id="tiktokUsernameInput" placeholder="Nhập @username hoặc link TikTok Live" value="wuxia_live" />
-          <button class="btn primary" id="btnConnectTikTok">Kết Nối</button>
-          <button class="btn danger" id="btnDisconnectTikTok">Ngắt</button>
+          <input type="text" id="tiktokUsernameInput" placeholder="Nhập @username hoặc link phòng Live TikTok..." value="" />
+          <button class="btn primary" id="btnConnectTikTok" type="button">Kết Nối</button>
+          <button class="btn danger" id="btnDisconnectTikTok" type="button">Ngắt</button>
         </div>
         <div class="row">
-          <span>Trạng thái:</span>
+          <span style="font-size:12.5px;">Trạng thái:</span>
           <span class="badge-status disconnected" id="tiktokStatusBadge">Chưa kết nối</span>
-          <span id="tiktokViewersText" style="font-size: 12px; color: var(--muted); margin-left: 10px;"></span>
+          <span id="tiktokViewersText" style="font-size: 12px; color: var(--muted);"></span>
         </div>
-        <p style="font-size: 12px; color: var(--muted); line-height: 1.5;">
-          💡 Người xem chỉ cần vào xem livestream TikTok và comment <strong>"chiến"</strong> hoặc tên môn phái/binh khí, nhân vật 3D sẽ xuất hiện trên lôi đài!
-        </p>
+        <div id="tiktokErrorText" style="font-size:12px; color:#fca5a5; display:none;"></div>
+        <div class="row">
+          <button class="btn" id="btnResetRound" type="button">🔄 Vòng Ghi Danh Mới</button>
+          <button class="btn primary" id="btnStartMatchNow" type="button">⚔️ Bắt Đầu Giao Đấu</button>
+          <button class="btn pink" id="btnSpawnBossAdmin" type="button">👹 Triệu Hồi Boss Ngẫu Nhiên</button>
+          <button class="btn danger" id="btnClearAllData" type="button">🗑️ Xóa Dữ Liệu / Về Trận 1</button>
+        </div>
+        <div class="checks-row">
+          <label><input type="checkbox" id="chkRandomBoss" checked /> 👹 Tự xuất hiện Boss ngẫu nhiên</label>
+          <label><input type="checkbox" id="chkAutoSim" /> 🤖 Bật giả lập Demo (tắt khi Live thật)</label>
+          <label><input type="checkbox" id="chkAutoFill" /> 🥋 Tự thêm NPC (tắt khi Live thật)</label>
+        </div>
+        <div class="row">
+          <label style="font-size:12px; color:var(--muted);">Tần suất Boss ngẫu nhiên:</label>
+          <select id="adminBossCadence" style="max-width:210px;">
+            <option value="fast">⚡ Nhanh (15–30 giây)</option>
+            <option value="normal" selected>🔥 Chuẩn (25–50 giây)</option>
+            <option value="slow">⏳ Chậm (45–80 giây)</option>
+          </select>
+        </div>
       </div>
 
       <!-- 2. THIẾT LẬP HÌNH ẢNH 3D TỪ XA -->
       <div class="card">
         <h2>⚙️ THIẾT LẬP HÌNH ẢNH 3D TỪ XA</h2>
         <div class="row">
-          <label style="width: 120px; font-size: 13px;">Chất lượng 3D:</label>
+          <label style="width:115px;font-size:12.5px;">Chất lượng 3D:</label>
           <select id="adminQuality">
             <option value="high">💎 Tuyệt Đẹp (Ultra 3D)</option>
             <option value="medium">🌟 Tiêu Chuẩn (Medium)</option>
-            <option value="low">⚡ Tiết Kiệm (Low - Không bóng)</option>
+            <option value="low">⚡ Tiết Kiệm (Low)</option>
           </select>
         </div>
         <div class="row">
-          <label style="width: 120px; font-size: 13px;">Góc Camera:</label>
+          <label style="width:115px;font-size:12.5px;">Góc Camera 3D:</label>
           <select id="adminCamera">
-            <option value="cinematic">🎥 Toàn Cảnh Cinematic</option>
-            <option value="action">🎥 Hành Động Zoom Theo Đấu</option>
-            <option value="champion">👑 Theo Sát Võ Lâm Minh Chủ</option>
+            <option value="broadcast">📺 Chuẩn Võ Đài Live (9:16)</option>
+            <option value="director">🎬 Đạo Diễn Đa Góc (Tự đảo góc)</option>
+            <option value="low_hero">🔥 Góc Thấp Hoành Tráng</option>
+            <option value="side_left">⬅️ Góc Nghiêng Cánh Trái 45°</option>
+            <option value="side_right">➡️ Góc Nghiêng Cánh Phải 45°</option>
+            <option value="crowd_pov">👀 Nhìn Từ Khán Đài 3D</option>
+            <option value="cinematic">🎥 Xoay Toàn Cảnh 360°</option>
+            <option value="action">⚔️ Bám Sát Giao Tranh</option>
+            <option value="champion">👑 Khóa Võ Lâm Minh Chủ</option>
             <option value="topdown">📐 Nhìn Từ Trên Xuống</option>
-            <option value="orbit">🖱️ Tự Do (Orbit Drag)</option>
+            <option value="orbit">🖱️ Tự Do Kéo Chuột 360°</option>
           </select>
         </div>
+        <div class="row" style="gap:6px;">
+          <button class="btn" onclick="quickCam('broadcast')" type="button" style="padding:6px 9px;font-size:11.5px;">📺 Live</button>
+          <button class="btn" onclick="quickCam('director')" type="button" style="padding:6px 9px;font-size:11.5px;">🎬 Đa Góc</button>
+          <button class="btn" onclick="quickCam('low_hero')" type="button" style="padding:6px 9px;font-size:11.5px;">🔥 Thấp</button>
+          <button class="btn" onclick="quickCam('side_left')" type="button" style="padding:6px 9px;font-size:11.5px;">⬅️ Trái</button>
+          <button class="btn" onclick="quickCam('side_right')" type="button" style="padding:6px 9px;font-size:11.5px;">➡️ Phải</button>
+          <button class="btn" onclick="quickCam('crowd_pov')" type="button" style="padding:6px 9px;font-size:11.5px;">👀 Khán Đài</button>
+          <button class="btn" onclick="quickCam('cinematic')" type="button" style="padding:6px 9px;font-size:11.5px;">🎥 360°</button>
+        </div>
         <div class="row">
-          <label style="width: 120px; font-size: 13px;">Thời tiết Lôi Đài:</label>
+          <label style="width:115px;font-size:12.5px;">Không khí 3D:</label>
           <select id="adminEnvironment">
-            <option value="sakura">🌸 Cánh Hoa Đào Rơi</option>
-            <option value="snow">❄️ Bão Tuyết Sơn Đỉnh</option>
-            <option value="fire">🔥 Hỏa Diễm Tro Tàn</option>
-            <option value="fog">🌫️ Sương Mù Huyền Bí</option>
+            <option value="embers">🔥 Tro Tàn Hoàng Hôn</option>
+            <option value="sakura">🌸 Hoa Đào Rơi</option>
+            <option value="snow">❄️ Tuyết Sơn Đỉnh</option>
+            <option value="fog">🌫️ Sương Mù</option>
             <option value="none">🚫 Tắt</option>
           </select>
         </div>
-        <button class="btn primary" id="btnApply3D">Đồng Bộ Cài Đặt 3D Xuống Màn Hình</button>
+        <div class="checks-row">
+          <label><input type="checkbox" id="adminGiftCamZoom" checked /> 🎥 Zoom khi tặng quà</label>
+          <label><input type="checkbox" id="adminShadows" checked /> Đổ bóng</label>
+          <label><input type="checkbox" id="adminSpectators" checked /> Khán giả 3D</label>
+          <label><input type="checkbox" id="adminBraziers" checked /> Đài lửa</label>
+        </div>
+        <button class="btn primary" id="btnApply3D" type="button">✅ Đồng Bộ Thiết Lập 3D Ngay</button>
       </div>
 
-      <!-- 3. MÔ PHỎNG TEST GIA NHẬP MÔN PHÁI & BINH KHÍ -->
+      <!-- 3. GIẢ LẬP 7 BINH KHÍ & MÔN PHÁI -->
       <div class="card">
-        <h2>🥋 GIẢ LẬP GIA NHẬP 6 ĐẠI MÔN PHÁI</h2>
+        <h2>🥋 TEST GÕ LỆNH & 7 BINH KHÍ (KIẾM • THƯƠNG • ĐAO • CÔN • CUNG • TIÊU • QUYỀN)</h2>
         <div class="row">
-          <input type="text" id="simUserInput" placeholder="Tên hiệp khách giả lập" value="Tiêu Phong" />
-          <button class="btn" id="btnSimRandomJoin">⚔️ Gõ "Chiến" (Ngẫu nhiên)</button>
+          <input type="text" id="simUserInput" placeholder="Tên người xem" value="Lion_King 🐯" />
+          <button class="btn primary" id="btnSimJoinRandom" type="button">⚔️ Gõ "chiến"</button>
         </div>
-        <div class="sect-buttons-grid">
-          <button class="btn" onclick="simJoinSect('thieulam', 'Hàng Ma Côn')">📿 Thiếu Lâm (Côn)</button>
-          <button class="btn" onclick="simJoinSect('vodang', 'Thái Cực Kiếm')">☯️ Võ Đang (Kiếm)</button>
-          <button class="btn" onclick="simJoinSect('caibang', 'Đả Cẩu Bổng')">🐉 Cái Bang (Bổng)</button>
-          <button class="btn" onclick="simJoinSect('ngami', 'Ỷ Thiên Kiếm')">🌸 Nga Mi (Kiếm)</button>
-          <button class="btn" onclick="simJoinSect('minhgiao', 'Huyết Long Đao')">🔥 Minh Giáo (Đao)</button>
-          <button class="btn" onclick="simJoinSect('duongmon', 'Ám Khí Phi Tiêu')">⚡ Đường Môn (Ám Khí)</button>
+        <div class="weapons-grid">
+          <button class="btn" onclick="simCmd('kiếm')" type="button">☯️ Võ Đang (Kiếm)</button>
+          <button class="btn" onclick="simCmd('thương')" type="button">🔱 Dương Gia (Thương)</button>
+          <button class="btn" onclick="simCmd('đao')" type="button">🔥 Minh Giáo (Đao)</button>
+          <button class="btn" onclick="simCmd('côn')" type="button">📿 Thiếu Lâm (Côn)</button>
+          <button class="btn" onclick="simCmd('cung')" type="button">🏹 Tiêu Dao (Cung)</button>
+          <button class="btn" onclick="simCmd('tiêu')" type="button">⚡ Đường Môn (Tiêu)</button>
+          <button class="btn" onclick="simCmd('quyền')" type="button">🐉 Cái Bang (Quyền)</button>
+          <button class="btn" onclick="simCmd('chạy')" type="button">💨 Lệnh "chạy" (Né)</button>
         </div>
       </div>
 
-      <!-- 4. MÔ PHỎNG CHIẾN ĐẤU & GIFT TUYỆT KỸ -->
+      <!-- 4. GIẢ LẬP 4 KỸ NĂNG TẶNG QUÀ & THẢ TIM -->
       <div class="card">
-        <h2>⚔️ GIẢ LẬP CHIẾN ĐẤU & TUYỆT KỸ</h2>
-        <div class="action-buttons-grid">
-          <button class="btn" id="btnSimAttack">⚔️ Đánh Thường (Liên Hoàn)</button>
-          <button class="btn" id="btnSimCrit">💥 Bạo Kích Vô Song</button>
-          <button class="btn" id="btnSimHeal">💚 Hồi Máu & Khí Công</button>
-          <button class="btn" id="btnSimLike">❤️ Thả 10 Tim (Buff Sức Mạnh)</button>
-          <button class="btn primary" id="btnSimGift">🎁 Tặng Quà (Đại Tuyệt Kỹ Trấn Phái)</button>
-          <button class="btn danger" id="btnResetRound">🔄 Bắt Đầu Vòng Mới (Hồi Sinh)</button>
-        </div>
-        <div class="row" style="margin-top: 8px;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-            <input type="checkbox" id="chkAutoSim" style="width: 18px; height: 18px;" />
-            <span style="font-weight: 700; color: var(--gold-light);">🤖 Tự Động Chạy Trận Đấu Giả Lập Liên Tục</span>
-          </label>
+        <h2>🎁 TEST 4 KỸ NĂNG TẶNG QUÀ & TIM MA ĐẤU</h2>
+        <div class="gifts-grid">
+          <button class="btn" onclick="simGift('rose')" type="button">🌹 Hoa hồng (+20 máu / Vào đấu)</button>
+          <button class="btn" onclick="simGift('gg')" type="button"><img src="/assets/gifts/gg.png" alt="GG" style="width:18px;height:18px;object-fit:contain;" /> GG (Hồi máu)</button>
+          <button class="btn" onclick="simGift('giftbox')" type="button"><img src="/assets/gifts/giftbox.png" alt="Hộp quà bóng bay" style="width:18px;height:18px;object-fit:contain;" /> Hộp quà bóng bay (Khổng lồ)</button>
+          <button class="btn primary" onclick="simGift('heart_hands')" type="button"><img src="/assets/gifts/heart_hands.png" alt="Thả tim" style="width:18px;height:18px;object-fit:contain;" /> Thả tim (Hồi sinh / Thần Võ)</button>
+          <button class="btn pink" onclick="simLike(150)" type="button">❤️ +150 Tim (Ma Đấu)</button>
         </div>
       </div>
     </div>
 
-    <!-- 5. NHẬT KÝ CHIẾN TRƯỜNG THỜI GIAN THỰC -->
+    <!-- 5. NHẬT KÝ SỰ KIỆN -->
     <div class="card">
-      <h2>📜 NHẬT KÝ CHIẾN ĐẤU THỜI GIAN THỰC (REAL-TIME EVENT LOG)</h2>
+      <h2>📜 NHẬT KÝ VÕ ĐÀI THỜI GIAN THỰC</h2>
       <div class="log-box" id="adminLogBox"></div>
     </div>
   </div>
 
   <script>
     async function sendRpc(method, params = {}) {
-      try {
-        const resp = await fetch('/rpc', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params })
-        });
-        const data = await resp.json();
-        return data.result;
-      } catch (err) {
-        console.error('RPC Error:', err);
-      }
+      const resp = await fetch('/rpc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params })
+      });
+      return resp.json();
     }
 
-    // Kết nối TikTok Live
-    document.getElementById('btnConnectTikTok').addEventListener('click', async () => {
-      const user = document.getElementById('tiktokUsernameInput').value.trim();
-      if (!user) return alert('Vui lòng nhập @username TikTok!');
-      try {
-        await sendRpc('live.connect', { username: user });
-      } catch (e) {
-        alert('Lỗi: ' + e.message);
-      }
-    });
-
-    document.getElementById('btnDisconnectTikTok').addEventListener('click', async () => {
-      await sendRpc('live.disconnect');
-    });
-
-    // Cài đặt 3D
-    document.getElementById('btnApply3D').addEventListener('click', async () => {
-      const quality = document.getElementById('adminQuality').value;
-      const cameraMode = document.getElementById('adminCamera').value;
-      const environmentFx = document.getElementById('adminEnvironment').value;
-
-      await sendRpc('wuxia.updateSettings', {
-        graphics3D: { quality, cameraMode, environmentFx }
-      });
-      alert('Đã gửi cấu hình 3D xuống màn hình lôi đài!');
-    });
-
-    // Giả lập
-    function getSimUser() {
-      return document.getElementById('simUserInput').value.trim() || 'Vô Danh';
+    function simUser() {
+      return document.getElementById('simUserInput').value.trim() || 'Vô Danh Hiệp';
     }
 
-    window.simJoinSect = async function(sect, weapon) {
-      const user = getSimUser();
-      await sendRpc('wuxia.join', {
-        user,
-        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
-        chosenSect: sect,
-        chosenWeapon: weapon
-      });
+    window.simCmd = (comment) => {
+      const user = simUser();
+      sendRpc('wuxia.comment', { comment, user, uniqueId: user.toLowerCase().replace(/\s+/g, '_') });
     };
 
-    document.getElementById('btnSimRandomJoin').addEventListener('click', async () => {
-      const user = getSimUser();
-      await sendRpc('wuxia.comment', {
-        comment: 'chiến',
-        user,
-        uniqueId: user.toLowerCase().replace(/\\s+/g, '')
-      });
-    });
+    window.simGift = (skillId) => {
+      const user = simUser();
+      sendRpc('wuxia.giftSkill', { skillId, user, uniqueId: user.toLowerCase().replace(/\s+/g, '_'), repeatCount: 1 });
+    };
 
-    document.getElementById('btnSimAttack').addEventListener('click', async () => {
-      const user = getSimUser();
-      await sendRpc('wuxia.attack', {
-        user,
-        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
-        isCrit: false
-      });
-    });
+    window.simLike = (count) => {
+      const user = simUser();
+      sendRpc('wuxia.buffLike', { user, uniqueId: user.toLowerCase().replace(/\s+/g, '_'), count });
+    };
 
-    document.getElementById('btnSimCrit').addEventListener('click', async () => {
-      const user = getSimUser();
-      await sendRpc('wuxia.attack', {
-        user,
-        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
-        isCrit: true
-      });
-    });
-
-    document.getElementById('btnSimHeal').addEventListener('click', async () => {
-      const user = getSimUser();
-      await sendRpc('wuxia.heal', {
-        user,
-        uniqueId: user.toLowerCase().replace(/\\s+/g, '')
-      });
-    });
-
-    document.getElementById('btnSimLike').addEventListener('click', async () => {
-      const user = getSimUser();
-      await sendRpc('wuxia.buffLike', {
-        user,
-        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
-        count: 10
-      });
-    });
-
-    document.getElementById('btnSimGift').addEventListener('click', async () => {
-      const user = getSimUser();
-      await sendRpc('wuxia.giftUltimate', {
-        user,
-        uniqueId: user.toLowerCase().replace(/\\s+/g, ''),
-        giftName: 'Kim Long Trấn Thiên Kiếm',
-        coins: 199
-      });
-    });
-
-    document.getElementById('btnResetRound').addEventListener('click', async () => {
-      if (confirm('Bắt đầu vòng đấu mới và hồi sinh toàn bộ đấu sĩ?')) {
-        await sendRpc('wuxia.resetRound');
+    document.getElementById('btnSimJoinRandom').addEventListener('click', () => simCmd('chiến'));
+    document.getElementById('btnResetRound').addEventListener('click', () => sendRpc('wuxia.resetRound'));
+    document.getElementById('btnStartMatchNow').addEventListener('click', () => sendRpc('wuxia.startMatchNow'));
+    document.getElementById('btnSpawnBossAdmin').addEventListener('click', () => sendRpc('wuxia.spawnBoss'));
+    document.getElementById('btnClearAllData').addEventListener('click', () => {
+      if (confirm('Xóa sạch toàn bộ dữ liệu trận đấu, Bảng Vàng và đưa về Trận 1?')) {
+        sendRpc('wuxia.clearAllData');
       }
     });
 
-    document.getElementById('chkAutoSim').addEventListener('change', async (e) => {
-      await sendRpc('live.setAutoSim', { enabled: e.target.checked });
+    const ADMIN_BOSS_PRESETS = {
+      fast: { bossMinIntervalSec: 15, bossMaxIntervalSec: 30 },
+      normal: { bossMinIntervalSec: 25, bossMaxIntervalSec: 50 },
+      slow: { bossMinIntervalSec: 45, bossMaxIntervalSec: 80 }
+    };
+    document.getElementById('chkRandomBoss').addEventListener('change', (e) => {
+      sendRpc('wuxia.updateSettings', { randomBossEnabled: e.target.checked });
+      addLog(e.target.checked ? '👹 Đã BẬT Boss xuất hiện ngẫu nhiên!' : '⏸️ Đã TẮT Boss xuất hiện ngẫu nhiên.', 'gold');
+    });
+    document.getElementById('adminBossCadence').addEventListener('change', (e) => {
+      const preset = ADMIN_BOSS_PRESETS[e.target.value] || ADMIN_BOSS_PRESETS.normal;
+      sendRpc('wuxia.updateSettings', preset);
+      addLog(`⏱️ Đã đổi tần suất Boss ngẫu nhiên: ${preset.bossMinIntervalSec}–${preset.bossMaxIntervalSec}s`, 'gold');
     });
 
-    // WebSocket lắng nghe event để ghi log
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    document.getElementById('btnConnectTikTok').addEventListener('click', async () => {
+      const username = document.getElementById('tiktokUsernameInput').value.trim();
+      const errEl = document.getElementById('tiktokErrorText');
+      if (!username) return;
+      errEl.style.display = 'none';
+      const res = await sendRpc('live.connect', { username });
+      if (res.error) {
+        errEl.textContent = '⚠️ ' + res.error.message;
+        errEl.style.display = 'block';
+      }
+    });
+    document.getElementById('btnDisconnectTikTok').addEventListener('click', () => sendRpc('live.disconnect'));
 
+    document.getElementById('chkAutoSim').addEventListener('change', (e) => {
+      sendRpc('live.setAutoSim', { enabled: e.target.checked });
+    });
+    document.getElementById('chkAutoFill').addEventListener('change', (e) => {
+      sendRpc('wuxia.updateSettings', { autoFillBots: e.target.checked });
+    });
+
+    window.quickCam = async (cameraMode) => {
+      document.getElementById('adminCamera').value = cameraMode;
+      await sendRpc('wuxia.updateSettings', { graphics3D: { cameraMode } });
+      addLog(`🎥 Đã chuyển góc Camera 3D → ${cameraMode}`, 'gold');
+    };
+
+    document.getElementById('btnApply3D').addEventListener('click', async () => {
+      await sendRpc('wuxia.updateSettings', {
+        graphics3D: {
+          quality: document.getElementById('adminQuality').value,
+          cameraMode: document.getElementById('adminCamera').value,
+          environmentFx: document.getElementById('adminEnvironment').value,
+          giftCamZoom: document.getElementById('adminGiftCamZoom').checked,
+          shadows: document.getElementById('adminShadows').checked,
+          spectators: document.getElementById('adminSpectators').checked,
+          braziers: document.getElementById('adminBraziers').checked
+        }
+      });
+      addLog('⚙️ Đã đồng bộ thiết lập hình ảnh 3D xuống tất cả màn hình!', 'gold');
+    });
+
+    function addLog(text, cls = '') {
+      const box = document.getElementById('adminLogBox');
+      const div = document.createElement('div');
+      div.className = `log-entry ${cls}`;
+      div.textContent = `[${new Date().toLocaleTimeString('vi-VN')}] ${text}`;
+      box.prepend(div);
+      while (box.children.length > 60) box.lastChild.remove();
+    }
+
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${proto}//${window.location.host}/ws`);
     ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
         if (msg.method === 'tiktok.status') {
           const t = msg.params;
           const badge = document.getElementById('tiktokStatusBadge');
-          if (t.connected) {
-            badge.className = 'badge-status connected';
-            badge.innerText = `Đã kết nối: @${t.username}`;
-            document.getElementById('tiktokViewersText').innerText = `(${t.viewerCount || 0} người xem)`;
+          const errEl = document.getElementById('tiktokErrorText');
+          const inp = document.getElementById('tiktokUsernameInput');
+          if (inp && t.username && !inp.value) inp.value = t.username;
+          badge.className = `badge-status ${t.connected ? 'connected' : 'disconnected'}`;
+          badge.textContent = t.connected ? `Đã nối @${t.username}` : (t.connecting ? `Đang nối @${t.username}...` : 'Chưa kết nối');
+          document.getElementById('tiktokViewersText').textContent = t.viewerCount ? `(${t.viewerCount} mắt xem)` : '';
+          if (t.lastError && !t.connected) {
+            errEl.textContent = '⚠️ ' + t.lastError;
+            errEl.style.display = 'block';
           } else {
-            badge.className = 'badge-status disconnected';
-            badge.innerText = t.connecting ? 'Đang kết nối...' : 'Chưa kết nối';
-            document.getElementById('tiktokViewersText').innerText = '';
+            errEl.style.display = 'none';
           }
-        } else if (msg.method === 'wuxia.event') {
-          addLogEntry(msg.params.event);
         } else if (msg.method === 'wuxia.state') {
-          document.getElementById('chkAutoSim').checked = Boolean(msg.params.settings?.autoSim);
+          const s = msg.params;
+          document.getElementById('chkAutoSim').checked = Boolean(s.settings?.autoSim);
+          document.getElementById('chkAutoFill').checked = Boolean(s.settings?.autoFillBots);
+          document.getElementById('chkRandomBoss').checked = s.settings?.randomBossEnabled !== false;
+          const minS = Number(s.settings?.bossMinIntervalSec) || 25;
+          document.getElementById('adminBossCadence').value = minS <= 18 ? 'fast' : minS >= 40 ? 'slow' : 'normal';
+          if (s.settings?.graphics3D) {
+            const g = s.settings.graphics3D;
+            if (g.cameraMode) document.getElementById('adminCamera').value = g.cameraMode;
+            if (g.quality) document.getElementById('adminQuality').value = g.quality;
+            if (g.environmentFx) document.getElementById('adminEnvironment').value = g.environmentFx;
+            document.getElementById('adminGiftCamZoom').checked = g.giftCamZoom !== false;
+            document.getElementById('adminShadows').checked = g.shadows !== false;
+            document.getElementById('adminSpectators').checked = g.spectators !== false;
+            document.getElementById('adminBraziers').checked = g.braziers !== false;
+          }
+          const inp = document.getElementById('tiktokUsernameInput');
+          if (inp && s.tiktok?.username && !inp.value) inp.value = s.tiktok.username;
+        } else if (msg.method === 'wuxia.event') {
+          const ev = msg.params?.event;
+          if (!ev) return;
+          if (ev.type === 'kill') addLog(`⚔️ ${ev.killerUser} hạ gục ${ev.victimUser} (Tổng: ${ev.killerKills} hạ gục)`, 'gold');
+          else if (ev.type === 'giftSkill') addLog(`🎁 ${ev.user} gửi ${ev.giftIcon} ${ev.giftName} → ${ev.skillLabel}`, 'pink');
+          else if (ev.type === 'coronation' && ev.champion) addLog(`👑 ${ev.champion.user} ĐĂNG QUANG VÕ LÂM MINH CHỦ TRẬN ${ev.round}!`, 'gold');
+          else if (ev.type === 'bossSpawn') addLog(`👹 ${ev.boss?.user || 'ĐẠI BOSS'} (${ev.boss?.maxHp || 0} HP) GIÁNG LÂM! Toàn võ lâm hợp lực đánh Boss!`, 'pink');
+          else if (ev.type === 'bossEnrage') addLog(`⚠️ ${ev.bossName} BẠO PHÁT CUỒNG NỘ (${ev.skillName})!`, 'pink');
+          else if (ev.type === 'bossAoE') addLog(`💥 ${ev.bossName} tung tuyệt kỹ ${ev.skillName} trúng ${ev.hitCount || 0} hiệp khách!`, 'pink');
+          else if (ev.type === 'bossDefeated') addLog(`🏆 ${ev.killerUser} KẾT LIỄU ${ev.bossName} (+${ev.slayerBonus || 3} hạ gục) • MVP: ${ev.mvpUser} (${ev.mvpDamage} DMG)!`, 'gold');
+          else if (ev.type === 'bossEscaped') addLog(`💨 ${ev.bossName} đã rút lui • Anh hùng hồi sinh quay lại tỉ thí!`, 'gold');
+          else if (ev.type === 'pvpResumed') addLog('⚔️ BOSS ĐÃ CHẾT — TOÀN VÕ LÂM QUAY LẠI TỈ THÍ!', 'gold');
+          else if (ev.type === 'join' && ev.fighter) addLog(`🥋 ${ev.fighter.user} cầm ${ev.weapon} bước lên võ đài!`);
         }
       } catch (_) {}
     };
-
-    function addLogEntry(evt) {
-      const box = document.getElementById('adminLogBox');
-      const item = document.createElement('div');
-      item.className = 'log-entry';
-
-      const time = new Date().toLocaleTimeString('vi-VN');
-      if (evt.type === 'attack') {
-        if (evt.isCrit) item.classList.add('crit');
-        item.innerText = `[${time}] ⚔️ ${evt.attacker.user} xuất chiêu ${evt.skillName} gây ${evt.damage} sát thương lên ${evt.target ? evt.target.user : 'khoảng không'}${evt.isKill ? ' (ĐOẠT MẠNG!)' : ''}`;
-      } else if (evt.type === 'ultimate') {
-        item.classList.add('champ');
-        item.innerText = `[${time}] 💥 ${evt.fighter.user} dâng ${evt.giftName}, phóng thích đại tuyệt kỹ ${evt.ultimateSkill} (Quét ${evt.aoeDamage} sát thương)!`;
-      } else if (evt.type === 'coronation') {
-        item.classList.add('champ');
-        item.innerText = `[${time}] 👑 THIÊN HẠ QUY TÂM! ${evt.champion.user} ĐĂNG QUANG VÕ LÂM MINH CHỦ!`;
-      } else if (evt.type === 'join') {
-        item.innerText = `[${time}] ⚡ Hiệp khách ${evt.user} gia nhập phái ${evt.sect} với ${evt.weapon}!`;
-      } else if (evt.type === 'heal') {
-        item.innerText = `[${time}] 💚 ${evt.fighter.user} hồi phục ${evt.healAmount} sinh lực!`;
-      }
-      box.prepend(item);
-      while (box.children.length > 50) {
-        box.lastChild.remove();
-      }
-    }
   </script>
 </body>
 </html>
