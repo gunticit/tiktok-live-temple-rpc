@@ -104,20 +104,30 @@ function parseGplxAnswerFromComment(commentText) {
 
   // Map 1-4 -> A-D (Vietnamese 600-question GPLX tests often number answers 1, 2, 3, 4)
   const digitMap = { '1': 'A', '2': 'B', '3': 'C', '4': 'D' };
+  const normalizeToken = (t) => {
+    const up = String(t || '').toUpperCase();
+    return digitMap[up] || up;
+  };
 
-  // 1. Direct single letter or digit, optionally wrapped with punctuation/emojis/short polite particle
-  // Examples: "A", "b.", "C!", "d ạ", "B nha", "2", "3 đi thầy"
-  const directMatch = raw.match(/^\s*([a-dA-D1-4])(?:\s*[.,!?)}\]:;]*\s*(?:ạ|nhé|nha|nhỉ|luôn|chắc chắn|đúng|thầy|ơi|đi|nhaa|ne|nè)?\s*[.,!?]*)\s*$/iu);
+  // Loại bỏ dấu ngoặc bao quanh toàn bộ câu như "(A)", "[B]", "【2】"
+  const unwrapped = raw.replace(/^[\s([【{]+|[\s)\]】}]+$/g, '').trim();
+  if (!unwrapped) return null;
+
+  // 1. Trả lời trực tiếp bằng chữ cái/số (hỗ trợ lặp nhấn mạnh "AAA", "222", kèm từ đệm/emoji như "B thầy ơi", "2 ạ", "A 🔥", "C chắc luôn")
+  const directMatch = unwrapped.match(
+    /^([a-dA-D1-4])\1{0,5}(?:\s*[.,!?)}\]:;]*\s*(?:(?:ạ|nhé|nhe|nha|nhaa|nhỉ|nhi|luôn|luon|chắc(?:\s*chắn|\s*luôn)?|chac(?:\s*chan|\s*luon)?|đúng(?:\s*rồi|\s*không|\s*ko)?|dung|chuẩn|chuan|chốt|chot|rồi|roi|thầy(?:\s*ơi)?|thay(?:\s*oi)?|ơi|oi|đi(?:\s*thầy)?|di|ne|nè|nhá|nha|kìa|kia|nhé\s*thầy|ạ\s*thầy)\s*){0,3}[\s.,!?~\-❤️🔥👍😂🎉👏✨🚗🚙💯✅👌🙏]*)$/iu
+  );
   if (directMatch) {
-    const token = directMatch[1].toUpperCase();
-    return digitMap[token] || token;
+    return normalizeToken(directMatch[1]);
   }
 
-  // 2. Explicit answer phrasing: "đáp án B", "chọn C", "câu A", "ý 2", "dap an d"
-  const explicitMatch = raw.match(/(?:đáp\s*án|dap\s*an|chọn|chon|ý|y\s*số|cau\s*trả\s*lời|trả\s*lời)\s*[:=\-]?\s*([a-dA-D1-4])(?:\b|$)/iu);
+  // 2. Nói rõ đáp án trong câu bình luận: "đáp án B", "chọn C", "em chọn 2", "chốt D", "ý 3", "phương án A", "số 2", "trả lời B"
+  // Đảm bảo ký tự ngay sau token KHÔNG phải chữ/số (tránh bắt nhầm "số 10" hoặc "câu 486")
+  const explicitMatch = unwrapped.match(
+    /(?:^|[\s,.;:!?])(?:đáp\s*án|dap\s*an|chọn|chon|chốt|chot|phương\s*án|phuong\s*an|ý(?:\s*số)?|y(?:\s*so)?|số|so|câu\s*trả\s*lời|cau\s*tra\s*loi|trả\s*lời|tra\s*loi)\s*(?:là|la)?\s*[:=\-]?\s*([a-dA-D1-4])(?=$|[\s.,!?)}\]:;❤️🔥👍😂🎉👏✨🚗🚙💯✅👌🙏])/iu
+  );
   if (explicitMatch) {
-    const token = explicitMatch[1].toUpperCase();
-    return digitMap[token] || token;
+    return normalizeToken(explicitMatch[1]);
   }
 
   return null;
@@ -160,7 +170,10 @@ class GplxEngine {
     };
 
     // Per-round tracking for answers & TikTok Gift x2 boosts
+    this.roundStartedAt = Date.now();
+    this.countdownStartedAt = this.phase === 'countdown' ? this.roundStartedAt : null;
     this.questionAnswers = new Map();       // userKey -> answerRecord
+    this.recentPredictions = [];            // Danh sách người bình luận dự đoán thực tế gần nhất ở câu hiện tại
     this.activeGiftBoosts = new Map();      // userKey -> giftBoostRecord (for current question)
     this.nextQuestionGiftBoosts = new Map();// userKey -> giftBoostRecord (carry-over to next question)
     this.recentGifts = [];                  // Recent gift alerts for UI/debug
@@ -423,28 +436,55 @@ class GplxEngine {
     return segments;
   }
 
-  syncQuestionState() {
+  recomputeRoundStats() {
     const q = this.getCurrentQuestion();
-    // Không tiết lộ đáp án đúng trong khi đang đếm ngược 15 giây!
-    this.highlightedKey = this.isRevealed ? q.correctKey : null;
-    this.roundWinner = null;
-
-    // Khởi tạo phiếu bầu theo đúng các đáp án có trong câu hỏi hiện tại
-    const validKeys = Array.isArray(q.options) && q.options.length
+    const validKeys = Array.isArray(q?.options) && q.options.length
       ? q.options.map(o => String(o.key).toUpperCase())
       : ['A', 'B', 'C', 'D'];
-    this.votes = {};
+
+    const freshVotes = {};
     for (const k of validKeys) {
-      this.votes[k] = q.mockVotes && q.mockVotes[k] !== undefined ? q.mockVotes[k] : 0;
+      freshVotes[k] = 0;
     }
 
-    this.stats = {
-      accuracyRate: q.accuracyRate || 72,
-      avgSpeed: q.avgSpeed || '1.2 giây'
-    };
+    let totalAnswers = 0;
+    let correctAnswers = 0;
+    let totalSpeedSec = 0;
 
-    // Chuyển lượt câu hỏi mới: xóa lượt trả lời cũ, kích hoạt các lượt x2 quà tặng chuyển tiếp từ vòng trước
+    for (const rec of this.questionAnswers.values()) {
+      if (freshVotes[rec.answer] !== undefined) {
+        freshVotes[rec.answer] += 1;
+      }
+      totalAnswers += 1;
+      if (rec.isCorrect) correctAnswers += 1;
+      totalSpeedSec += Number(rec.speedSec || 0);
+    }
+
+    this.votes = freshVotes;
+    const avgSpeedSec = totalAnswers > 0 ? Number((totalSpeedSec / totalAnswers).toFixed(1)) : null;
+    this.stats = {
+      totalAnswers,
+      correctAnswers,
+      accuracyRate: totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : null,
+      avgSpeedSec,
+      avgSpeed: avgSpeedSec !== null ? `${avgSpeedSec.toFixed(1)} giây` : null
+    };
+  }
+
+  syncQuestionState() {
+    const q = this.getCurrentQuestion();
+    // Không tiết lộ đáp án đúng trong khi đang đếm ngược
+    this.highlightedKey = this.isRevealed ? q.correctKey : null;
+    this.roundWinner = null;
+    this.roundStartedAt = Date.now();
+    this.countdownStartedAt = this.phase === 'countdown' ? this.roundStartedAt : null;
+
+    // Chuyển lượt câu hỏi mới: xóa toàn bộ lượt bình luận cũ (100% tính theo dữ liệu thật, không dùng mockVotes)
     this.questionAnswers.clear();
+    this.recentPredictions = [];
+    this.recomputeRoundStats();
+
+    // Kích hoạt các lượt x2 quà tặng bảo lưu từ vòng trước
     this.activeGiftBoosts = new Map(this.nextQuestionGiftBoosts);
     this.nextQuestionGiftBoosts.clear();
   }
@@ -537,6 +577,7 @@ class GplxEngine {
     }
     this.clearReadingFallbackTimeout();
     this.phase = 'countdown';
+    this.countdownStartedAt = Date.now();
     this.timerRemaining = this.timerMax;
     this.broadcast('gplx.countdownStarted', {
       roundId: this.questionRoundId,
@@ -584,11 +625,29 @@ class GplxEngine {
 
   getState() {
     const q = this.getCurrentQuestion();
+    // Không trả về các trường mock cũ (mockVotes, accuracyRate, avgSpeed) trong dữ liệu câu hỏi
+    const cleanQuestion = q
+      ? {
+          id: q.id,
+          questionNumber: q.questionNumber,
+          totalQuestions: q.totalQuestions,
+          category: q.category,
+          question: q.question,
+          isFatal: q.isFatal,
+          fatalLabel: q.fatalLabel,
+          options: q.options,
+          correctKey: q.correctKey,
+          correctNum: q.correctNum,
+          explanation: q.explanation,
+          image: q.image
+        }
+      : null;
+
     return {
       roundId: this.questionRoundId,
       phase: this.phase,
       waitingForMc: this.phase === 'reading',
-      question: q,
+      question: cleanQuestion,
       questionIndex: this.currentQIndex,
       totalQuestionsCount: this.questions.length,
       timerRemaining: this.timerRemaining,
@@ -597,6 +656,7 @@ class GplxEngine {
       highlightedKey: this.highlightedKey,
       multiplier: this.multiplier,
       votes: this.votes,
+      recentPredictions: this.recentPredictions,
       stats: this.stats,
       onlineLearnersCount: this.onlineLearnersCount,
       totalRankedPlayers: this.players.size,
@@ -762,10 +822,9 @@ class GplxEngine {
       };
     }
 
-    this.votes[rawAnswer] = (this.votes[rawAnswer] || 0) + 1;
-
     const isCorrect = rawAnswer === String(q.correctKey || '').toUpperCase();
-    const elapsedSec = Math.max(0.2, (this.timerMax - this.timerRemaining) + Math.random() * 0.4);
+    const baseTs = this.countdownStartedAt || this.roundStartedAt || Date.now();
+    const elapsedSec = Math.max(0.1, (Date.now() - baseTs) / 1000);
     const speedSec = Number(elapsedSec.toFixed(1));
     const speedText = `+${speedSec.toFixed(1)}s`;
 
@@ -799,6 +858,17 @@ class GplxEngine {
     };
 
     this.questionAnswers.set(userKey, answerRecord);
+    this.recentPredictions.unshift({
+      user: displayUser,
+      avatar: safeAvatar,
+      answer: rawAnswer,
+      speed: speedText,
+      boosted: hasGiftX2,
+      timestamp: answerRecord.timestamp
+    });
+    if (this.recentPredictions.length > 12) {
+      this.recentPredictions.pop();
+    }
 
     if (isCorrect) {
       let player = this.players.get(userKey);
@@ -847,12 +917,8 @@ class GplxEngine {
       }
     }
 
-    // Cập nhật thống kê tỷ lệ đúng & tốc độ trung bình theo câu hỏi
-    const totalVotes = Object.values(this.votes).reduce((s, n) => s + Number(n || 0), 0);
-    const correctVotes = Number(this.votes[String(q.correctKey || '').toUpperCase()] || 0);
-    if (totalVotes > 0) {
-      this.stats.accuracyRate = Math.round((correctVotes / totalVotes) * 100);
-    }
+    // Cập nhật lại phân bổ lượt chọn, tỷ lệ đúng & tốc độ trung bình 100% từ dữ liệu bình luận thực tế
+    this.recomputeRoundStats();
 
     const payload = {
       user: displayUser,
@@ -1018,7 +1084,9 @@ class GplxEngine {
     this.players.clear();
     this.leaderboard = [];
     this.questionAnswers.clear();
+    this.recentPredictions = [];
     this.roundWinner = null;
+    this.recomputeRoundStats();
     this.broadcastState();
     return { ok: true, leaderboard: [] };
   }

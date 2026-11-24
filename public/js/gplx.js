@@ -1090,11 +1090,24 @@
         btnRevealNow.disabled = Boolean(state.isRevealed);
       }
 
-      // Update Votes text
+      // Update Votes text (100% từ bình luận thực tế của người xem)
       if (state.votes) {
-        const parts = Object.entries(state.votes).map(([k, count]) => `${k} (${count} người)`);
+        const entries = Object.entries(state.votes);
+        const totalVotes = entries.reduce((sum, [, count]) => sum + Number(count || 0), 0);
         const voteEl = document.getElementById('voteDistribution');
-        if (voteEl) voteEl.textContent = parts.join(' • ');
+        if (voteEl) {
+          if (totalVotes === 0) {
+            const zeroParts = entries.map(([k]) => `${k} (0)`);
+            voteEl.textContent = `Chưa có người dự đoán • ${zeroParts.join(' • ')}`;
+          } else {
+            const parts = entries.map(([k, count]) => {
+              const n = Number(count || 0);
+              const pct = Math.round((n / totalVotes) * 100);
+              return `${k} (${n} người • ${pct}%)`;
+            });
+            voteEl.textContent = parts.join(' • ');
+          }
+        }
       }
 
       // Update Online Count (chỉ hiển thị số thật từ TikTok Live hoặc số học viên đã ghi điểm)
@@ -1114,11 +1127,21 @@
         }
       }
 
-      // Update Stats
-      if (state.stats) {
-        const accEl = document.getElementById('accuracyStatsText');
-        if (accEl) {
-          accEl.textContent = `✓ Tỷ lệ đúng: ${state.stats.accuracyRate || 68}% • Thời gian trung bình: ${state.stats.avgSpeed || '1.2 giây'}`;
+      // Update Stats (100% tính từ lượt dự đoán thực tế, không lộ đáp án trước khi hết giờ)
+      const accEl = document.getElementById('accuracyStatsText');
+      if (accEl) {
+        const st = state.stats || {};
+        const totalAns = Number(st.totalAnswers || 0);
+        const correctAns = Number(st.correctAnswers || 0);
+        if (totalAns === 0) {
+          accEl.textContent = '📊 Chưa có lượt dự đoán nào ở câu này';
+        } else if (!state.isRevealed) {
+          const speedInfo = st.avgSpeed ? ` • Tốc độ TB: ${st.avgSpeed}` : '';
+          accEl.textContent = `📊 Đã nhận ${totalAns} người dự đoán${speedInfo}`;
+        } else {
+          const accPct = st.accuracyRate !== null && st.accuracyRate !== undefined ? st.accuracyRate : 0;
+          const speedInfo = st.avgSpeed ? ` • Tốc độ TB: ${st.avgSpeed}` : '';
+          accEl.textContent = `✓ Trả lời đúng: ${correctAns}/${totalAns} (${accPct}%)${speedInfo}`;
         }
       }
 
